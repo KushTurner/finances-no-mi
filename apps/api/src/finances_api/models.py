@@ -1,0 +1,128 @@
+from datetime import date, datetime
+
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Account(Base):
+    __tablename__ = "accounts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String, unique=True)
+    institution: Mapped[str] = mapped_column(String)
+    account_type: Mapped[str] = mapped_column(String)
+
+
+class ImportFile(Base):
+    __tablename__ = "import_files"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="RESTRICT"))
+    original_filename: Mapped[str] = mapped_column(String)
+    content_sha256: Mapped[str] = mapped_column(String(64), unique=True)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    imported_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String, unique=True)
+
+
+class Merchant(Base):
+    __tablename__ = "merchants"
+    __table_args__ = (Index("ix_merchants_category_id", "category_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String, unique=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"))
+
+
+class MerchantKey(Base):
+    __tablename__ = "merchant_keys"
+    __table_args__ = (Index("ix_merchant_keys_merchant_id", "merchant_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    value: Mapped[str] = mapped_column(String, unique=True)
+    merchant_id: Mapped[int | None] = mapped_column(ForeignKey("merchants.id", ondelete="RESTRICT"))
+
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+    __table_args__ = (
+        UniqueConstraint("account_id", "source_key", name="uq_transactions_source_key"),
+        Index("ix_transactions_account_date", "account_id", "transaction_date"),
+        Index("ix_transactions_merchant_key_id", "merchant_key_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="RESTRICT"))
+    transaction_date: Mapped[date] = mapped_column(Date)
+    amount_minor: Mapped[int] = mapped_column(Integer)
+    balance_after_minor: Mapped[int | None] = mapped_column(Integer)
+    source_type: Mapped[str | None] = mapped_column(String)
+    raw_description: Mapped[str] = mapped_column(Text)
+    source_reference: Mapped[str | None] = mapped_column(String)
+    source_key: Mapped[str] = mapped_column(String)
+    merchant_key_id: Mapped[int] = mapped_column(
+        ForeignKey("merchant_keys.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+
+
+class ImportFileTransaction(Base):
+    __tablename__ = "import_file_transactions"
+    __table_args__ = (
+        UniqueConstraint(
+            "import_file_id",
+            "transaction_id",
+            name="uq_import_file_transactions_transaction",
+        ),
+        CheckConstraint("row_number > 0", name="ck_import_file_transactions_row_number"),
+        Index("ix_import_file_transactions_transaction_id", "transaction_id"),
+    )
+
+    import_file_id: Mapped[int] = mapped_column(
+        ForeignKey("import_files.id", ondelete="RESTRICT"), primary_key=True
+    )
+    transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id", ondelete="RESTRICT"))
+    row_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+
+class MerchantSuggestion(Base):
+    __tablename__ = "merchant_suggestions"
+    __table_args__ = (
+        CheckConstraint(
+            "confidence >= 0 AND confidence <= 1",
+            name="ck_merchant_suggestions_confidence",
+        ),
+    )
+
+    merchant_key_id: Mapped[int] = mapped_column(
+        ForeignKey("merchant_keys.id", ondelete="CASCADE"), primary_key=True
+    )
+    suggested_merchant_name: Mapped[str] = mapped_column(String)
+    suggested_category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id", ondelete="RESTRICT")
+    )
+    confidence: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())

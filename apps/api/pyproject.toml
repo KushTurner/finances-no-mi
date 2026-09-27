@@ -1,0 +1,43 @@
+[project]
+name = "finances-api"
+version = "0.1.0"
+description = "Local API for Finances No MI"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.20.0",
+    "fastapi>=0.141.1",
+    "pydantic>=2.13.5",
+    "sqlalchemy>=2.1.1",
+    "uvicorn>=0.54.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.13.1",
+    "pyright>=1.1.414",
+    "pytest>=9.1.1",
+    "ruff>=0.16.9",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/finances_api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.pyright]
+include = ["src", "tests"]
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]
