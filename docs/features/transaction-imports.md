@@ -118,14 +118,11 @@ Schema details and constraints remain defined in [Architecture](../architecture.
 
 Local accounts are created and listed through `POST /accounts` and `GET /accounts`. An account's institution is one of `amex`, `natwest`, or `nationwide`, and its type is one of `current_account`, `credit_card`, or `savings`.
 
-`POST /accounts/{account_id}/imports` accepts the CSV as a multipart `file` field. Its response distinguishes:
+`POST /imports` accepts the CSV as a multipart `file` field, detects its institution, and imports it into that institution's account. Its response distinguishes:
 
 - a successful import: `201` with the import id, account name, and counts of new and existing transactions;
-- an exact file that was already imported: `409`;
-- a malformed statement or row-specific validation failures: `400` with `errors`, each containing a `row_number` (`null` for file-level errors) and a `message`;
-- an unknown account: `404`.
-
-`POST /imports` accepts the CSV as a multipart `file` field, detects its institution, and imports it into that institution's account. Its responses match the account-scoped import, with `account_name` added on success. An unsupported file is a `400` file-level error, and several accounts for the institution is a `409`.
+- an exact file that was already imported, or an institution with several accounts: `409` with a `detail` message;
+- an unsupported file, a malformed statement, or row-specific validation failures: `400` with `errors`, each containing a `row_number` (`null` for file-level errors) and a `message`.
 
 The UI accepts several files by drag and drop or a file picker, imports them one at a time through `POST /imports`, and shows each file's account and outcome. It does not need a pre-import spreadsheet editor or a generic column-mapping interface.
 

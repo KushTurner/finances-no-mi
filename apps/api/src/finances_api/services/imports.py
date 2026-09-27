@@ -40,11 +40,6 @@ class ImportCompleted:
 
 
 @dataclass(frozen=True)
-class AccountNotFound:
-    pass
-
-
-@dataclass(frozen=True)
 class DuplicateImport:
     pass
 
@@ -54,24 +49,10 @@ class SeveralInstitutionAccounts:
     institution: Institution
 
 
-ImportResult = ImportCompleted | AccountNotFound | DuplicateImport | InvalidStatement
-DetectedImportResult = (
-    ImportCompleted | DuplicateImport | InvalidStatement | SeveralInstitutionAccounts
-)
+ImportResult = ImportCompleted | DuplicateImport | InvalidStatement | SeveralInstitutionAccounts
 
 
-def import_statement(
-    session: Session, account_id: int, filename: str, content: bytes
-) -> ImportResult:
-    account = session.get(Account, account_id)
-    if account is None:
-        return AccountNotFound()
-    return _import_into_account(session, account, filename, content)
-
-
-def import_detected_statement(
-    session: Session, filename: str, content: bytes
-) -> DetectedImportResult:
+def import_statement(session: Session, filename: str, content: bytes) -> ImportResult:
     institution = detect_institution(content)
     if institution is None:
         return UNSUPPORTED_STATEMENT
