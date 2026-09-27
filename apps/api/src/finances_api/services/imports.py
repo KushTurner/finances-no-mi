@@ -1,5 +1,5 @@
 import hashlib
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -10,25 +10,29 @@ from sqlalchemy.orm import Session
 from finances_api.merchant_keys import normalize_merchant_key
 from finances_api.models import (
     Account,
+    AccountType,
     ImportFile,
     ImportFileTransaction,
+    Institution,
     MerchantKey,
     Transaction,
 )
 from finances_api.statements.contract import InvalidStatement, TransactionCandidate
-from finances_api.statements.parsers import PARSERS_BY_INSTITUTION
+from finances_api.statements.parsers import PARSERS_BY_INSTITUTION, detect_institution
+
+DEFAULT_ACCOUNTS_BY_INSTITUTION: Mapping[Institution, tuple[str, AccountType]] = {
+    "amex": ("Amex", "credit_card"),
+    "natwest": ("NatWest", "current_account"),
+    "nationwide": ("Nationwide", "current_account"),
+}
 
 
 @dataclass(frozen=True)
 class ImportCompleted:
     import_id: int
+    account_name: str
     new_transaction_count: int
     existing_transaction_count: int
-
-
-@dataclass(frozen=True)
-class AccountNotFound:
-    pass
 
 
 @dataclass(frozen=True)
@@ -36,18 +40,36 @@ class DuplicateImport:
     pass
 
 
-ImportResult = ImportCompleted | AccountNotFound | DuplicateImport | InvalidStatement
+ImportResult = ImportCompleted | DuplicateImport | InvalidStatement
 
 
-def import_statement(
-    session: Session, account_id: int, filename: str, content: bytes
-) -> ImportResult:
-    account = session.get(Account, account_id)
+def import_statement(session: Session, filename: str, content: bytes) -> ImportResult:
+    institution = detect_institution(content)
+    if isinstance(institution, InvalidStatement):
+        return institution
+
+    account = session.scalars(
+        select(Account).where(Account.institution == institution)
+    ).one_or_none()
     if account is None:
-        return AccountNotFound()
+        account = _add_default_account(session, institution)
+    return _import_into_account(session, account, filename, content)
 
+
+def _add_default_account(session: Session, institution: Institution) -> Account:
+    name, account_type = DEFAULT_ACCOUNTS_BY_INSTITUTION[institution]
+    account = Account(name=name, institution=institution, account_type=account_type)
+    session.add(account)
+    session.flush()
+    return account
+
+
+def _import_into_account(
+    session: Session, account: Account, filename: str, content: bytes
+) -> ImportResult:
     result = PARSERS_BY_INSTITUTION[account.institution](content)
     if isinstance(result, InvalidStatement):
+        session.rollback()
         return result
 
     import_file = ImportFile(
@@ -63,13 +85,16 @@ def import_statement(
         session.rollback()
         return DuplicateImport()
 
-    completed = _record_transactions(session, import_file, result.candidates)
+    completed = _record_transactions(session, account, import_file, result.candidates)
     session.commit()
     return completed
 
 
 def _record_transactions(
-    session: Session, import_file: ImportFile, candidates: Sequence[TransactionCandidate]
+    session: Session,
+    account: Account,
+    import_file: ImportFile,
+    candidates: Sequence[TransactionCandidate],
 ) -> ImportCompleted:
     existing_transactions = _existing_transactions(session, import_file.account_id, candidates)
     new_candidates = [
@@ -96,6 +121,7 @@ def _record_transactions(
     )
     return ImportCompleted(
         import_id=import_file.id,
+        account_name=account.name,
         new_transaction_count=len(new_transactions),
         existing_transaction_count=len(existing_transactions),
     )

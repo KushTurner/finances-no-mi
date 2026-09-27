@@ -41,6 +41,8 @@ Run the frontend from the repository root:
 pnpm --filter web dev
 ```
 
+The Vite dev server proxies `/api` requests to the API at `http://127.0.0.1:8000`. Importing a statement creates the account for its bank the first time that bank is seen.
+
 Run the isolated browser tests:
 
 ```bash

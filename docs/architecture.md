@@ -17,7 +17,6 @@ Transaction identity is independent from merchant normalization:
 - Amex transactions use the source reference.
 - NatWest and Nationwide transactions use an exact fingerprint containing the date, source type, raw description, amount, and resulting balance.
 - A source key repeated within one file is numbered by occurrence.
-- Manual transactions receive an immutable generated source key.
 
 ## Merchant classification
 
