@@ -57,3 +57,11 @@ pnpm --filter web browser open http://127.0.0.1:5173
 ```
 
 Local application data is stored under `.data/` and must never be committed.
+
+## Documentation
+
+- [Product](docs/product.md)
+- [Architecture](docs/architecture.md)
+- [Roadmap](docs/roadmap.md)
+- [Transaction imports](docs/features/transaction-imports.md)
+- [Merchant resolution](docs/features/merchant-resolution.md)
