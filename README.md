@@ -1,6 +1,6 @@
 # Finances No MI
 
-A local-only personal finance application for importing bank transactions, resolving merchants, and reviewing financial activity.
+A local-only personal finance application for importing bank transactions, categorizing transactions, and reviewing financial activity.
 
 ## Repository layout
 
@@ -66,4 +66,4 @@ Local application data is stored under `.data/` and must never be committed.
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Transaction imports](docs/features/transaction-imports.md)
-- [Merchant resolution](docs/features/merchant-resolution.md)
+- [Transaction categorization](docs/features/transaction-categorization.md)

@@ -82,25 +82,11 @@ The fingerprint is the SHA-256 of the compact JSON array `[ISO date, source type
 
 ## Description normalization
 
-Merchant-key normalization is deterministic and happens after parsing:
+The current importer preserves the raw description unchanged and derives a merchant key after parsing using one shared rule: runs of whitespace collapse to one space, the result is trimmed, and it is uppercased.
 
-1. Preserve the raw description unchanged.
-2. Apply ordered, institution-specific regex substitutions defined in code.
-3. Normalize whitespace and casing according to one shared rule.
-4. Use the result as the merchant key.
+This key is not a category assignment or a reliable identifier for a person. [Transaction categorization](transaction-categorization.md) operates on individual transactions and preserves meaningful description context. Institution-specific regex cleanup is not required for that workflow.
 
-Every regex rule needs focused synthetic examples proving what it removes and what it preserves. Rules should target known institution formatting rather than attempt broad natural-language cleanup.
-
-For example, a source description may resolve as:
-
-```text
-raw description -> DELIVEROO LTD -> Deliveroo -> Eating Out
-                   merchant key     merchant     category
-```
-
-Until institution-specific rules exist, only the shared whitespace and casing rule applies: runs of whitespace collapse to one space, the result is trimmed, and it is uppercased.
-
-Changing a normalization rule does not alter the stored raw description or the identity of an existing transaction. Reparsing or remapping existing records is a separate feature and is not implicit.
+If description cleanup is introduced later, every rule needs focused synthetic examples proving what it removes and what it preserves. Changing a rule must not alter source descriptions, transaction identity, or existing records implicitly. Reparsing or remapping existing records remains a separate feature.
 
 ## Data changes
 
@@ -109,7 +95,7 @@ The initial schema already contains the required tables:
 - `import_files` stores the account, original filename, content hash, bytes, and import time.
 - `transactions` stores canonical financial events and their account-scoped source keys.
 - `import_file_transactions` records the rows observed in each file.
-- `merchant_keys` stores the normalized description used by merchant resolution.
+- `merchant_keys` stores the normalized description used by the existing import model; category decisions will be stored separately on transactions.
 
 Schema details and constraints remain defined in [Architecture](../architecture.md).
 
