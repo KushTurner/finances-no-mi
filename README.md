@@ -41,4 +41,19 @@ Run the frontend from the repository root:
 pnpm --filter web dev
 ```
 
+Run the isolated browser tests:
+
+```bash
+pnpm --filter web exec playwright install chromium
+pnpm --filter web test:e2e
+```
+
+Playwright starts only the frontend. API and external network requests are blocked unless a test explicitly provides a synthetic response.
+
+For interactive browser exploration, start the frontend and use the project-local CLI in another terminal:
+
+```bash
+pnpm --filter web browser open http://127.0.0.1:5173
+```
+
 Local application data is stored under `.data/` and must never be committed.

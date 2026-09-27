@@ -15,6 +15,8 @@
 - Use synthetic data in tests, examples, fixtures, screenshots, and documentation.
 - Do not log uploaded file contents, account identifiers, or transaction descriptions.
 - Keep local databases, uploaded files, `.env` files, and CSV files out of Git.
+- Playwright tests and browser reviews must start only the frontend, mock every API request, and block all other network requests.
+- Never capture or commit HAR files from the real application or use real financial data in browser tests or screenshots.
 
 ## Code
 
@@ -37,4 +39,5 @@
 ## Verification
 
 - Frontend: `pnpm --filter web lint`, `pnpm --filter web format:check`, `pnpm --filter web typecheck`, `pnpm --filter web test`, and `pnpm --filter web build`.
+- Browser: `pnpm --filter web test:e2e`. Review the Playwright report and synthetic-data screenshots for UI changes.
 - Backend, from `apps/api`: `uv run ruff check .`, `uv run ruff format --check .`, `uv run pyright`, `uv run pytest`, `uv run alembic upgrade head`, and `uv run alembic check`.
