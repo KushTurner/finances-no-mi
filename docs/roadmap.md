@@ -37,33 +37,26 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ## Planned
 
-### 1. Add manual transactions
-
-- Add Chase as an account institution without a statement parser.
-- Enter savings transactions without a CSV.
-- Give each manual transaction an immutable generated source key.
-- Apply the same amount, merchant-key, and persistence rules as imported transactions.
-
-### 2. Resolve merchant keys with deterministic rules
+### 1. Resolve merchant keys with deterministic rules
 
 - Apply institution-specific regex rules to raw descriptions.
 - Reuse approved mappings for known merchant keys.
 - Expose unresolved merchant keys for review.
 
-### 3. Suggest unresolved merchants
+### 2. Suggest unresolved merchants
 
 - Add a small LLM client behind an application interface.
 - Request structured merchant, category, and confidence output.
 - Persist at most one current suggestion for each unresolved merchant key.
 - Stub every LLM call in automated tests.
 
-### 4. Review merchant suggestions
+### 3. Review merchant suggestions
 
 - List pending suggestions in the frontend.
 - Approve a suggestion or correct its merchant and category.
 - Remove the pending suggestion after the merchant key is resolved.
 
-### 5. Browse transactions
+### 4. Browse transactions
 
 - Display transactions in a sortable, filterable table.
 - Show account, date, amount, raw description, merchant, and category.

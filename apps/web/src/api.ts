@@ -32,7 +32,11 @@ export async function importStatement(file: File): Promise<ImportResult> {
   const body = new FormData();
   body.append('file', file);
 
-  const response = await fetch('/api/imports', { method: 'POST', body });
+  const response = await fetch('/api/imports', { method: 'POST', body }).catch(
+    () => {
+      throw new Error('The API could not be reached');
+    },
+  );
 
   switch (response.status) {
     case 201: {
@@ -53,6 +57,6 @@ export async function importStatement(file: File): Promise<ImportResult> {
       return { kind: 'rejected', message: rejection.detail };
     }
     default:
-      throw new Error(`Import failed with status ${response.status}`);
+      throw new Error(`The API responded with status ${response.status}`);
   }
 }

@@ -17,7 +17,7 @@ from finances_api.models import (
     MerchantKey,
     Transaction,
 )
-from finances_api.statements.contract import InvalidStatement, RowError, TransactionCandidate
+from finances_api.statements.contract import InvalidStatement, TransactionCandidate
 from finances_api.statements.parsers import PARSERS_BY_INSTITUTION, detect_institution
 
 DEFAULT_ACCOUNTS_BY_INSTITUTION: Mapping[Institution, tuple[str, AccountType]] = {
@@ -25,10 +25,6 @@ DEFAULT_ACCOUNTS_BY_INSTITUTION: Mapping[Institution, tuple[str, AccountType]] =
     "natwest": ("NatWest", "current_account"),
     "nationwide": ("Nationwide", "current_account"),
 }
-
-UNSUPPORTED_STATEMENT = InvalidStatement(
-    (RowError(None, "Not a supported Amex, NatWest, or Nationwide statement"),)
-)
 
 
 @dataclass(frozen=True)
@@ -44,24 +40,19 @@ class DuplicateImport:
     pass
 
 
-@dataclass(frozen=True)
-class SeveralInstitutionAccounts:
-    institution: Institution
-
-
-ImportResult = ImportCompleted | DuplicateImport | InvalidStatement | SeveralInstitutionAccounts
+ImportResult = ImportCompleted | DuplicateImport | InvalidStatement
 
 
 def import_statement(session: Session, filename: str, content: bytes) -> ImportResult:
     institution = detect_institution(content)
-    if institution is None:
-        return UNSUPPORTED_STATEMENT
+    if isinstance(institution, InvalidStatement):
+        return institution
 
-    accounts = session.scalars(select(Account).where(Account.institution == institution)).all()
-    if len(accounts) > 1:
-        return SeveralInstitutionAccounts(institution)
-
-    account = accounts[0] if accounts else _add_default_account(session, institution)
+    account = session.scalars(
+        select(Account).where(Account.institution == institution)
+    ).one_or_none()
+    if account is None:
+        account = _add_default_account(session, institution)
     return _import_into_account(session, account, filename, content)
 
 
@@ -75,7 +66,7 @@ def _add_default_account(session: Session, institution: Institution) -> Account:
 
 def _import_into_account(
     session: Session, account: Account, filename: str, content: bytes
-) -> ImportCompleted | DuplicateImport | InvalidStatement:
+) -> ImportResult:
     result = PARSERS_BY_INSTITUTION[account.institution](content)
     if isinstance(result, InvalidStatement):
         session.rollback()

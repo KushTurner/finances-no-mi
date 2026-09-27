@@ -103,3 +103,25 @@ test('lists validation errors with their row numbers', async () => {
     'Row 4: Invalid amount',
   ]);
 });
+
+test('retries a statement whose import failed', async () => {
+  const responses = [
+    () => new Response(null, { status: 500 }),
+    completedImport('NatWest'),
+  ];
+  stubImports({ 'natwest.csv': () => responses.shift()!() });
+  render(<ImportPage />);
+  dropStatements('natwest.csv');
+  fireEvent.click(screen.getByRole('button', { name: 'Import 1 statement' }));
+  expect(
+    await statementRow('natwest.csv').findByRole('alert'),
+  ).toHaveTextContent(
+    'The API responded with status 500. Import again to retry.',
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: 'Import 1 statement' }));
+
+  expect(
+    await statementRow('natwest.csv').findByRole('status'),
+  ).toHaveTextContent('Imported into NatWest');
+});

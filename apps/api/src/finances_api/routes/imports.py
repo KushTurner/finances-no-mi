@@ -9,7 +9,6 @@ from finances_api.database import get_session
 from finances_api.services.imports import (
     DuplicateImport,
     ImportCompleted,
-    SeveralInstitutionAccounts,
     import_statement,
 )
 from finances_api.statements.contract import InvalidStatement
@@ -50,11 +49,6 @@ def create_import(
             return ImportResponse.model_validate(result, from_attributes=True)
         case DuplicateImport():
             raise HTTPException(status.HTTP_409_CONFLICT, "This file has already been imported")
-        case SeveralInstitutionAccounts():
-            raise HTTPException(
-                status.HTTP_409_CONFLICT,
-                "Several accounts exist for this statement's institution",
-            )
         case InvalidStatement():
             return _statement_errors_response(result)
 

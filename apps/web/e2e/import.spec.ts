@@ -91,7 +91,8 @@ test('shows the outcome of each chosen statement', async ({
         errors: [
           {
             row_number: null,
-            message: 'Not a supported Amex, NatWest, or Nationwide statement',
+            message:
+              'No header row matches a supported Amex, NatWest, or Nationwide statement',
           },
         ],
       },
@@ -109,7 +110,7 @@ test('shows the outcome of each chosen statement', async ({
   await page.getByRole('button', { name: 'Import 4 statements' }).click();
 
   await expect(page.getByRole('listitem', { name: 'notes.csv' })).toContainText(
-    'Not a supported Amex, NatWest, or Nationwide statement',
+    'No header row matches a supported Amex, NatWest, or Nationwide statement',
   );
   await expect(
     page.getByRole('listitem', { name: 'nationwide.csv' }),

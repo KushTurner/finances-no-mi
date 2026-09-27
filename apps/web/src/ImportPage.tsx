@@ -6,7 +6,7 @@ type StatementStatus =
   | { kind: 'waiting' }
   | { kind: 'importing' }
   | { kind: 'imported'; result: ImportResult }
-  | { kind: 'failed' };
+  | { kind: 'failed'; message: string };
 
 type QueuedStatement = {
   key: number;
@@ -18,8 +18,9 @@ export function ImportPage() {
   const [statements, setStatements] = useState<QueuedStatement[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const nextKey = useRef(0);
-  const waiting = statements.filter(
-    (statement) => statement.status.kind === 'waiting',
+  const pending = statements.filter(
+    (statement) =>
+      statement.status.kind === 'waiting' || statement.status.kind === 'failed',
   );
 
   function updateStatus(key: number, status: StatementStatus) {
@@ -39,15 +40,18 @@ export function ImportPage() {
     setStatements((current) => [...current, ...added]);
   }
 
-  async function importWaitingStatements() {
+  async function importPendingStatements() {
     setIsImporting(true);
-    for (const statement of waiting) {
+    for (const statement of pending) {
       updateStatus(statement.key, { kind: 'importing' });
       try {
         const result = await importStatement(statement.file);
         updateStatus(statement.key, { kind: 'imported', result });
-      } catch {
-        updateStatus(statement.key, { kind: 'failed' });
+      } catch (error) {
+        updateStatus(statement.key, {
+          kind: 'failed',
+          message: (error as Error).message,
+        });
       }
     }
     setIsImporting(false);
@@ -86,10 +90,10 @@ export function ImportPage() {
           <button
             type="button"
             className="mt-6 rounded-md bg-slate-900 px-4 py-2 font-medium text-white disabled:opacity-50"
-            disabled={isImporting || waiting.length === 0}
-            onClick={() => void importWaitingStatements()}
+            disabled={isImporting || pending.length === 0}
+            onClick={() => void importPendingStatements()}
           >
-            {isImporting ? 'Importing…' : importLabel(waiting.length)}
+            {isImporting ? 'Importing…' : importLabel(pending.length)}
           </button>
         </>
       )}
@@ -156,7 +160,7 @@ function StatementStatusMessage({ status }: { status: StatementStatus }) {
     case 'failed':
       return (
         <p role="alert" className="mt-2 text-sm text-red-800">
-          The request failed. Check that the API is running.
+          {status.message}. Import again to retry.
         </p>
       );
   }

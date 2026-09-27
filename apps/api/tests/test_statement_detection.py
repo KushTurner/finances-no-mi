@@ -2,7 +2,8 @@ import pytest
 from statement_helpers import csv_bytes
 
 from finances_api.models import Institution
-from finances_api.statements.parsers import detect_institution
+from finances_api.statements.parsers import UNSUPPORTED_STATEMENT, detect_institution
+from finances_api.statements.reading import UNREADABLE_FILE
 
 AMEX_HEADER = ["Date", "Description", "Card Member", "Account #", "Amount", "Reference"]
 NATWEST_HEADER = ["Date", "Type", "Description", "Value", "Balance", "Account Name"]
@@ -33,10 +34,15 @@ def test_detects_the_institution_from_its_header_row(
     [
         csv_bytes([["Date", "Description", "Amount"]]),
         csv_bytes([AMEX_HEADER, NATWEST_HEADER]),
-        b"\xff\xfeDate,Type\n",
     ],
 )
-def test_does_not_detect_an_unsupported_or_ambiguous_file(content: bytes) -> None:
+def test_rejects_an_unsupported_or_ambiguous_header(content: bytes) -> None:
     detected = detect_institution(content)
 
-    assert detected is None
+    assert detected == UNSUPPORTED_STATEMENT
+
+
+def test_rejects_a_file_that_is_not_a_readable_csv() -> None:
+    detected = detect_institution(b"\xff\xfeDate,Type\n")
+
+    assert detected == UNREADABLE_FILE

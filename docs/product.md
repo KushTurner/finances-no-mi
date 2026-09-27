@@ -15,7 +15,7 @@ The application is for one user on one machine. It is not a hosted service.
 3. Review each file's import result, including rows added, rows already observed in an earlier import, and any validation failure.
 4. View the imported transactions in a common format regardless of their source institution.
 
-Amex, NatWest, and Nationwide CSV exports are the initial supported formats. Chase savings activity is entered manually because a suitable CSV export is not available.
+Amex, NatWest, and Nationwide CSV exports are the initial supported formats.
 
 ### Resolve merchants
 

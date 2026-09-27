@@ -14,7 +14,7 @@ Transactions from supported institutions can be imported into one canonical mode
 6. The import is persisted atomically.
 7. The user receives, per file, counts for new transactions and transactions already observed in another import, or the reason the file was not imported.
 
-The first supported CSV sources are Amex, NatWest, and Nationwide. Chase savings activity uses the separate manual-entry flow.
+The first supported CSV sources are Amex, NatWest, and Nationwide.
 
 ## Business rules
 
@@ -37,7 +37,6 @@ Source keys are scoped to an account:
 
 - Amex uses the stable reference supplied by the export.
 - NatWest and Nationwide use an exact fingerprint of the date, source type, raw description, signed amount, and resulting balance.
-- Manual transactions use an immutable generated key.
 
 The resulting balance is part of the NatWest and Nationwide identity so two otherwise identical purchases on the same day remain separate events. The same event appearing in overlapping exports retains the same fingerprint and is reused.
 
@@ -67,7 +66,7 @@ Each adapter locates the first row containing its required columns, ignores any 
 
 Institution detection matches a file against each adapter's required columns. It succeeds only when exactly one supported format matches; otherwise the file is reported as unsupported. Detection reads column names only, never account-holder or account-number values.
 
-Each institution is expected to have one account. When a detected import finds none, it creates one named after the institution: Amex as a credit card, and NatWest and Nationwide as current accounts. The account is created in the same database transaction as the import, so a rejected first statement creates no account. If several accounts share the institution, the detected import is rejected.
+Each institution has one account, and imports are the only way accounts are created. When an import finds no account for its institution, it creates one named after the institution: Amex as a credit card, and NatWest and Nationwide as current accounts. The account is created in the same database transaction as the import, so a rejected first statement creates no account.
 
 | Source | Required columns | Date | Amount | Source key |
 | --- | --- | --- | --- | --- |
@@ -116,13 +115,13 @@ Schema details and constraints remain defined in [Architecture](../architecture.
 
 ## API and UI behaviour
 
-Local accounts are created and listed through `POST /accounts` and `GET /accounts`. An account's institution is one of `amex`, `natwest`, or `nationwide`, and its type is one of `current_account`, `credit_card`, or `savings`.
+Accounts are listed through `GET /accounts`. An account's institution is one of `amex`, `natwest`, or `nationwide`, and its type is one of `current_account`, `credit_card`, or `savings`.
 
 `POST /imports` accepts the CSV as a multipart `file` field, detects its institution, and imports it into that institution's account. Its response distinguishes:
 
 - a successful import: `201` with the import id, account name, and counts of new and existing transactions;
-- an exact file that was already imported, or an institution with several accounts: `409` with a `detail` message;
-- an unsupported file, a malformed statement, or row-specific validation failures: `400` with `errors`, each containing a `row_number` (`null` for file-level errors) and a `message`.
+- an exact file that was already imported: `409` with a `detail` message;
+- an unreadable file, an unsupported header, a malformed statement, or row-specific validation failures: `400` with `errors`, each containing a `row_number` (`null` for file-level errors) and a `message`.
 
 The UI accepts several files by drag and drop or a file picker, imports them one at a time through `POST /imports`, and shows each file's account and outcome. It does not need a pre-import spreadsheet editor or a generic column-mapping interface.
 

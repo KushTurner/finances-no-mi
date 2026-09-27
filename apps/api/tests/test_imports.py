@@ -33,17 +33,6 @@ def natwest_csv(*rows: list[str]) -> bytes:
     return csv_bytes([NATWEST_HEADER, *rows])
 
 
-def create_account(client: TestClient) -> None:
-    client.post(
-        "/accounts",
-        json={
-            "name": "Synthetic Current",
-            "institution": "natwest",
-            "account_type": "current_account",
-        },
-    )
-
-
 def upload(client: TestClient, content: bytes, filename: str = "statement.csv") -> Response:
     return client.post("/imports", files={"file": (filename, content, "text/csv")})
 
@@ -173,14 +162,14 @@ def test_creates_the_institution_account_on_its_first_detected_import(
     ]
 
 
-def test_imports_a_detected_statement_into_the_existing_institution_account(
+def test_imports_later_statements_into_the_existing_institution_account(
     client: TestClient, session: Session
 ) -> None:
-    create_account(client)
+    upload(client, natwest_csv(natwest_row(date="02 Sep 2026", balance="1000.00")))
 
-    response = upload(client, natwest_csv(natwest_row()))
+    response = upload(client, natwest_csv(natwest_row(balance="995.50")))
 
-    assert response.json()["account_name"] == "Synthetic Current"
+    assert response.json()["account_name"] == "NatWest"
     assert count(session, Account) == 1
 
 
@@ -195,7 +184,9 @@ def test_rejects_an_unsupported_statement_without_creating_an_account(
         "errors": [
             {
                 "row_number": None,
-                "message": "Not a supported Amex, NatWest, or Nationwide statement",
+                "message": (
+                    "No header row matches a supported Amex, NatWest, or Nationwide statement"
+                ),
             }
         ]
     }
@@ -211,18 +202,3 @@ def test_an_invalid_first_statement_does_not_create_its_account(
 
     assert response.status_code == 400
     assert count(session, Account) == 0
-
-
-def test_rejects_a_detected_statement_when_its_institution_has_several_accounts(
-    client: TestClient, session: Session
-) -> None:
-    create_account(client)
-    client.post(
-        "/accounts",
-        json={"name": "Synthetic Savings", "institution": "natwest", "account_type": "savings"},
-    )
-
-    response = upload(client, natwest_csv(natwest_row()))
-
-    assert response.status_code == 409
-    assert count(session, ImportFile) == 0
