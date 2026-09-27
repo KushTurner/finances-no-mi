@@ -41,6 +41,14 @@ Run the frontend from the repository root:
 pnpm --filter web dev
 ```
 
+The Vite dev server proxies `/api` requests to the API at `http://127.0.0.1:8000`. Accounts are created through the API, for example:
+
+```bash
+curl -X POST http://127.0.0.1:8000/accounts \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Everyday", "institution": "natwest", "account_type": "current_account"}'
+```
+
 Run the isolated browser tests:
 
 ```bash
