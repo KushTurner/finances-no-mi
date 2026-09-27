@@ -112,7 +112,7 @@ Before enabling automatic categorization, evaluate candidate thresholds while al
 - Reusable merchant or substring matching rules.
 - Category hierarchies, split transactions, trip tags, and automatic matching of repayments to original purchases.
 - A category-management UI, custom model training, prompt archives, and raw LLM response storage.
-- Merchant search, monthly summaries, and conversational analysis. These can build on descriptions and transaction filters later, with arithmetic performed by application code.
+- Merchant search and conversational analysis. These can build on descriptions and transaction filters later, with arithmetic performed by application code. Period summaries are planned in [Spending overview](spending-overview.md).
 
 ## Decisions for later slices
 
