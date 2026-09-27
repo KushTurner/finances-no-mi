@@ -58,6 +58,22 @@ No fuzzy matching, date-window matching, or merchant-based deduplication is perm
 - If any row is invalid, persist neither the import file nor its transactions.
 - Perform the accepted import in one database transaction.
 
+## Supported export formats
+
+Each adapter locates the first row containing its required columns, ignores any other columns, and never reads account-holder or account-number columns.
+
+| Source | Required columns | Date | Amount | Source key |
+| --- | --- | --- | --- | --- |
+| Amex | `Date`, `Description`, `Amount`, `Reference` | `DD/MM/YYYY` | `Amount`, charges positive, so negated | `ref:` + reference without its surrounding apostrophes |
+| NatWest | `Date`, `Type`, `Description`, `Value`, `Balance` | `DD Mon YYYY` | `Value`, already signed | `fp:` fingerprint |
+| Nationwide | `Date`, `Transaction type`, `Description`, `Paid out`, `Paid in`, `Balance` | `DD Mon YYYY` | `Paid in` minus `Paid out`; exactly one is present | `fp:` fingerprint |
+
+Nationwide exports start with a UTF-8 byte order mark and an account summary above the header. Amex address cells can span several lines, so row numbers count CSV records rather than physical lines.
+
+Amounts accept an optional `-` and `£` followed by at most two decimal places. Any other format is a row error.
+
+The fingerprint is the SHA-256 of the compact JSON array `[ISO date, source type, raw description, amount in pence, balance in pence]`. Its encoding is fixed; changing it would change the identity of every stored transaction.
+
 ## Description normalization
 
 Merchant-key normalization is deterministic and happens after parsing:
@@ -121,5 +137,4 @@ The initial UI needs account selection, a file input, a submit action, and a res
 
 ## Open questions
 
-- Confirm the exact required and optional columns for each supported export before implementing its adapter.
 - Decide how the initial local accounts are created when planning the persistence slice.

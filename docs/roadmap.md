@@ -12,14 +12,13 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - GitHub Actions verification and protected `main` branch.
 - Mock-only browser testing that does not start the backend.
 
+### Parse supported statements
+
+- One parser contract producing canonical transaction candidates or row-specific validation failures.
+- Amex, NatWest, and Nationwide adapters tested with synthetic fixtures.
+- Account-scoped source keys that preserve legitimate repeated transactions.
+
 ## Planned
-
-### 1. Parse supported statements
-
-- Define one parser contract that produces canonical transaction candidates.
-- Implement Amex, NatWest, and Nationwide adapters using synthetic fixtures.
-- Generate stable source keys that preserve legitimate repeated transactions.
-- Return row-specific validation failures without persisting anything.
 
 ### 2. Persist transaction imports
 
