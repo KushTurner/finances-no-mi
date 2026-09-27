@@ -27,41 +27,36 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Derive merchant keys with the shared whitespace and casing rule.
 - Return counts of new and existing transactions, or row-specific validation errors.
 
-## Planned
+### Add the import interface
 
-### 1. Add the import interface
-
-- Select an account and upload a CSV.
-- Display success, duplicate-file, and validation outcomes.
+- Drop or choose several CSVs at once.
+- Detect each file's institution from its header row and import it into that institution's account, creating the account on first import.
+- Display each file's account and its success, duplicate-file, or validation outcome.
+- Proxy `/api` requests from the Vite dev server to the local API.
 - Exercise the complete interface with mocked API responses and synthetic screenshots.
 
-### 2. Add manual transactions
+## Planned
 
-- Add Chase as an account institution without a statement parser.
-- Enter savings transactions without a CSV.
-- Give each manual transaction an immutable generated source key.
-- Apply the same amount, merchant-key, and persistence rules as imported transactions.
-
-### 3. Resolve merchant keys with deterministic rules
+### 1. Resolve merchant keys with deterministic rules
 
 - Apply institution-specific regex rules to raw descriptions.
 - Reuse approved mappings for known merchant keys.
 - Expose unresolved merchant keys for review.
 
-### 4. Suggest unresolved merchants
+### 2. Suggest unresolved merchants
 
 - Add a small LLM client behind an application interface.
 - Request structured merchant, category, and confidence output.
 - Persist at most one current suggestion for each unresolved merchant key.
 - Stub every LLM call in automated tests.
 
-### 5. Review merchant suggestions
+### 3. Review merchant suggestions
 
 - List pending suggestions in the frontend.
 - Approve a suggestion or correct its merchant and category.
 - Remove the pending suggestion after the merchant key is resolved.
 
-### 6. Browse transactions
+### 4. Browse transactions
 
 - Display transactions in a sortable, filterable table.
 - Show account, date, amount, raw description, merchant, and category.

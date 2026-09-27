@@ -1,23 +1,18 @@
+from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
-SYNTHETIC_ACCOUNT = {
-    "name": "Synthetic Current",
-    "institution": "natwest",
-    "account_type": "current_account",
-}
+from finances_api.models import Account
 
 
-def test_lists_a_created_account(client: TestClient) -> None:
-    client.post("/accounts", json=SYNTHETIC_ACCOUNT)
+def test_lists_accounts_in_name_order(client: TestClient, session: Session) -> None:
+    session.add_all(
+        [
+            Account(name="NatWest", institution="natwest", account_type="current_account"),
+            Account(name="Amex", institution="amex", account_type="credit_card"),
+        ]
+    )
+    session.commit()
 
     response = client.get("/accounts")
 
-    assert response.json() == [{"id": 1, **SYNTHETIC_ACCOUNT}]
-
-
-def test_rejects_a_duplicate_account_name(client: TestClient) -> None:
-    client.post("/accounts", json=SYNTHETIC_ACCOUNT)
-
-    response = client.post("/accounts", json={**SYNTHETIC_ACCOUNT, "institution": "amex"})
-
-    assert response.status_code == 409
+    assert [account["name"] for account in response.json()] == ["Amex", "NatWest"]

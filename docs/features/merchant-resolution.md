@@ -6,7 +6,7 @@ Noisy source descriptions resolve to consistent merchants and categories, with d
 
 ## User flow
 
-1. A transaction receives a normalized merchant key during import or manual entry.
+1. A transaction receives a normalized merchant key during import.
 2. If that key already points to a merchant, the transaction is categorized immediately.
 3. If the key is unresolved and has no current suggestion, the backend requests one structured LLM suggestion.
 4. The pending suggestion appears in the review interface with its proposed merchant, category, and confidence.

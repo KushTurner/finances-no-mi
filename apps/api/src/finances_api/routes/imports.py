@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from finances_api.database import get_session
 from finances_api.services.imports import (
-    AccountNotFound,
     DuplicateImport,
     ImportCompleted,
     import_statement,
@@ -17,6 +16,7 @@ from finances_api.statements.contract import InvalidStatement
 
 class ImportResponse(BaseModel):
     import_id: int
+    account_name: str
     new_transaction_count: int
     existing_transaction_count: int
 
@@ -30,7 +30,7 @@ class StatementErrorsResponse(BaseModel):
     errors: list[StatementError]
 
 
-router = APIRouter(prefix="/accounts/{account_id}/imports", tags=["imports"])
+router = APIRouter(prefix="/imports", tags=["imports"])
 
 
 @router.post(
@@ -40,15 +40,13 @@ router = APIRouter(prefix="/accounts/{account_id}/imports", tags=["imports"])
     responses={status.HTTP_400_BAD_REQUEST: {"model": StatementErrorsResponse}},
 )
 def create_import(
-    account_id: int, file: UploadFile, session: Annotated[Session, Depends(get_session)]
+    file: UploadFile, session: Annotated[Session, Depends(get_session)]
 ) -> ImportResponse | JSONResponse:
-    result = import_statement(session, account_id, file.filename or "", file.file.read())
+    result = import_statement(session, file.filename or "", file.file.read())
 
     match result:
         case ImportCompleted():
             return ImportResponse.model_validate(result, from_attributes=True)
-        case AccountNotFound():
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Account not found")
         case DuplicateImport():
             raise HTTPException(status.HTTP_409_CONFLICT, "This file has already been imported")
         case InvalidStatement():
