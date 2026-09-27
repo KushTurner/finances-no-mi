@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 
 from sqlalchemy import (
     CheckConstraint,
@@ -16,6 +17,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+Institution = Literal["amex", "natwest", "nationwide"]
+AccountType = Literal["current_account", "credit_card", "savings"]
+
 
 class Base(DeclarativeBase):
     pass
@@ -26,8 +30,8 @@ class Account(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, unique=True)
-    institution: Mapped[str] = mapped_column(String)
-    account_type: Mapped[str] = mapped_column(String)
+    institution: Mapped[Institution] = mapped_column(String)
+    account_type: Mapped[AccountType] = mapped_column(String)
 
 
 class ImportFile(Base):

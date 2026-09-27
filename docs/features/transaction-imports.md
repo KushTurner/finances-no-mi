@@ -111,13 +111,13 @@ Schema details and constraints remain defined in [Architecture](../architecture.
 
 ## API and UI behaviour
 
-Local accounts are created and listed through `POST /accounts` and `GET /accounts`. An account's institution is one of `amex`, `natwest`, `nationwide`, or `chase`, and its type is one of `current_account`, `credit_card`, or `savings`.
+Local accounts are created and listed through `POST /accounts` and `GET /accounts`. An account's institution is one of `amex`, `natwest`, or `nationwide`, and its type is one of `current_account`, `credit_card`, or `savings`.
 
 `POST /accounts/{account_id}/imports` accepts the CSV as a multipart `file` field. Its response distinguishes:
 
 - a successful import: `201` with the import id and counts of new and existing transactions;
 - an exact file that was already imported: `409`;
-- an unsupported or malformed statement, or row-specific validation failures: `422` with `errors`, each containing a `row_number` (`null` for file-level errors) and a `message`;
+- a malformed statement or row-specific validation failures: `400` with `errors`, each containing a `row_number` (`null` for file-level errors) and a `message`;
 - an unknown account: `404`.
 
 The initial UI needs account selection, a file input, a submit action, and a result summary. It does not need a pre-import spreadsheet editor or a generic column-mapping interface.

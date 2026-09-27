@@ -6,8 +6,12 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from finances_api.database import get_session
-from finances_api.imports import DuplicateImport, ImportCompleted, import_statement
-from finances_api.models import Account
+from finances_api.services.imports import (
+    AccountNotFound,
+    DuplicateImport,
+    ImportCompleted,
+    import_statement,
+)
 from finances_api.statements.contract import InvalidStatement
 
 
@@ -33,24 +37,18 @@ router = APIRouter(prefix="/accounts/{account_id}/imports", tags=["imports"])
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=ImportResponse,
-    responses={status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": StatementErrorsResponse}},
+    responses={status.HTTP_400_BAD_REQUEST: {"model": StatementErrorsResponse}},
 )
 def create_import(
     account_id: int, file: UploadFile, session: Annotated[Session, Depends(get_session)]
 ) -> ImportResponse | JSONResponse:
-    account = session.get(Account, account_id)
-    if account is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Account not found")
-
-    result = import_statement(session, account, file.filename or "", file.file.read())
+    result = import_statement(session, account_id, file.filename or "", file.file.read())
 
     match result:
         case ImportCompleted():
-            return ImportResponse(
-                import_id=result.import_id,
-                new_transaction_count=result.new_transaction_count,
-                existing_transaction_count=result.existing_transaction_count,
-            )
+            return ImportResponse.model_validate(result, from_attributes=True)
+        case AccountNotFound():
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Account not found")
         case DuplicateImport():
             raise HTTPException(status.HTTP_409_CONFLICT, "This file has already been imported")
         case InvalidStatement():
@@ -64,4 +62,4 @@ def _statement_errors_response(statement: InvalidStatement) -> JSONResponse:
             for error in statement.errors
         ]
     )
-    return JSONResponse(errors.model_dump(), status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+    return JSONResponse(errors.model_dump(), status_code=status.HTTP_400_BAD_REQUEST)

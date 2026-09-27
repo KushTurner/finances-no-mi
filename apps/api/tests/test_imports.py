@@ -32,15 +32,13 @@ def natwest_csv(*rows: list[str]) -> bytes:
     return csv_bytes([NATWEST_HEADER, *rows])
 
 
-def create_account(
-    client: TestClient, institution: str = "natwest", account_type: str = "current_account"
-) -> int:
+def create_account(client: TestClient) -> int:
     response = client.post(
         "/accounts",
         json={
-            "name": f"Synthetic {institution}",
-            "institution": institution,
-            "account_type": account_type,
+            "name": "Synthetic Current",
+            "institution": "natwest",
+            "account_type": "current_account",
         },
     )
     return response.json()["id"]
@@ -168,25 +166,11 @@ def test_an_invalid_row_is_reported_and_nothing_is_stored(
 
     response = upload(client, account_id, content)
 
+    assert response.status_code == 400
     assert response.json() == {
         "errors": [{"row_number": 3, "message": "Value is not a valid GBP amount"}]
     }
     assert [count(session, model) for model in (ImportFile, Transaction, MerchantKey)] == [0, 0, 0]
-
-
-def test_rejects_an_import_for_an_account_without_a_statement_parser(
-    client: TestClient,
-) -> None:
-    account_id = create_account(client, institution="chase", account_type="savings")
-
-    response = upload(client, account_id, natwest_csv(natwest_row()))
-
-    assert response.status_code == 422
-    assert response.json() == {
-        "errors": [
-            {"row_number": None, "message": "Statement imports are not supported for this account"}
-        ]
-    }
 
 
 def test_rejects_an_import_for_an_unknown_account(client: TestClient) -> None:

@@ -23,6 +23,7 @@
 - Prefer clear names, small functions, and explicit control flow over comments or explanatory docstrings.
 - Add a comment only when an external constraint cannot be expressed clearly in code or tests.
 - Keep financial parsing, normalization, persistence, and classification as separate concerns.
+- Keep API routes thin: they validate the request, call one service function, and map its result to an HTTP response. Services own business rules, database queries, and transaction boundaries, and return typed results rather than raising HTTP errors.
 - Store GBP monetary values as integer pence. Income and refunds are positive; spending and withdrawals are negative.
 - Use Alembic for schema changes. Do not use `create_all()` for application schema management.
 - SQLAlchemy ORM is appropriate for ordinary persistence. Use SQLAlchemy Core or parameterized SQL when it is clearer.

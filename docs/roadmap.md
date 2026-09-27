@@ -37,6 +37,7 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ### 2. Add manual transactions
 
+- Add Chase as an account institution without a statement parser.
 - Enter savings transactions without a CSV.
 - Give each manual transaction an immutable generated source key.
 - Apply the same amount, merchant-key, and persistence rules as imported transactions.
