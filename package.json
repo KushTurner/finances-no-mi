@@ -1,0 +1,16 @@
+{
+  "name": "finances-no-mi",
+  "private": true,
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "build": "pnpm --filter web build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "pnpm --filter web lint",
+    "test": "pnpm --filter web test",
+    "typecheck": "pnpm --filter web typecheck"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.9"
+  }
+}
