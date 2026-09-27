@@ -26,6 +26,11 @@ const categories = [
   },
 ];
 
+async function choose(page: Page, label: string, option: string) {
+  await page.getByLabel(label).click();
+  await page.getByRole('option', { name: option, exact: true }).click();
+}
+
 async function mockTransactions(page: Page, failFirstSave = false) {
   const rows = [
     {
@@ -130,10 +135,10 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   await expect(
     page.getByRole('cell', { name: '-£4.50', exact: true }),
   ).toBeVisible();
-  await page.getByLabel('Filter by category').selectOption('uncategorized');
+  await choose(page, 'Filter by category', 'Uncategorized');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
   await page.getByLabel('Select transaction 2:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('1');
+  await choose(page, 'Category for selection', 'Eating out');
   await testInfo.attach('transactions-selected', {
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',
@@ -144,19 +149,19 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   await expect(page.getByRole('status')).toHaveText('Updated 2 transactions.');
   await expect(page.getByRole('row')).toHaveCount(2);
   expect(decisions[0]).toEqual({ transaction_ids: [1, 2], category_id: 1 });
-  await page.getByLabel('Filter by category').selectOption('1');
+  await choose(page, 'Filter by category', 'Eating out');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('2');
+  await choose(page, 'Category for selection', 'Travel');
   await page.getByRole('button', { name: 'Apply to selected' }).click();
   await expect(page.getByRole('status')).toHaveText('Updated 1 transaction.');
-  await page.getByLabel('Filter by category').selectOption('2');
+  await choose(page, 'Filter by category', 'Travel');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('clear');
+  await choose(page, 'Category for selection', 'Clear category');
   await page.getByRole('button', { name: 'Apply to selected' }).click();
   await expect(
     page.getByText('No transactions match this category.'),
   ).toBeVisible();
-  await page.getByLabel('Filter by category').selectOption('all');
+  await choose(page, 'Filter by category', 'All categories');
   await expect(
     page.getByRole('row').filter({ hasText: 'SYNTHETIC CAFE' }),
   ).toContainText('Uncategorized');
@@ -172,7 +177,7 @@ test('keeps a failed decision selected for retry and clears selection when filte
   const decisions = await mockTransactions(page, true);
   await page.goto('/transactions');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('1');
+  await choose(page, 'Category for selection', 'Eating out');
 
   await page.getByRole('button', { name: 'Apply to selected' }).click();
 
@@ -186,7 +191,7 @@ test('keeps a failed decision selected for retry and clears selection when filte
   await expect(page.getByRole('status')).toHaveText('Updated 1 transaction.');
   expect(decisions).toEqual([{ transaction_ids: [1], category_id: 1 }]);
   await page.getByLabel('Select transaction 2:', { exact: false }).check();
-  await page.getByLabel('Filter by category').selectOption('3');
+  await choose(page, 'Filter by category', 'Income');
   await expect(page.getByText('0 selected', { exact: true })).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Apply to selected' }),
@@ -201,7 +206,7 @@ test('shows the transaction list and editing controls on a narrow screen', async
   await page.goto('/transactions');
   await expect(page.getByRole('table')).toBeVisible();
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('1');
+  await choose(page, 'Category for selection', 'Eating out');
   await expect(
     page.getByRole('button', { name: 'Apply to selected' }),
   ).toBeInViewport();

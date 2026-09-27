@@ -7,38 +7,58 @@ import {
 } from '@tanstack/react-router';
 
 import { ImportPage } from './ImportPage';
+import { OverviewPage } from './OverviewPage';
 import { TransactionsPage } from './TransactionsPage';
+
+const navLink =
+  'rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground';
+const activeNavLink = {
+  className: 'bg-secondary font-medium text-foreground',
+};
 
 const rootRoute = createRootRoute({
   component: () => (
     <>
-      <nav
-        aria-label="Main navigation"
-        className="flex gap-6 border-b border-slate-200 bg-white px-6 py-4 text-sm font-medium"
-      >
-        <Link
-          to="/"
-          activeOptions={{ exact: true }}
-          activeProps={{ className: 'underline underline-offset-4' }}
-        >
-          Import statements
+      <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 pt-7">
+        <Link to="/" className="flex items-center gap-2.5 font-semibold">
+          <span
+            aria-hidden="true"
+            className="grid size-7 place-items-center rounded-lg bg-linear-to-br from-[#3a3a3c] to-[#1d1d1f] text-xs font-bold"
+          >
+            £
+          </span>
+          Finances
         </Link>
-        <Link
-          to="/transactions"
-          activeProps={{ className: 'underline underline-offset-4' }}
-        >
-          Transactions
-        </Link>
-      </nav>
+        <nav aria-label="Main navigation" className="flex gap-1">
+          <Link
+            to="/"
+            className={navLink}
+            activeOptions={{ exact: true }}
+            activeProps={activeNavLink}
+          >
+            Overview
+          </Link>
+          <Link
+            to="/transactions"
+            className={navLink}
+            activeProps={activeNavLink}
+          >
+            Transactions
+          </Link>
+          <Link to="/import" className={navLink} activeProps={activeNavLink}>
+            Import
+          </Link>
+        </nav>
+      </header>
       <Outlet />
     </>
   ),
 });
 
-const indexRoute = createRoute({
+const overviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: ImportPage,
+  component: OverviewPage,
 });
 
 const transactionsRoute = createRoute({
@@ -47,7 +67,17 @@ const transactionsRoute = createRoute({
   component: TransactionsPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, transactionsRoute]);
+const importRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/import',
+  component: ImportPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  overviewRoute,
+  transactionsRoute,
+  importRoute,
+]);
 
 export const router = createRouter({ routeTree });
 

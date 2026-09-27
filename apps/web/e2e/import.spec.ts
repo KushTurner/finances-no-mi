@@ -52,7 +52,7 @@ test('imports dropped statements into the accounts for their banks', async ({
     'natwest.csv': completed('NatWest'),
     'amex.csv': completed('Amex'),
   });
-  await page.goto('/');
+  await page.goto('/import');
   const dataTransfer = await page.evaluateHandle(() => {
     const transfer = new DataTransfer();
     for (const name of ['natwest.csv', 'amex.csv']) {
@@ -98,7 +98,7 @@ test('shows the outcome of each chosen statement', async ({
       },
     },
   });
-  await page.goto('/');
+  await page.goto('/import');
 
   await page
     .getByLabel(/Drop statement CSVs/)
