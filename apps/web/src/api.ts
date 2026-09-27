@@ -1,12 +1,3 @@
-export type Institution = 'amex' | 'natwest' | 'nationwide';
-
-export type Account = {
-  id: number;
-  name: string;
-  institution: Institution;
-  account_type: 'current_account' | 'credit_card' | 'savings';
-};
-
 export type StatementError = {
   row_number: number | null;
   message: string;
@@ -15,15 +6,16 @@ export type StatementError = {
 export type ImportResult =
   | {
       kind: 'completed';
+      accountName: string;
       newTransactionCount: number;
       existingTransactionCount: number;
     }
-  | { kind: 'duplicate' }
   | { kind: 'invalid'; errors: StatementError[] }
-  | { kind: 'accountNotFound' };
+  | { kind: 'rejected'; message: string };
 
 type ImportResponse = {
   import_id: number;
+  account_name: string;
   new_transaction_count: number;
   existing_transaction_count: number;
 };
@@ -32,52 +24,22 @@ type StatementErrorsResponse = {
   errors: StatementError[];
 };
 
-type InstitutionDetectionResponse = {
-  institution: Institution | null;
+type RejectionResponse = {
+  detail: string;
 };
 
-export async function listAccounts(): Promise<Account[]> {
-  const response = await fetch('/api/accounts');
-  if (!response.ok) {
-    throw new Error(`Loading accounts failed with status ${response.status}`);
-  }
-  return (await response.json()) as Account[];
-}
-
-export async function detectInstitution(
-  file: File,
-): Promise<Institution | null> {
+export async function importStatement(file: File): Promise<ImportResult> {
   const body = new FormData();
   body.append('file', file);
 
-  const response = await fetch('/api/statements/institution', {
-    method: 'POST',
-    body,
-  });
-  if (!response.ok) {
-    throw new Error(`Detection failed with status ${response.status}`);
-  }
-  const detection = (await response.json()) as InstitutionDetectionResponse;
-  return detection.institution;
-}
-
-export async function importStatement(
-  accountId: number,
-  file: File,
-): Promise<ImportResult> {
-  const body = new FormData();
-  body.append('file', file);
-
-  const response = await fetch(`/api/accounts/${accountId}/imports`, {
-    method: 'POST',
-    body,
-  });
+  const response = await fetch('/api/imports', { method: 'POST', body });
 
   switch (response.status) {
     case 201: {
       const imported = (await response.json()) as ImportResponse;
       return {
         kind: 'completed',
+        accountName: imported.account_name,
         newTransactionCount: imported.new_transaction_count,
         existingTransactionCount: imported.existing_transaction_count,
       };
@@ -86,10 +48,10 @@ export async function importStatement(
       const invalid = (await response.json()) as StatementErrorsResponse;
       return { kind: 'invalid', errors: invalid.errors };
     }
-    case 404:
-      return { kind: 'accountNotFound' };
-    case 409:
-      return { kind: 'duplicate' };
+    case 409: {
+      const rejection = (await response.json()) as RejectionResponse;
+      return { kind: 'rejected', message: rejection.detail };
+    }
     default:
       throw new Error(`Import failed with status ${response.status}`);
   }

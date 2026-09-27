@@ -11,7 +11,7 @@ The application is for one user on one machine. It is not a hosted service.
 ### Import transactions
 
 1. Drop or choose one or more supported CSV files.
-2. Confirm the account detected for each file, or select one when the institution has several accounts.
+2. Each file is imported into the account for its institution, which is created on that institution's first import.
 3. Review each file's import result, including rows added, rows already observed in an earlier import, and any validation failure.
 4. View the imported transactions in a common format regardless of their source institution.
 

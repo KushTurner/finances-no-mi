@@ -4,38 +4,19 @@ import type { Page, TestInfo } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 
-const accounts = [
-  {
-    id: 1,
-    name: 'Everyday',
-    institution: 'natwest',
-    account_type: 'current_account',
-  },
-  { id: 2, name: 'Card', institution: 'amex', account_type: 'credit_card' },
-  {
-    id: 3,
-    name: 'Rainy Day',
-    institution: 'nationwide',
-    account_type: 'savings',
-  },
-];
-
-const institutionsByFilename: Record<string, string> = {
-  'natwest.csv': 'natwest',
-  'amex.csv': 'amex',
-  'nationwide.csv': 'nationwide',
-};
-
 type MockResponse = { status: number; json: unknown };
 
-const completed: MockResponse = {
-  status: 201,
-  json: {
-    import_id: 1,
-    new_transaction_count: 12,
-    existing_transaction_count: 3,
-  },
-};
+function completed(accountName: string): MockResponse {
+  return {
+    status: 201,
+    json: {
+      import_id: 1,
+      account_name: accountName,
+      new_transaction_count: 12,
+      existing_transaction_count: 3,
+    },
+  };
+}
 
 function syntheticStatement(name: string) {
   return {
@@ -45,26 +26,15 @@ function syntheticStatement(name: string) {
   };
 }
 
-async function mockApi(
+async function mockImports(
   page: Page,
-  importResponses: Record<number, MockResponse>,
+  responsesByFilename: Record<string, MockResponse>,
 ) {
-  await page.route('**/api/accounts', (route) =>
-    route.fulfill({ json: accounts }),
-  );
-  await page.route('**/api/statements/institution', (route) => {
+  await page.route('**/api/imports', (route) => {
     const filename = /filename="([^"]+)"/.exec(
       route.request().postData() ?? '',
     )?.[1];
-    return route.fulfill({
-      json: { institution: institutionsByFilename[filename ?? ''] ?? null },
-    });
-  });
-  await page.route('**/api/accounts/*/imports', (route) => {
-    const accountId = Number(
-      new URL(route.request().url()).pathname.split('/')[3],
-    );
-    return route.fulfill(importResponses[accountId]);
+    return route.fulfill(responsesByFilename[filename ?? '']);
   });
 }
 
@@ -75,10 +45,13 @@ async function attachScreenshot(page: Page, testInfo: TestInfo, name: string) {
   });
 }
 
-test('imports dropped statements into the accounts at their banks', async ({
+test('imports dropped statements into the accounts for their banks', async ({
   page,
 }, testInfo) => {
-  await mockApi(page, { 1: completed, 2: completed });
+  await mockImports(page, {
+    'natwest.csv': completed('NatWest'),
+    'amex.csv': completed('Amex'),
+  });
   await page.goto('/');
   const dataTransfer = await page.evaluateHandle(() => {
     const transfer = new DataTransfer();
@@ -93,19 +66,35 @@ test('imports dropped statements into the accounts at their banks', async ({
     .dispatchEvent('drop', { dataTransfer });
   await page.getByRole('button', { name: 'Import 2 statements' }).click();
 
-  await expect(page.getByRole('status')).toHaveCount(2);
+  await expect(
+    page.getByRole('listitem', { name: 'amex.csv' }).getByRole('status'),
+  ).toHaveText('Imported into Amex: 12 new transactions, 3 already imported.');
   await attachScreenshot(page, testInfo, 'dropped-statements-imported');
 });
 
 test('shows the outcome of each chosen statement', async ({
   page,
 }, testInfo) => {
-  await mockApi(page, {
-    1: completed,
-    2: { status: 409, json: { detail: 'Already imported' } },
-    3: {
+  await mockImports(page, {
+    'natwest.csv': completed('NatWest'),
+    'amex.csv': {
+      status: 409,
+      json: { detail: 'This file has already been imported' },
+    },
+    'nationwide.csv': {
       status: 400,
       json: { errors: [{ row_number: 4, message: 'Invalid amount' }] },
+    },
+    'notes.csv': {
+      status: 400,
+      json: {
+        errors: [
+          {
+            row_number: null,
+            message: 'Not a supported Amex, NatWest, or Nationwide statement',
+          },
+        ],
+      },
     },
   });
   await page.goto('/');
@@ -117,16 +106,16 @@ test('shows the outcome of each chosen statement', async ({
         syntheticStatement,
       ),
     );
-  await page.getByRole('button', { name: 'Import 3 statements' }).click();
+  await page.getByRole('button', { name: 'Import 4 statements' }).click();
 
+  await expect(page.getByRole('listitem', { name: 'notes.csv' })).toContainText(
+    'Not a supported Amex, NatWest, or Nationwide statement',
+  );
   await expect(
     page.getByRole('listitem', { name: 'nationwide.csv' }),
   ).toContainText('Row 4: Invalid amount');
   await expect(page.getByRole('listitem', { name: 'amex.csv' })).toContainText(
     'This file has already been imported.',
-  );
-  await expect(page.getByRole('listitem', { name: 'notes.csv' })).toContainText(
-    'Not a supported Amex, NatWest, or Nationwide statement.',
   );
   await attachScreenshot(page, testInfo, 'statement-outcomes');
 });

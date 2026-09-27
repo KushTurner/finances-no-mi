@@ -8,8 +8,8 @@ Transactions from supported institutions can be imported into one canonical mode
 
 1. The user drops or chooses one or more CSV exports.
 2. The backend detects each file's institution from its header row.
-3. When exactly one account belongs to that institution, it is selected automatically; otherwise the user selects the account.
-4. Each file is imported separately into its selected account, using the account institution's parser.
+3. The file is imported into that institution's account. The first import for an institution creates its account.
+4. Each file is imported separately, using the institution's parser.
 5. The complete file is validated and converted into canonical transaction candidates.
 6. The import is persisted atomically.
 7. The user receives, per file, counts for new transactions and transactions already observed in another import, or the reason the file was not imported.
@@ -67,6 +67,8 @@ Each adapter locates the first row containing its required columns, ignores any 
 
 Institution detection matches a file against each adapter's required columns. It succeeds only when exactly one supported format matches; otherwise the file is reported as unsupported. Detection reads column names only, never account-holder or account-number values.
 
+Each institution is expected to have one account. When a detected import finds none, it creates one named after the institution: Amex as a credit card, and NatWest and Nationwide as current accounts. The account is created in the same database transaction as the import, so a rejected first statement creates no account. If several accounts share the institution, the detected import is rejected.
+
 | Source | Required columns | Date | Amount | Source key |
 | --- | --- | --- | --- | --- |
 | Amex | `Date`, `Description`, `Amount`, `Reference` | `DD/MM/YYYY` | `Amount`, charges positive, so negated | `ref:` + reference without its surrounding apostrophes |
@@ -118,14 +120,14 @@ Local accounts are created and listed through `POST /accounts` and `GET /account
 
 `POST /accounts/{account_id}/imports` accepts the CSV as a multipart `file` field. Its response distinguishes:
 
-- a successful import: `201` with the import id and counts of new and existing transactions;
+- a successful import: `201` with the import id, account name, and counts of new and existing transactions;
 - an exact file that was already imported: `409`;
 - a malformed statement or row-specific validation failures: `400` with `errors`, each containing a `row_number` (`null` for file-level errors) and a `message`;
 - an unknown account: `404`.
 
-`POST /statements/institution` accepts the CSV as a multipart `file` field and returns `200` with `institution` set to `amex`, `natwest`, `nationwide`, or `null` when the file matches no single supported format.
+`POST /imports` accepts the CSV as a multipart `file` field, detects its institution, and imports it into that institution's account. Its responses match the account-scoped import, with `account_name` added on success. An unsupported file is a `400` file-level error, and several accounts for the institution is a `409`.
 
-The UI accepts several files by drag and drop or a file picker, shows each file's detected account with the option to change it, imports the files one at a time, and shows each file's outcome. It does not need a pre-import spreadsheet editor or a generic column-mapping interface.
+The UI accepts several files by drag and drop or a file picker, imports them one at a time through `POST /imports`, and shows each file's account and outcome. It does not need a pre-import spreadsheet editor or a generic column-mapping interface.
 
 ## Acceptance criteria
 

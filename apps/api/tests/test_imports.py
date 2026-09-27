@@ -8,6 +8,7 @@ from starlette.testclient import TestClient
 from statement_helpers import csv_bytes
 
 from finances_api.models import (
+    Account,
     Base,
     ImportFile,
     ImportFileTransaction,
@@ -67,6 +68,7 @@ def test_imports_every_transaction_as_new(client: TestClient) -> None:
     assert response.status_code == 201
     assert response.json() == {
         "import_id": 1,
+        "account_name": "Synthetic Current",
         "new_transaction_count": 2,
         "existing_transaction_count": 0,
     }
@@ -126,6 +128,7 @@ def test_overlapping_exports_reuse_the_shared_transaction(
 
     assert response.json() == {
         "import_id": 2,
+        "account_name": "Synthetic Current",
         "new_transaction_count": 1,
         "existing_transaction_count": 1,
     }
@@ -177,3 +180,73 @@ def test_rejects_an_import_for_an_unknown_account(client: TestClient) -> None:
     response = upload(client, 999, natwest_csv(natwest_row()))
 
     assert response.status_code == 404
+
+
+def upload_detected(client: TestClient, content: bytes) -> Response:
+    return client.post("/imports", files={"file": ("statement.csv", content, "text/csv")})
+
+
+def test_creates_the_institution_account_on_its_first_detected_import(
+    client: TestClient,
+) -> None:
+    response = upload_detected(client, natwest_csv(natwest_row()))
+
+    assert response.json()["account_name"] == "NatWest"
+    assert client.get("/accounts").json() == [
+        {"id": 1, "name": "NatWest", "institution": "natwest", "account_type": "current_account"}
+    ]
+
+
+def test_imports_a_detected_statement_into_the_existing_institution_account(
+    client: TestClient, session: Session
+) -> None:
+    create_account(client)
+
+    response = upload_detected(client, natwest_csv(natwest_row()))
+
+    assert response.json()["account_name"] == "Synthetic Current"
+    assert count(session, Account) == 1
+
+
+def test_rejects_an_unsupported_statement_without_creating_an_account(
+    client: TestClient, session: Session
+) -> None:
+    content = csv_bytes([["Date", "Description", "Amount"], ["03/09/2026", "SYNTHETIC", "1.00"]])
+
+    response = upload_detected(client, content)
+
+    assert response.json() == {
+        "errors": [
+            {
+                "row_number": None,
+                "message": "Not a supported Amex, NatWest, or Nationwide statement",
+            }
+        ]
+    }
+    assert count(session, Account) == 0
+
+
+def test_an_invalid_first_statement_does_not_create_its_account(
+    client: TestClient, session: Session
+) -> None:
+    content = natwest_csv(natwest_row(value="not money"))
+
+    response = upload_detected(client, content)
+
+    assert response.status_code == 400
+    assert count(session, Account) == 0
+
+
+def test_rejects_a_detected_statement_when_its_institution_has_several_accounts(
+    client: TestClient, session: Session
+) -> None:
+    create_account(client)
+    client.post(
+        "/accounts",
+        json={"name": "Synthetic Savings", "institution": "natwest", "account_type": "savings"},
+    )
+
+    response = upload_detected(client, natwest_csv(natwest_row()))
+
+    assert response.status_code == 409
+    assert count(session, ImportFile) == 0

@@ -1,5 +1,4 @@
 import pytest
-from starlette.testclient import TestClient
 from statement_helpers import csv_bytes
 
 from finances_api.models import Institution
@@ -41,13 +40,3 @@ def test_does_not_detect_an_unsupported_or_ambiguous_file(content: bytes) -> Non
     detected = detect_institution(content)
 
     assert detected is None
-
-
-def test_reports_the_detected_institution_of_an_uploaded_statement(client: TestClient) -> None:
-    content = csv_bytes([NATWEST_HEADER])
-
-    response = client.post(
-        "/statements/institution", files={"file": ("statement.csv", content, "text/csv")}
-    )
-
-    assert response.json() == {"institution": "natwest"}
