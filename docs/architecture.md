@@ -27,7 +27,7 @@ transaction -> suggestion -> human review
 
 Categories belong to transactions. The same description, merchant, or person can occur in transactions with different purposes. Neither exact description matching nor identifying a sender automatically assigns a category.
 
-Manual categorization uses the fixed list in [Transaction categorization](features/transaction-categorization.md). The next slice adds structured LLM suggestions with human review. Suggestions remain separate from assigned categories, and review preserves the prediction and human decision for evaluation. Categorization does not require LangGraph or merchant resolution.
+Manual categorization uses the fixed list in [Transaction categorization](features/transaction-categorization.md). A later slice adds structured LLM suggestions with human review. Suggestions remain separate from assigned categories, and review preserves the prediction and human decision for evaluation. Categorization does not require LangGraph or merchant resolution.
 
 The importer currently creates merchant keys using whitespace/casing normalization. Existing merchant tables can remain during this transition, but their category relationships are not authoritative for transaction categorization.
 

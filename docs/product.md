@@ -29,7 +29,7 @@ Categories belong to individual transactions. Identifying a merchant or person i
 
 ### Review financial activity
 
-The user can inspect transactions across accounts by date, category, and description. Merchant search, monthly summaries, and a conversational interface are future capabilities.
+The user can inspect transactions across accounts by date, category, and description. The [spending overview](features/spending-overview.md) summarizes spending and income for a chosen period and accounts. Merchant search and a conversational interface are future capabilities.
 
 A future question about spending at a merchant can combine a date filter with matching descriptions. Category is an optional additional filter, not a prerequisite for identifying that merchant's transactions. An LLM may interpret the question and help identify matches; application code calculates totals using integer pence and makes the matching transactions available for inspection.
 

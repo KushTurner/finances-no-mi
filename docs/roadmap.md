@@ -47,7 +47,24 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ## Planned
 
-### 1. Suggest transaction categories
+### 1. Apply the Graphite design
+
+- Add shadcn/ui on top of Tailwind and the dark Graphite palette described in [Spending overview](features/spending-overview.md#visual-design).
+- Restyle the Import and Transactions pages without changing their behaviour.
+- Move Import to `/import` and add one navigation bar for Overview, Transactions, and Import.
+- Update browser tests and synthetic screenshots for the new markup and routes.
+
+### 2. Show a spending overview
+
+- Follow [Spending overview](features/spending-overview.md) and make the overview the home page.
+- Add a dark Graphite overview page with period presets, previous-period comparisons, and plain account cards that filter the page.
+- Show Spent, Income, and Net, excluding own-account transfers and stating how much uncategorized spending is included.
+- Show spending pace, spending by category, monthly spending, income and spending, and largest payments, each with a table view.
+- Let the user hide every amount on the page.
+- Add a summary service and endpoint that aggregate in integer pence.
+- Exercise the UI with mocked API responses and synthetic screenshots.
+
+### 3. Suggest transaction categories
 
 - Add a small LLM client behind an application interface.
 - Choose the provider/model and implement the documented data boundary before making external requests.
@@ -58,21 +75,21 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Show suggestions and allow individual approval or correction, retaining the prediction and review outcome.
 - Stub every LLM call in automated tests.
 
-### 2. Review suggestions in groups
+### 4. Review suggestions in groups
 
 - Group or filter pending suggestions by proposed category while keeping each transaction inspectable.
 - Show distinct descriptions and transaction counts; allow excluding mismatches from a selection.
 - Approve or correct selected transactions together, including payments involving different people or merchants.
 - Apply decisions only to selected transactions; do not infer future matching rules from bulk approval.
 
-### 3. Evaluate suggestions using reviewed examples
+### 5. Evaluate suggestions using reviewed examples
 
 - Compare predictions with human decisions on later transactions, without exposing the answers in their suggestion context.
 - Evaluate whether relevant previously reviewed examples improve suggestions.
 - Define the permitted example context before sending any historical transaction information externally.
 - Measure category errors and potential review reduction, including ambiguous personal payments.
 
-### 4. Introduce selective automatic categorization
+### 6. Introduce selective automatic categorization
 
 - Evaluate candidate approval thresholds while the user still reviews all predictions.
 - Enable automatic assignment only where measured accuracy supports the chosen target with enough evidence.
@@ -81,7 +98,8 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ## Deferred
 
-- Monthly summaries.
+- Account settings for account type, card design, and credit limit; account balances and credit-limit usage.
+- Suggested own-account transfer pairs.
 - Merchant search and conversational analysis over filtered transactions, with totals computed in code.
 - Merchant aliases, reusable matching rules, and institution-specific description cleanup.
 - Custom model training and any LangGraph workflow.
