@@ -35,19 +35,19 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Proxy `/api` requests from the Vite dev server to the local API.
 - Exercise the complete interface with mocked API responses and synthetic screenshots.
 
-## Planned
+### Browse and categorize transactions manually
 
-### 1. Browse and categorize transactions manually
-
-- Seed the ten categories and definitions in [Transaction categorization](features/transaction-categorization.md).
-- Add transaction-level category assignments and review metadata through Alembic.
+- Seeded the ten categories and definitions in [Transaction categorization](features/transaction-categorization.md).
+- Added transaction-level category assignments and human decision metadata through Alembic.
 - List transactions with account, date, signed amount, raw description, transaction type, and assigned category.
 - Filter by category, including uncategorized transactions.
 - Assign, correct, or clear a category for one transaction or an explicitly selected group.
 - Keep categorization independent of merchant keys and preserve import identity and source data.
 - Exercise the UI with mocked API responses and synthetic screenshots.
 
-### 2. Suggest transaction categories
+## Planned
+
+### 1. Suggest transaction categories
 
 - Add a small LLM client behind an application interface.
 - Choose the provider/model and implement the documented data boundary before making external requests.
@@ -58,21 +58,21 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Show suggestions and allow individual approval or correction, retaining the prediction and review outcome.
 - Stub every LLM call in automated tests.
 
-### 3. Review suggestions in groups
+### 2. Review suggestions in groups
 
 - Group or filter pending suggestions by proposed category while keeping each transaction inspectable.
 - Show distinct descriptions and transaction counts; allow excluding mismatches from a selection.
 - Approve or correct selected transactions together, including payments involving different people or merchants.
 - Apply decisions only to selected transactions; do not infer future matching rules from bulk approval.
 
-### 4. Evaluate suggestions using reviewed examples
+### 3. Evaluate suggestions using reviewed examples
 
 - Compare predictions with human decisions on later transactions, without exposing the answers in their suggestion context.
 - Evaluate whether relevant previously reviewed examples improve suggestions.
 - Define the permitted example context before sending any historical transaction information externally.
 - Measure category errors and potential review reduction, including ambiguous personal payments.
 
-### 5. Introduce selective automatic categorization
+### 4. Introduce selective automatic categorization
 
 - Evaluate candidate approval thresholds while the user still reviews all predictions.
 - Enable automatic assignment only where measured accuracy supports the chosen target with enough evidence.

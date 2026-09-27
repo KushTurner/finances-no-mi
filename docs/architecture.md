@@ -27,7 +27,7 @@ transaction -> suggestion -> human review
 
 Categories belong to transactions. The same description, merchant, or person can occur in transactions with different purposes. Neither exact description matching nor identifying a sender automatically assigns a category.
 
-The next slice adds manual categorization from the fixed list in [Transaction categorization](features/transaction-categorization.md). A later slice adds structured LLM suggestions with human review. Suggestions remain separate from assigned categories, and review preserves the prediction and human decision for evaluation. Categorization does not require LangGraph or merchant resolution.
+Manual categorization uses the fixed list in [Transaction categorization](features/transaction-categorization.md). The next slice adds structured LLM suggestions with human review. Suggestions remain separate from assigned categories, and review preserves the prediction and human decision for evaluation. Categorization does not require LangGraph or merchant resolution.
 
 The importer currently creates merchant keys using whitespace/casing normalization. Existing merchant tables can remain during this transition, but their category relationships are not authoritative for transaction categorization.
 
@@ -64,6 +64,10 @@ This section describes the implemented schema. Planned additions are listed sepa
 - `source_key`: immutable source identity
 - `merchant_key_id`: derived merchant key foreign key
 - `created_at`: creation timestamp
+- `category_id`: nullable category foreign key; null means uncategorized
+- `category_decision_source`: `human` for a manual assignment, null when cleared
+- `category_decided_at`: UTC timestamp of the current assignment, null when cleared
+- Check constraint keeps the category and its decision metadata present or absent together
 - Unique constraint on `account_id` and `source_key`
 
 ### import_file_transactions
@@ -78,6 +82,9 @@ This section describes the implemented schema. Planned additions are listed sepa
 
 - `id`: integer primary key
 - `name`: unique category name
+- `definition`: category purpose; the migration seeds the ten agreed categories and definitions
+
+Legacy categories without definitions remain stored for existing merchant references but are excluded from transaction category choices.
 
 ### merchants
 
@@ -107,14 +114,6 @@ External categorization requests follow the [LLM boundary](features/transaction-
 
 ## Planned schema changes
 
-### Manual categorization slice
-
-- Add a definition to each category and seed the agreed ten categories.
-- Add nullable `transactions.category_id`; absence means uncategorized.
-- Record the source and time of the current category decision so human decisions remain distinguishable from later automated assignments. Clearing a category must clear the current assignment consistently.
-- Keep category changes independent from immutable source fields, source keys, and import observations.
-- Do not automatically derive transaction categories from existing merchant mappings.
-
 ### Suggestion and review slice
 
 - Add transaction-level suggestion storage rather than using `merchant_suggestions`.
@@ -124,4 +123,4 @@ External categorization requests follow the [LLM boundary](features/transaction-
 - Assign the category and record the review outcome in one database transaction, including for an explicitly selected batch.
 - Retain reviewed prediction/decision records rather than deleting them. Raw LLM responses and full prompt archives are not required.
 
-Exact fields and constraints will be finalized within each implementation slice. No migration or application change is included in this planning update.
+Suggestion fields and constraints will be finalized in that implementation slice.
