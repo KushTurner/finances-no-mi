@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 
@@ -32,4 +31,3 @@ class InvalidStatement:
 
 
 ParseResult = ParsedStatement | InvalidStatement
-StatementParser = Callable[[bytes], ParseResult]

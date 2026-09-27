@@ -16,11 +16,11 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 - One parser contract producing canonical transaction candidates or row-specific validation failures.
 - Amex, NatWest, and Nationwide adapters tested with synthetic fixtures.
-- Account-scoped source keys that preserve legitimate repeated transactions.
+- Source keys that preserve legitimate repeated transactions.
 
 ## Planned
 
-### 2. Persist transaction imports
+### 1. Persist transaction imports
 
 - Import a CSV for an existing account through the API.
 - Store the original file and its content hash locally.
@@ -28,38 +28,38 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Reuse transactions already observed in overlapping exports and record each file observation.
 - Return a small import result containing counts and validation errors.
 
-### 3. Add the import interface
+### 2. Add the import interface
 
 - Select an account and upload a CSV.
 - Display success, duplicate-file, and validation outcomes.
 - Exercise the complete interface with mocked API responses and synthetic screenshots.
 
-### 4. Add manual transactions
+### 3. Add manual transactions
 
 - Enter savings transactions without a CSV.
 - Give each manual transaction an immutable generated source key.
 - Apply the same amount, merchant-key, and persistence rules as imported transactions.
 
-### 5. Resolve merchant keys with deterministic rules
+### 4. Resolve merchant keys with deterministic rules
 
 - Apply institution-specific regex rules to raw descriptions.
 - Reuse approved mappings for known merchant keys.
 - Expose unresolved merchant keys for review.
 
-### 6. Suggest unresolved merchants
+### 5. Suggest unresolved merchants
 
 - Add a small LLM client behind an application interface.
 - Request structured merchant, category, and confidence output.
 - Persist at most one current suggestion for each unresolved merchant key.
 - Stub every LLM call in automated tests.
 
-### 7. Review merchant suggestions
+### 6. Review merchant suggestions
 
 - List pending suggestions in the frontend.
 - Approve a suggestion or correct its merchant and category.
 - Remove the pending suggestion after the merchant key is resolved.
 
-### 8. Browse transactions
+### 7. Browse transactions
 
 - Display transactions in a sortable, filterable table.
 - Show account, date, amount, raw description, merchant, and category.

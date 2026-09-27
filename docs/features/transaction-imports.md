@@ -40,6 +40,8 @@ Source keys are scoped to an account:
 
 The resulting balance is part of the NatWest and Nationwide identity so two otherwise identical purchases on the same day remain separate events. The same event appearing in overlapping exports retains the same fingerprint and is reused.
 
+When a source key repeats within one file, such as two identical purchases separated by a refund of the same amount that restores the balance, the second occurrence receives the suffix `#2`, the third `#3`, and so on. Exports cover whole days in a consistent order, so the same repeated events receive the same numbered keys in overlapping exports.
+
 No fuzzy matching, date-window matching, or merchant-based deduplication is permitted. Merchant normalization must not affect transaction identity.
 
 ### Canonical values

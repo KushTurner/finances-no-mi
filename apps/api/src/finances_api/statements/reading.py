@@ -1,6 +1,8 @@
 import csv
 import io
+from collections import Counter
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 
 from finances_api.statements.contract import (
     InvalidStatement,
@@ -10,6 +12,7 @@ from finances_api.statements.contract import (
     TransactionCandidate,
 )
 from finances_api.statements.fields import InvalidRow, Row
+from finances_api.statements.source_keys import numbered_repeat_key
 
 RowParser = Callable[[int, Row], TransactionCandidate]
 
@@ -52,7 +55,7 @@ def _parse_data_records(
     header = records[header_index]
     candidates: list[TransactionCandidate] = []
     errors: list[RowError] = []
-    first_row_by_source_key: dict[str, int] = {}
+    occurrences_by_source_key: Counter[str] = Counter()
 
     for row_number, record in enumerate(records[header_index + 1 :], start=header_index + 2):
         if not any(cell.strip() for cell in record):
@@ -63,11 +66,13 @@ def _parse_data_records(
             errors.append(RowError(row_number, str(error)))
             continue
 
-        first_row = first_row_by_source_key.setdefault(candidate.source_key, row_number)
-        if first_row != row_number:
-            errors.append(RowError(row_number, f"Duplicates row {first_row}"))
-        else:
-            candidates.append(candidate)
+        occurrences_by_source_key[candidate.source_key] += 1
+        occurrence = occurrences_by_source_key[candidate.source_key]
+        if occurrence > 1:
+            candidate = replace(
+                candidate, source_key=numbered_repeat_key(candidate.source_key, occurrence)
+            )
+        candidates.append(candidate)
 
     return candidates, errors
 

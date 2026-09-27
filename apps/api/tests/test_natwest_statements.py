@@ -78,6 +78,33 @@ def test_overlapping_exports_identify_a_shared_row_identically() -> None:
     assert earlier[0].source_key == later[1].source_key
 
 
+def test_numbers_an_identical_purchase_repeated_after_a_refund() -> None:
+    content = natwest_csv(
+        natwest_row(balance="995.50"),
+        natwest_row(value="4.50", balance="1000.00"),
+        natwest_row(balance="995.50"),
+    )
+
+    candidates = candidates_of(natwest.parse(content))
+
+    assert candidates[2].source_key == f"{candidates[0].source_key}#2"
+
+
+def test_overlapping_exports_number_repeated_purchases_identically() -> None:
+    same_day = [
+        natwest_row(balance="995.50"),
+        natwest_row(value="4.50", balance="1000.00"),
+        natwest_row(balance="995.50"),
+    ]
+    earlier_export = natwest_csv(*same_day, natwest_row(date="02 Sep 2026", balance="1000.00"))
+    later_export = natwest_csv(natwest_row(date="04 Sep 2026", balance="991.00"), *same_day)
+
+    earlier = candidates_of(natwest.parse(earlier_export))
+    later = candidates_of(natwest.parse(later_export))
+
+    assert [c.source_key for c in earlier[:3]] == [c.source_key for c in later[1:]]
+
+
 def test_reports_an_invalid_amount_with_its_row_number() -> None:
     content = natwest_csv(natwest_row(), natwest_row(value="four pounds", balance="991.00"))
 

@@ -8,7 +8,7 @@ from finances_api.statements.fields import (
     read_text,
 )
 from finances_api.statements.reading import parse_statement
-from finances_api.statements.source_keys import fingerprint_key
+from finances_api.statements.source_keys import fingerprinted_candidate
 
 REQUIRED_COLUMNS = ("Date", "Transaction type", "Description", "Paid out", "Paid in", "Balance")
 
@@ -23,16 +23,13 @@ def _parse_row(row_number: int, row: Row) -> TransactionCandidate:
     raw_description = read_text(row, "Description")
     amount_minor = _read_amount(row)
     balance_after_minor = read_pence(row, "Balance")
-    return TransactionCandidate(
-        row_number=row_number,
-        transaction_date=transaction_date,
-        amount_minor=amount_minor,
-        raw_description=raw_description,
-        source_key=fingerprint_key(
-            transaction_date, source_type, raw_description, amount_minor, balance_after_minor
-        ),
-        balance_after_minor=balance_after_minor,
-        source_type=source_type,
+    return fingerprinted_candidate(
+        row_number,
+        transaction_date,
+        source_type,
+        raw_description,
+        amount_minor,
+        balance_after_minor,
     )
 
 

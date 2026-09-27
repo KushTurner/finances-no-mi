@@ -34,14 +34,6 @@ def test_ignores_blank_rows() -> None:
     assert [candidate.row_number for candidate in candidates] == [2]
 
 
-def test_rejects_a_repeated_transaction_within_one_file() -> None:
-    content = csv_bytes([HEADER, VALID_ROW, VALID_ROW])
-
-    result = natwest.parse(content)
-
-    assert result == InvalidStatement((RowError(3, "Duplicates row 2"),))
-
-
 def test_rejects_a_row_with_a_different_number_of_columns() -> None:
     content = csv_bytes([HEADER, VALID_ROW[:5]])
 
