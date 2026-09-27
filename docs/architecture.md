@@ -18,17 +18,22 @@ Transaction identity is independent from merchant normalization:
 - NatWest and Nationwide transactions use an exact fingerprint containing the date, source type, raw description, amount, and resulting balance.
 - A source key repeated within one file is numbered by occurrence.
 
-## Merchant classification
+## Transaction classification
 
 ```text
-transaction -> merchant key -> merchant -> category
+transaction -> assigned category
+transaction -> suggestion -> human review
 ```
 
-Regex rules in code derive merchant keys from raw descriptions. Many merchant keys may resolve to one merchant. Each merchant belongs to one category.
+Categories belong to transactions. The same description, merchant, or person can occur in transactions with different purposes. Neither exact description matching nor identifying a sender automatically assigns a category.
 
-An unresolved merchant key may have one current LLM suggestion. Approving or correcting it assigns the key to a merchant and removes the pending suggestion. Categorization uses an ordinary structured LLM call; it does not require LangGraph.
+The next slice adds manual categorization from the fixed list in [Transaction categorization](features/transaction-categorization.md). A later slice adds structured LLM suggestions with human review. Suggestions remain separate from assigned categories, and review preserves the prediction and human decision for evaluation. Categorization does not require LangGraph or merchant resolution.
 
-## Schema
+The importer currently creates merchant keys using whitespace/casing normalization. Existing merchant tables can remain during this transition, but their category relationships are not authoritative for transaction categorization.
+
+## Current schema
+
+This section describes the implemented schema. Planned additions are listed separately below; they must be introduced through Alembic migrations.
 
 ### accounts
 
@@ -97,3 +102,26 @@ An unresolved merchant key may have one current LLM suggestion. Approving or cor
 ## Data handling
 
 No PII, real financial data, statements, credentials, or API keys may be committed. Tests and examples use synthetic data only. Local CSV files, databases, uploaded data, and environment files are ignored by Git.
+
+External categorization requests follow the [LLM boundary](features/transaction-categorization.md#llm-boundary). Original descriptions remain local and unchanged. Do not log statement contents, descriptions, account identifiers, or LLM payloads containing transaction data.
+
+## Planned schema changes
+
+### Manual categorization slice
+
+- Add a definition to each category and seed the agreed ten categories.
+- Add nullable `transactions.category_id`; absence means uncategorized.
+- Record the source and time of the current category decision so human decisions remain distinguishable from later automated assignments. Clearing a category must clear the current assignment consistently.
+- Keep category changes independent from immutable source fields, source keys, and import observations.
+- Do not automatically derive transaction categories from existing merchant mappings.
+
+### Suggestion and review slice
+
+- Add transaction-level suggestion storage rather than using `merchant_suggestions`.
+- Record the transaction, proposed category or explicit abstention, optional confidence, provider/model, prompt version, category-definition version, and creation time.
+- Allow at most one pending suggestion per transaction. Repeated requests must not duplicate pending suggestions or overwrite reviewed evidence.
+- Record the human review outcome, final chosen category, and review time alongside the original prediction. Later category corrections must not rewrite what the user decided in that earlier review.
+- Assign the category and record the review outcome in one database transaction, including for an explicitly selected batch.
+- Retain reviewed prediction/decision records rather than deleting them. Raw LLM responses and full prompt archives are not required.
+
+Exact fields and constraints will be finalized within each implementation slice. No migration or application change is included in this planning update.

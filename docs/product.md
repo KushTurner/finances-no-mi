@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Finances No MI is a local-only application for bringing personal financial activity into one place. It imports transactions from multiple institutions, normalizes merchant descriptions, supports human-reviewed categorization, and provides a foundation for understanding monthly spending.
+Finances No MI is a local-only application for bringing personal financial activity into one place. It imports transactions from multiple institutions, supports transaction-level categorization, and provides a foundation for understanding monthly spending.
 
 The application is for one user on one machine. It is not a hosted service.
 
@@ -17,31 +17,32 @@ The application is for one user on one machine. It is not a hosted service.
 
 Amex, NatWest, and Nationwide CSV exports are the initial supported formats.
 
-### Resolve merchants
+### Categorize transactions
 
-1. The application derives a stable merchant key from each raw transaction description using deterministic rules.
-2. Known merchant keys resolve immediately to their canonical merchant and category.
-3. An ordinary LLM call proposes a merchant and category for an unresolved key.
-4. The user reviews the proposal and either approves or corrects it.
-5. Future transactions with that merchant key reuse the approved resolution without another LLM call.
+1. Browse imported transactions with their original descriptions and signed amounts.
+2. Choose a category from a fixed list of ten broad categories, for one transaction or a selected group.
+3. In the later suggestion slice, request LLM suggestions for uncategorized transactions using description context, direction, transaction type, and the allowed category definitions.
+4. Accept a suggestion or select a different allowed category. Insufficient information leaves the transaction uncategorized.
+5. Keep the suggestion and the user's decision separately so future evaluation can measure accuracy.
 
-For example:
-
-```text
-DELIVEROO LTD -> Deliveroo -> Eating Out
-```
+Categories belong to individual transactions. Identifying a merchant or person is not required, and assigning a category does not create a rule for future transactions with the same description or sender. See [Transaction categorization](features/transaction-categorization.md) for the category list and treatment of repayments.
 
 ### Review financial activity
 
-The user can inspect transactions across accounts with their resolved merchant and category. Monthly summaries and a conversational interface are intended future capabilities, but they are not part of the initial implementation.
+The user can inspect transactions across accounts by date, category, and description. Merchant search, monthly summaries, and a conversational interface are future capabilities.
+
+A future question about spending at a merchant can combine a date filter with matching descriptions. Category is an optional additional filter, not a prerequisite for identifying that merchant's transactions. An LLM may interpret the question and help identify matches; application code calculates totals using integer pence and makes the matching transactions available for inspection.
 
 ## Product rules
 
-- Preserve the source transaction description even when a normalized merchant key is derived from it.
+- Preserve the source transaction description and meaningful payment references for local review and future analysis.
 - Treat two legitimate transactions as separate events even when they share a date, description, and amount.
 - Accept statement exports with overlapping date ranges without duplicating transactions already observed.
-- Require human approval before an LLM suggestion becomes a durable merchant mapping.
-- Keep all application and statement data on the local machine, apart from the minimal normalized value sent when requesting an LLM suggestion.
+- Derive incoming/outgoing direction from the institution's amount fields, not from a guess about the description.
+- Treat known refunds and expense repayments as positive offsets to the original spending category. Incoming money is not necessarily income.
+- Require human approval before an LLM suggestion becomes an assigned category in the initial workflow.
+- Keep application and statement data local, apart from the limited categorization context permitted by the [LLM boundary](features/transaction-categorization.md#llm-boundary).
+- Preserve reviewed decisions as evidence. Importing more data or accepting a suggestion does not itself train the model or create a reusable matching rule.
 - Use synthetic financial data in source control, tests, documentation, and screenshots.
 
 ## Non-goals
@@ -50,6 +51,7 @@ The user can inspect transactions across accounts with their resolved merchant a
 - Authentication, authorization, or account sharing.
 - Connecting directly to bank APIs.
 - Moving or initiating payments.
-- Automatic approval based on an LLM confidence threshold.
+- Automatic approval in the initial implementation. Later automation requires evaluation against human-reviewed decisions; an LLM's self-reported confidence is not sufficient.
+- Mandatory merchant normalization, automatic person identification, or institution-specific regex cleanup for categorization.
 - Adding budgeting, forecasting, investment tracking, or other adjacent finance features unless requested.
 - Using LangGraph for a single categorization request. It should only be considered when a future workflow actually requires orchestration.

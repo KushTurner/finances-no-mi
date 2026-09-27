@@ -37,35 +37,54 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ## Planned
 
-### 1. Resolve merchant keys with deterministic rules
+### 1. Browse and categorize transactions manually
 
-- Apply institution-specific regex rules to raw descriptions.
-- Reuse approved mappings for known merchant keys.
-- Expose unresolved merchant keys for review.
+- Seed the ten categories and definitions in [Transaction categorization](features/transaction-categorization.md).
+- Add transaction-level category assignments and review metadata through Alembic.
+- List transactions with account, date, signed amount, raw description, transaction type, and assigned category.
+- Filter by category, including uncategorized transactions.
+- Assign, correct, or clear a category for one transaction or an explicitly selected group.
+- Keep categorization independent of merchant keys and preserve import identity and source data.
+- Exercise the UI with mocked API responses and synthetic screenshots.
 
-### 2. Suggest unresolved merchants
+### 2. Suggest transaction categories
 
 - Add a small LLM client behind an application interface.
-- Request structured merchant, category, and confidence output.
-- Persist at most one current suggestion for each unresolved merchant key.
+- Choose the provider/model and implement the documented data boundary before making external requests.
+- Let the user request suggestions for uncategorized transactions.
+- Use description context, direction, transaction type, institution, and allowed category definitions.
+- Accept only an allowed category or an explicit abstention; leave failed requests recoverable.
+- Store transaction-level suggestions separately from assigned categories, with model/prompt versions for later evaluation.
+- Show suggestions and allow individual approval or correction, retaining the prediction and review outcome.
 - Stub every LLM call in automated tests.
 
-### 3. Review merchant suggestions
+### 3. Review suggestions in groups
 
-- List pending suggestions in the frontend.
-- Approve a suggestion or correct its merchant and category.
-- Remove the pending suggestion after the merchant key is resolved.
+- Group or filter pending suggestions by proposed category while keeping each transaction inspectable.
+- Show distinct descriptions and transaction counts; allow excluding mismatches from a selection.
+- Approve or correct selected transactions together, including payments involving different people or merchants.
+- Apply decisions only to selected transactions; do not infer future matching rules from bulk approval.
 
-### 4. Browse transactions
+### 4. Evaluate suggestions using reviewed examples
 
-- Display transactions in a sortable, filterable table.
-- Show account, date, amount, raw description, merchant, and category.
-- Choose a table library only when implementing this slice.
+- Compare predictions with human decisions on later transactions, without exposing the answers in their suggestion context.
+- Evaluate whether relevant previously reviewed examples improve suggestions.
+- Define the permitted example context before sending any historical transaction information externally.
+- Measure category errors and potential review reduction, including ambiguous personal payments.
+
+### 5. Introduce selective automatic categorization
+
+- Evaluate candidate approval thresholds while the user still reviews all predictions.
+- Enable automatic assignment only where measured accuracy supports the chosen target with enough evidence.
+- Distinguish automatic assignments from human-reviewed decisions, keep them correctable, and sample them for review.
+- Re-evaluate when categories, prompts, or models change; do not treat automatic assignments as human-confirmed evidence.
 
 ## Deferred
 
 - Monthly summaries.
-- Conversational analysis and any LangGraph workflow.
+- Merchant search and conversational analysis over filtered transactions, with totals computed in code.
+- Merchant aliases, reusable matching rules, and institution-specific description cleanup.
+- Custom model training and any LangGraph workflow.
 - Additional institutions and import formats.
-- Editing historical imports or transactions.
+- Editing imported source fields or historical import files. Category corrections are part of the planned workflow.
 - Hosted deployment.
