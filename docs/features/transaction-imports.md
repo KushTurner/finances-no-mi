@@ -6,12 +6,13 @@ Transactions from supported institutions can be imported into one canonical mode
 
 ## User flow
 
-1. The user selects the account represented by the statement.
-2. The user uploads a CSV export.
-3. The backend selects the parser using the account institution rather than guessing from private file contents.
-4. The complete file is validated and converted into canonical transaction candidates.
-5. The import is persisted atomically.
-6. The user receives counts for new transactions and transactions already observed in another import.
+1. The user drops or chooses one or more CSV exports.
+2. The backend detects each file's institution from its header row.
+3. When exactly one account belongs to that institution, it is selected automatically; otherwise the user selects the account.
+4. Each file is imported separately into its selected account, using the account institution's parser.
+5. The complete file is validated and converted into canonical transaction candidates.
+6. The import is persisted atomically.
+7. The user receives, per file, counts for new transactions and transactions already observed in another import, or the reason the file was not imported.
 
 The first supported CSV sources are Amex, NatWest, and Nationwide. Chase savings activity uses the separate manual-entry flow.
 
@@ -63,6 +64,8 @@ No fuzzy matching, date-window matching, or merchant-based deduplication is perm
 ## Supported export formats
 
 Each adapter locates the first row containing its required columns, ignores any other columns, and never reads account-holder or account-number columns.
+
+Institution detection matches a file against each adapter's required columns. It succeeds only when exactly one supported format matches; otherwise the file is reported as unsupported. Detection reads column names only, never account-holder or account-number values.
 
 | Source | Required columns | Date | Amount | Source key |
 | --- | --- | --- | --- | --- |
@@ -120,7 +123,9 @@ Local accounts are created and listed through `POST /accounts` and `GET /account
 - a malformed statement or row-specific validation failures: `400` with `errors`, each containing a `row_number` (`null` for file-level errors) and a `message`;
 - an unknown account: `404`.
 
-The initial UI needs account selection, a file input, a submit action, and a result summary. It does not need a pre-import spreadsheet editor or a generic column-mapping interface.
+`POST /statements/institution` accepts the CSV as a multipart `file` field and returns `200` with `institution` set to `amex`, `natwest`, `nationwide`, or `null` when the file matches no single supported format.
+
+The UI accepts several files by drag and drop or a file picker, shows each file's detected account with the option to change it, imports the files one at a time, and shows each file's outcome. It does not need a pre-import spreadsheet editor or a generic column-mapping interface.
 
 ## Acceptance criteria
 
@@ -134,7 +139,8 @@ The initial UI needs account selection, a file input, a submit action, and a res
 
 ## Out of scope
 
-- Automatic institution detection from arbitrary files.
+- Detecting institutions from anything other than the exact header columns of supported formats.
+- Matching files to accounts by account number or account-holder details.
 - User-defined column mapping.
 - Background jobs or import queues.
 - Editing source rows during import.

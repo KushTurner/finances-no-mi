@@ -1,7 +1,9 @@
+export type Institution = 'amex' | 'natwest' | 'nationwide';
+
 export type Account = {
   id: number;
   name: string;
-  institution: 'amex' | 'natwest' | 'nationwide';
+  institution: Institution;
   account_type: 'current_account' | 'credit_card' | 'savings';
 };
 
@@ -30,12 +32,33 @@ type StatementErrorsResponse = {
   errors: StatementError[];
 };
 
+type InstitutionDetectionResponse = {
+  institution: Institution | null;
+};
+
 export async function listAccounts(): Promise<Account[]> {
   const response = await fetch('/api/accounts');
   if (!response.ok) {
     throw new Error(`Loading accounts failed with status ${response.status}`);
   }
   return (await response.json()) as Account[];
+}
+
+export async function detectInstitution(
+  file: File,
+): Promise<Institution | null> {
+  const body = new FormData();
+  body.append('file', file);
+
+  const response = await fetch('/api/statements/institution', {
+    method: 'POST',
+    body,
+  });
+  if (!response.ok) {
+    throw new Error(`Detection failed with status ${response.status}`);
+  }
+  const detection = (await response.json()) as InstitutionDetectionResponse;
+  return detection.institution;
 }
 
 export async function importStatement(

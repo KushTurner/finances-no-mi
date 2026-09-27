@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from finances_api.routes import accounts, imports
+from finances_api.routes import accounts, imports, statements
 
 
 class HealthResponse(BaseModel):
@@ -11,6 +11,7 @@ class HealthResponse(BaseModel):
 app = FastAPI(title="Finances No MI")
 app.include_router(accounts.router)
 app.include_router(imports.router)
+app.include_router(statements.router)
 
 
 @app.get("/health", response_model=HealthResponse)

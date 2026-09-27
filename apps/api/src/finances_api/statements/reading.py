@@ -21,11 +21,11 @@ def parse_statement(
     content: bytes, required_columns: Sequence[str], parse_row: RowParser
 ) -> ParseResult:
     try:
-        records = _read_records(content)
+        records = read_records(content)
     except (UnicodeDecodeError, csv.Error):
         return _file_error("File is not a readable UTF-8 CSV")
 
-    header_index = _find_header(records, required_columns)
+    header_index = find_header(records, required_columns)
     if header_index is None:
         return _file_error(f"Expected a header row with columns: {', '.join(required_columns)}")
 
@@ -37,12 +37,12 @@ def parse_statement(
     return ParsedStatement(tuple(candidates))
 
 
-def _read_records(content: bytes) -> list[list[str]]:
+def read_records(content: bytes) -> list[list[str]]:
     text = content.decode("utf-8-sig")
     return list(csv.reader(io.StringIO(text, newline=""), strict=True))
 
 
-def _find_header(records: list[list[str]], required_columns: Sequence[str]) -> int | None:
+def find_header(records: list[list[str]], required_columns: Sequence[str]) -> int | None:
     return next(
         (index for index, record in enumerate(records) if set(required_columns) <= set(record)),
         None,

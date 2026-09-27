@@ -29,8 +29,9 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ### Add the import interface
 
-- Select an account and upload a CSV.
-- Display success, duplicate-file, and validation outcomes.
+- Drop or choose several CSVs at once.
+- Detect each file's institution from its header row and select the institution's only account.
+- Import each file into its selected account and display its success, duplicate-file, or validation outcome.
 - Proxy `/api` requests from the Vite dev server to the local API.
 - Exercise the complete interface with mocked API responses and synthetic screenshots.
 
