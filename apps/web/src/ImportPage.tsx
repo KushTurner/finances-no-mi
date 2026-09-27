@@ -35,6 +35,12 @@ export function ImportPage() {
     );
   }
 
+  function removeStatement(key: number) {
+    setStatements((current) =>
+      current.filter((statement) => statement.key !== key),
+    );
+  }
+
   function addFiles(files: File[]) {
     const added = files.map((file): QueuedStatement => ({
       key: nextKey.current++,
@@ -62,7 +68,7 @@ export function ImportPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10 *:max-w-2xl">
+    <main className="mx-auto max-w-6xl px-6 py-10">
       <PageHeading
         title="Import statements"
         description="Each statement goes into the account for its bank, which is created on its first import."
@@ -75,24 +81,38 @@ export function ImportPage() {
             {statements.map((statement) => (
               <li key={statement.key} aria-label={statement.file.name}>
                 <Card size="sm">
-                  <CardContent>
-                    <span className="font-medium break-all">
-                      {statement.file.name}
-                    </span>
-                    <StatementStatusMessage status={statement.status} />
+                  <CardContent className="flex items-start justify-between gap-4">
+                    <div>
+                      <span className="font-medium break-all">
+                        {statement.file.name}
+                      </span>
+                      <StatementStatusMessage status={statement.status} />
+                    </div>
+                    {!isImporting && pending.includes(statement) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Remove ${statement.file.name}`}
+                        onClick={() => removeStatement(statement.key)}
+                      >
+                        Remove
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </li>
             ))}
           </ul>
-          <Button
-            size="lg"
-            className="mt-6 px-4"
-            disabled={isImporting || pending.length === 0}
-            onClick={() => void importPendingStatements()}
-          >
-            {isImporting ? 'Importing…' : importLabel(pending.length)}
-          </Button>
+          {(isImporting || pending.length > 0) && (
+            <Button
+              size="lg"
+              className="mt-6 px-4"
+              disabled={isImporting}
+              onClick={() => void importPendingStatements()}
+            >
+              {isImporting ? 'Importing…' : importLabel(pending.length)}
+            </Button>
+          )}
         </>
       )}
     </main>
@@ -100,9 +120,6 @@ export function ImportPage() {
 }
 
 function importLabel(count: number) {
-  if (count === 0) {
-    return 'Import';
-  }
   return `Import ${count} ${count === 1 ? 'statement' : 'statements'}`;
 }
 
@@ -150,7 +167,9 @@ function StatementDropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
 function StatementStatusMessage({ status }: { status: StatementStatus }) {
   switch (status.kind) {
     case 'waiting':
-      return null;
+      return (
+        <p className="mt-2 text-sm text-muted-foreground">Ready to import</p>
+      );
     case 'importing':
       return <p className="mt-2 text-sm text-muted-foreground">Importing…</p>;
     case 'imported':

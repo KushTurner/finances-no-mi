@@ -40,7 +40,7 @@ async function mockImports(
 
 async function attachScreenshot(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, {
-    body: await page.screenshot({ fullPage: true }),
+    body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
     contentType: 'image/png',
   });
 }

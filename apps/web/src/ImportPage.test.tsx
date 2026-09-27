@@ -61,6 +61,18 @@ test('imports each dropped statement into the account for its bank', async () =>
   );
 });
 
+test('removes a statement added by mistake before importing', () => {
+  render(<ImportPage />);
+  dropStatements('natwest.csv', 'notes.csv');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Remove notes.csv' }));
+
+  expect(screen.queryByRole('listitem', { name: 'notes.csv' })).toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'Import 1 statement' }),
+  ).toBeVisible();
+});
+
 test('shows why a statement was rejected', async () => {
   stubImports({
     'natwest.csv': () =>

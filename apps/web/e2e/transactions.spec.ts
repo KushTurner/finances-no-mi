@@ -140,7 +140,7 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   await page.getByLabel('Select transaction 2:', { exact: false }).check();
   await choose(page, 'Category for selection', 'Eating out');
   await testInfo.attach('transactions-selected', {
-    body: await page.screenshot({ fullPage: true }),
+    body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
     contentType: 'image/png',
   });
 
@@ -166,7 +166,7 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
     page.getByRole('row').filter({ hasText: 'SYNTHETIC CAFE' }),
   ).toContainText('Uncategorized');
   await testInfo.attach('transactions-reviewed', {
-    body: await page.screenshot({ fullPage: true }),
+    body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
     contentType: 'image/png',
   });
 });
@@ -211,7 +211,7 @@ test('shows the transaction list and editing controls on a narrow screen', async
     page.getByRole('button', { name: 'Apply to selected' }),
   ).toBeInViewport();
   await testInfo.attach('transactions-mobile', {
-    body: await page.screenshot({ fullPage: true }),
+    body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
     contentType: 'image/png',
   });
 });

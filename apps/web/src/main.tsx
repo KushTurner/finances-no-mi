@@ -6,7 +6,9 @@ import { RouterProvider } from '@tanstack/react-router';
 import './index.css';
 import { router } from './router';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1 } },
+});
 const root = document.getElementById('root');
 
 if (!root) {

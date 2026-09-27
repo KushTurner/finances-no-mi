@@ -36,7 +36,8 @@ const date = new Intl.DateTimeFormat('en-GB', {
   year: 'numeric',
   timeZone: 'UTC',
 });
-const fieldLabel = 'grid gap-2 text-sm text-muted-foreground';
+const field = 'grid gap-2';
+const fieldLabel = 'text-sm text-muted-foreground';
 
 export function TransactionsPage() {
   const queryClient = useQueryClient();
@@ -87,8 +88,10 @@ export function TransactionsPage() {
       />
 
       <div className="mt-8 flex flex-wrap items-end gap-4">
-        <div className={fieldLabel}>
-          <label htmlFor="category-filter">Filter by category</label>
+        <div className={field}>
+          <label htmlFor="category-filter" className={fieldLabel}>
+            Filter by category
+          </label>
           <Select
             value={filter}
             disabled={assignment.isPending}
@@ -115,26 +118,30 @@ export function TransactionsPage() {
         </div>
         {ready && (
           <p className="pb-1.5 text-sm text-muted-foreground">
-            {transactions.data.length} transactions
+            {transactions.data.length}{' '}
+            {transactions.data.length === 1 ? 'transaction' : 'transactions'}
           </p>
         )}
       </div>
 
       {loadError && (
-        <Alert variant="destructive" className="mt-6 p-4">
+        <Alert
+          variant="destructive"
+          className="mt-6 flex flex-wrap items-center justify-between gap-3 p-4"
+        >
           <AlertDescription>
-            <p>Could not load transactions. {loadError.message}.</p>
-            <Button
-              variant="outline"
-              className="mt-3"
-              onClick={() => {
-                void categories.refetch();
-                void transactions.refetch();
-              }}
-            >
-              Retry
-            </Button>
+            Could not load transactions. {loadError.message}.
           </AlertDescription>
+          <Button
+            variant="outline"
+            className="text-foreground"
+            onClick={() => {
+              void categories.refetch();
+              void transactions.refetch();
+            }}
+          >
+            Retry
+          </Button>
         </Alert>
       )}
       {!loadError && !ready && (
@@ -151,12 +158,10 @@ export function TransactionsPage() {
             className="mt-6"
           >
             <CardContent>
-              <div className="flex flex-wrap items-end gap-4">
-                <p className="pb-1.5 text-sm font-medium">
-                  {selected.length} selected
-                </p>
-                <div className={fieldLabel}>
-                  <label htmlFor="category-choice">
+              <p className="text-sm font-medium">{selected.length} selected</p>
+              <div className="mt-3 flex flex-wrap items-end gap-4">
+                <div className={field}>
+                  <label htmlFor="category-choice" className={fieldLabel}>
                     Category for selection
                   </label>
                   <Select
