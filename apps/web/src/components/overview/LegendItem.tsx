@@ -10,9 +10,7 @@ export function LegendItem({ color, label, shape = 'line' }: LegendItemProps) {
       <i
         aria-hidden="true"
         className={
-          shape === 'line'
-            ? 'h-[3px] w-3.5 rounded-sm'
-            : 'size-2.5 rounded-[3px]'
+          shape === 'line' ? 'h-0.75 w-3.5 rounded-sm' : 'size-2.5 rounded-xs'
         }
         style={{ background: color }}
       />

@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { categoryName, formatDayWithYear, formatSignedPounds } from '@/lib';
+import { cn } from '@/lib/utils';
 
 type TransactionsTableProps = {
   transactions: Transaction[];
@@ -75,7 +76,10 @@ export function TransactionsTable({
                 {transaction.source_type ?? '—'}
               </TableCell>
               <TableCell
-                className={`text-right tabular-nums ${transaction.amount_pence > 0 ? 'text-positive' : ''}`}
+                className={cn(
+                  'text-right tabular-nums',
+                  transaction.amount_pence > 0 && 'text-positive',
+                )}
               >
                 {formatSignedPounds(transaction.amount_pence)}
               </TableCell>

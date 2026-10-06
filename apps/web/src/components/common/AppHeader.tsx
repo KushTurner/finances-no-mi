@@ -12,7 +12,7 @@ export function AppHeader() {
       <Link to="/" className="flex items-center gap-2.5 font-semibold">
         <span
           aria-hidden="true"
-          className="grid size-7 place-items-center rounded-lg bg-linear-to-br from-[#3a3a3c] to-[#1d1d1f] text-xs font-bold"
+          className="grid size-7 place-items-center rounded-lg bg-linear-to-br from-metal to-metal-dark text-xs font-bold"
         >
           £
         </span>

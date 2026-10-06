@@ -40,6 +40,10 @@
   --notice: #1f1b10;
   --notice-foreground: #e9cf8a;
   --notice-border: #3d3218;
+  --metal-light: #6b6b70;
+  --metal: #3a3a3c;
+  --metal-dark: #1c1c1e;
+  --control-active: #3a3a3e;
 }
 
 body {
@@ -66,6 +70,20 @@ body {
   --color-notice: var(--notice);
   --color-notice-foreground: var(--notice-foreground);
   --color-notice-border: var(--notice-border);
+  --color-metal-light: var(--metal-light);
+  --color-metal: var(--metal);
+  --color-metal-dark: var(--metal-dark);
+  --color-control-active: var(--control-active);
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.5;
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.5;
+  --text-figure: 2.125rem;
+  --text-figure--line-height: 1.25;
+  --text-pence: 0.6em;
+  --shadow-control: 0 1px 3px rgb(0 0 0 / 50%);
+  --shadow-account-card:
+    0 1px 2px rgb(0 0 0 / 12%), 0 10px 30px -12px rgb(0 0 0 / 45%);
   --color-positive: var(--positive);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
@@ -89,6 +107,18 @@ body {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@utility account-card-sheen {
+  background-image: radial-gradient(
+    120% 90% at 0% 0%,
+    rgb(255 255 255 / 22%),
+    transparent 55%
+  );
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
 }
 
 @layer base {

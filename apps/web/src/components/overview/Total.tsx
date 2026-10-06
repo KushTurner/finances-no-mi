@@ -16,14 +16,14 @@ export function Total({ label, value, change }: TotalProps) {
 
   return (
     <div className="flex flex-col gap-1 border-border px-6 py-5 not-first:border-t sm:not-first:border-t-0 sm:not-first:border-l">
-      <p className="text-[13px] text-muted-foreground">{label}</p>
+      <p className="text-caption text-muted-foreground">{label}</p>
       <p
         aria-label={`${label} ${formatted}`}
-        className="font-heading text-[34px] leading-tight font-semibold tracking-tight tabular-nums"
+        className="font-heading text-figure leading-tight font-semibold tracking-tight tabular-nums"
       >
         {whole}
         {pence && (
-          <span className="text-[0.55em] font-medium text-muted-foreground">
+          <span className="text-pence font-medium text-muted-foreground">
             .{pence}
           </span>
         )}

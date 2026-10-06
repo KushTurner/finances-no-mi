@@ -1,5 +1,7 @@
 import { useState, type DragEvent } from 'react';
 
+import { cn } from '@/lib/utils';
+
 type StatementDropZoneProps = {
   onFiles: (files: File[]) => void;
 };
@@ -20,7 +22,12 @@ export function StatementDropZone({ onFiles }: StatementDropZoneProps) {
 
   return (
     <label
-      className={`mt-8 flex cursor-pointer flex-col items-center rounded-xl border border-dashed px-6 py-12 text-center transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50 ${isDragging ? 'border-foreground bg-accent' : 'border-input bg-card hover:bg-accent'}`}
+      className={cn(
+        'mt-8 flex cursor-pointer flex-col items-center rounded-xl border border-dashed px-6 py-12 text-center transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50',
+        isDragging
+          ? 'border-foreground bg-accent'
+          : 'border-input bg-card hover:bg-accent',
+      )}
       onDragOver={handleDragOver}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}

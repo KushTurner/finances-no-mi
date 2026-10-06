@@ -49,7 +49,7 @@ export function CategorySpending({
             <li
               key={row.key}
               className={cn(
-                'grid grid-cols-[minmax(90px,150px)_minmax(0,1fr)_auto] items-center gap-3 py-0.5 text-[13px]',
+                'grid grid-cols-[minmax(90px,150px)_minmax(0,1fr)_auto] items-center gap-3 py-0.5 text-caption',
                 row.muted && 'mt-1 border-t pt-3.5',
               )}
             >

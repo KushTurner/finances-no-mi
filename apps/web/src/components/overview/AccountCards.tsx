@@ -2,11 +2,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Summary } from '@/api';
+import { Button } from '@/components/ui/button';
 
 import { AccountCard } from './AccountCard';
-
-const scrollButton =
-  'grid size-7.5 place-items-center rounded-full bg-secondary text-foreground transition-opacity disabled:opacity-35';
 
 type AccountCardsProps = {
   accounts: Summary['accounts'];
@@ -70,34 +68,36 @@ export function AccountCards({
         </h2>
         <div className="flex items-center gap-3">
           {selectedIds.length > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="link"
               onClick={onClear}
-              className="text-sm text-foreground underline-offset-4 hover:underline"
+              className="h-auto px-0 font-normal text-foreground"
             >
               Show all accounts
-            </button>
+            </Button>
           )}
           {scroll.overflows && (
             <>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="icon-sm"
                 aria-label="Previous accounts"
                 disabled={scroll.atStart}
                 onClick={() => scrollByCard(-1)}
-                className={scrollButton}
+                className="rounded-full"
               >
-                <ChevronLeft className="size-4" />
-              </button>
-              <button
-                type="button"
+                <ChevronLeft />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon-sm"
                 aria-label="More accounts"
                 disabled={scroll.atEnd}
                 onClick={() => scrollByCard(1)}
-                className={scrollButton}
+                className="rounded-full"
               >
-                <ChevronRight className="size-4" />
-              </button>
+                <ChevronRight />
+              </Button>
             </>
           )}
         </div>
@@ -105,7 +105,7 @@ export function AccountCards({
       <div
         ref={wallet}
         onScroll={measure}
-        className="-my-1.5 grid snap-x snap-mandatory auto-cols-[86%] grid-flow-col gap-5 overflow-x-auto py-1.5 [scrollbar-width:none] sm:auto-cols-[calc((100%-20px)/2)] lg:auto-cols-[calc((100%-40px)/3)]"
+        className="-my-1.5 grid snap-x snap-mandatory auto-cols-[86%] grid-flow-col gap-5 overflow-x-auto py-1.5 scrollbar-none sm:auto-cols-[calc((100%-20px)/2)] lg:auto-cols-[calc((100%-40px)/3)]"
       >
         {accounts.map((account) => (
           <AccountCard
