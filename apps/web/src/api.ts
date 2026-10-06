@@ -71,7 +71,7 @@ export type Transaction = {
   id: number;
   account_name: string;
   transaction_date: string;
-  amount_minor: number;
+  amount_pence: number;
   raw_description: string;
   source_type: string | null;
   category_id: number | null;
