@@ -68,7 +68,7 @@ export function formatDay(isoDate: string) {
   return `${formatDayOfMonth(isoDate)} ${shortMonthOf(isoDate)}`;
 }
 
-function formatDayWithYear(isoDate: string) {
+export function formatDayWithYear(isoDate: string) {
   return `${formatDay(isoDate)} ${isoDate.slice(0, 4)}`;
 }
 

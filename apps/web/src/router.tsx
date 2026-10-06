@@ -62,11 +62,29 @@ const rootRoute = createRootRoute({
 type OverviewSearch = { period?: Period; accounts?: number[] };
 
 function accountIdsFrom(value: unknown) {
-  if (!Array.isArray(value)) return undefined;
-  const ids = value.filter(
-    (id): id is number => Number.isInteger(id) && id > 0,
+  const candidates: unknown[] =
+    typeof value === 'string'
+      ? value.split(',').map(Number)
+      : Array.isArray(value)
+        ? value
+        : [];
+  const ids = candidates.filter(
+    (id): id is number => Number.isInteger(id) && Number(id) > 0,
   );
   return ids.length > 0 ? ids : undefined;
+}
+
+function parseSearch(query: string) {
+  return Object.fromEntries(new URLSearchParams(query));
+}
+
+function stringifySearch(search: Record<string, unknown>) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(search)) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+  const query = params.toString().replaceAll('%2C', ',');
+  return query ? `?${query}` : '';
 }
 
 const overviewRoute = createRoute({
@@ -130,7 +148,9 @@ export const routeTree = rootRoute.addChildren([
   importRoute,
 ]);
 
-export const router = createRouter({ routeTree });
+export const searchSerialization = { parseSearch, stringifySearch };
+
+export const router = createRouter({ routeTree, ...searchSerialization });
 
 declare module '@tanstack/react-router' {
   interface Register {

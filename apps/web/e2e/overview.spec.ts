@@ -101,7 +101,7 @@ test('selecting account cards narrows every request and clearing restores all ac
   await amex.click();
 
   await expect(amex).toHaveAttribute('aria-pressed', 'true');
-  await expect(page).toHaveURL(/accounts=/);
+  await expect(page).toHaveURL(/accounts=3$/);
   await expect(
     page.getByText('1 – 2 Oct 2026 · up to your latest transaction'),
   ).toBeVisible();
@@ -115,6 +115,9 @@ test('selecting account cards narrows every request and clearing restores all ac
   ).toBe(true);
   await attachScreenshot(page, testInfo, 'overview-account-selected');
   await page.getByRole('button', { name: /^NatWest, spent/ }).click();
+  await expect(page).toHaveURL(/accounts=1,3$/);
+  await page.reload();
+  await expect(amex).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: /^Nationwide, spent/ }).click();
   await expect(amex).toHaveAttribute('aria-pressed', 'false');
   await expect(page).not.toHaveURL(/accounts=/);

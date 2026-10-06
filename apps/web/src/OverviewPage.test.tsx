@@ -7,7 +7,7 @@ import {
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
-import { routeTree } from './router';
+import { routeTree, searchSerialization } from './router';
 
 const summary = {
   start: '2026-10-01',
@@ -76,6 +76,7 @@ afterEach(() => {
 function renderOverview(path: string) {
   const router = createRouter({
     routeTree,
+    ...searchSerialization,
     history: createMemoryHistory({ initialEntries: [path] }),
   });
   const client = new QueryClient({
