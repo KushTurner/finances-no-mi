@@ -1,4 +1,5 @@
 import { expect, test as base } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
 
 type NetworkFixtures = {
   networkGuard: void;
@@ -27,5 +28,16 @@ export const test = base.extend<NetworkFixtures>({
     { auto: true },
   ],
 });
+
+export async function attachScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  name: string,
+) {
+  await testInfo.attach(name, {
+    body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
+    contentType: 'image/png',
+  });
+}
 
 export { expect };

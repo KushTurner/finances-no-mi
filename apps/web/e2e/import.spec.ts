@@ -1,8 +1,8 @@
 /// <reference lib="dom" />
 
-import type { Page, TestInfo } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-import { expect, test } from './fixtures';
+import { attachScreenshot, expect, test } from './fixtures';
 
 type MockResponse = { status: number; json: unknown };
 
@@ -38,13 +38,6 @@ async function mockImports(
   });
 }
 
-async function attachScreenshot(page: Page, testInfo: TestInfo, name: string) {
-  await testInfo.attach(name, {
-    body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
-    contentType: 'image/png',
-  });
-}
-
 test('imports dropped statements into the accounts for their banks', async ({
   page,
 }, testInfo) => {
@@ -53,6 +46,7 @@ test('imports dropped statements into the accounts for their banks', async ({
     'amex.csv': completed('Amex'),
   });
   await page.goto('/import');
+  await attachScreenshot(page, testInfo, 'import-empty');
   const dataTransfer = await page.evaluateHandle(() => {
     const transfer = new DataTransfer();
     for (const name of ['natwest.csv', 'amex.csv']) {
@@ -64,11 +58,16 @@ test('imports dropped statements into the accounts for their banks', async ({
   await page
     .getByText('Drop statement CSVs here')
     .dispatchEvent('drop', { dataTransfer });
+  await expect(
+    page.getByRole('listitem', { name: 'natwest.csv' }),
+  ).toContainText('Ready to import');
+  await attachScreenshot(page, testInfo, 'statements-queued');
   await page.getByRole('button', { name: 'Import 2 statements' }).click();
 
   await expect(
     page.getByRole('listitem', { name: 'amex.csv' }).getByRole('status'),
   ).toHaveText('Imported into Amex: 12 new transactions, 3 already imported.');
+  await expect(page.getByRole('button', { name: /^Import/ })).toHaveCount(0);
   await attachScreenshot(page, testInfo, 'dropped-statements-imported');
 });
 
