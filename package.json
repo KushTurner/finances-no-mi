@@ -4,6 +4,7 @@
   "packageManager": "pnpm@12.6.0",
   "scripts": {
     "build": "pnpm --filter web build",
+    "demo": "bash scripts/demo.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "pnpm --filter web lint",

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { expect, test } from './fixtures';
+import { attachScreenshot, expect, test } from './fixtures';
 
 const categories = [
   {
@@ -25,6 +25,11 @@ const categories = [
     definition: 'Moving money between your own accounts.',
   },
 ];
+
+async function choose(page: Page, label: string, option: string) {
+  await page.getByLabel(label).click();
+  await page.getByRole('option', { name: option, exact: true }).click();
+}
 
 async function mockTransactions(page: Page, failFirstSave = false) {
   const rows = [
@@ -123,6 +128,8 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
 }, testInfo) => {
   const decisions = await mockTransactions(page);
   await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await attachScreenshot(page, testInfo, 'overview-placeholder');
   await page.getByRole('link', { name: 'Transactions', exact: true }).click();
   await expect(
     page.getByRole('cell', { name: '+£2,000.00', exact: true }),
@@ -130,49 +137,44 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   await expect(
     page.getByRole('cell', { name: '-£4.50', exact: true }),
   ).toBeVisible();
-  await page.getByLabel('Filter by category').selectOption('uncategorized');
+  await choose(page, 'Filter by category', 'Uncategorized');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
   await page.getByLabel('Select transaction 2:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('1');
-  await testInfo.attach('transactions-selected', {
-    body: await page.screenshot({ fullPage: true }),
-    contentType: 'image/png',
-  });
+  await choose(page, 'Category for selection', 'Eating out');
+  await attachScreenshot(page, testInfo, 'transactions-selected');
 
   await page.getByRole('button', { name: 'Apply to selected' }).click();
 
   await expect(page.getByRole('status')).toHaveText('Updated 2 transactions.');
   await expect(page.getByRole('row')).toHaveCount(2);
   expect(decisions[0]).toEqual({ transaction_ids: [1, 2], category_id: 1 });
-  await page.getByLabel('Filter by category').selectOption('1');
+  await choose(page, 'Filter by category', 'Eating out');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('2');
+  await choose(page, 'Category for selection', 'Travel');
   await page.getByRole('button', { name: 'Apply to selected' }).click();
   await expect(page.getByRole('status')).toHaveText('Updated 1 transaction.');
-  await page.getByLabel('Filter by category').selectOption('2');
+  await choose(page, 'Filter by category', 'Travel');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('clear');
+  await choose(page, 'Category for selection', 'Clear category');
   await page.getByRole('button', { name: 'Apply to selected' }).click();
   await expect(
     page.getByText('No transactions match this category.'),
   ).toBeVisible();
-  await page.getByLabel('Filter by category').selectOption('all');
+  await expect(page.getByRole('status')).toHaveText('Updated 1 transaction.');
+  await choose(page, 'Filter by category', 'All categories');
   await expect(
     page.getByRole('row').filter({ hasText: 'SYNTHETIC CAFE' }),
   ).toContainText('Uncategorized');
-  await testInfo.attach('transactions-reviewed', {
-    body: await page.screenshot({ fullPage: true }),
-    contentType: 'image/png',
-  });
+  await attachScreenshot(page, testInfo, 'transactions-reviewed');
 });
 
 test('keeps a failed decision selected for retry and clears selection when filtering', async ({
   page,
-}) => {
+}, testInfo) => {
   const decisions = await mockTransactions(page, true);
   await page.goto('/transactions');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('1');
+  await choose(page, 'Category for selection', 'Eating out');
 
   await page.getByRole('button', { name: 'Apply to selected' }).click();
 
@@ -182,11 +184,12 @@ test('keeps a failed decision selected for retry and clears selection when filte
   await expect(
     page.getByLabel('Select transaction 1:', { exact: false }),
   ).toBeChecked();
+  await attachScreenshot(page, testInfo, 'transactions-save-failed');
   await page.getByRole('button', { name: 'Apply to selected' }).click();
   await expect(page.getByRole('status')).toHaveText('Updated 1 transaction.');
   expect(decisions).toEqual([{ transaction_ids: [1], category_id: 1 }]);
   await page.getByLabel('Select transaction 2:', { exact: false }).check();
-  await page.getByLabel('Filter by category').selectOption('3');
+  await choose(page, 'Filter by category', 'Income');
   await expect(page.getByText('0 selected', { exact: true })).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Apply to selected' }),
@@ -201,12 +204,80 @@ test('shows the transaction list and editing controls on a narrow screen', async
   await page.goto('/transactions');
   await expect(page.getByRole('table')).toBeVisible();
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await page.getByLabel('Category for selection').selectOption('1');
+  await choose(page, 'Category for selection', 'Eating out');
   await expect(
     page.getByRole('button', { name: 'Apply to selected' }),
   ).toBeInViewport();
-  await testInfo.attach('transactions-mobile', {
-    body: await page.screenshot({ fullPage: true }),
-    contentType: 'image/png',
-  });
+  await attachScreenshot(page, testInfo, 'transactions-mobile');
 });
+
+test('recovers from a failed load with an explicit retry', async ({
+  page,
+}, testInfo) => {
+  let failing = true;
+  await page.route('**/api/categories', (route) =>
+    failing
+      ? route.fulfill({ status: 500 })
+      : route.fulfill({ json: categories }),
+  );
+  await page.route('**/api/transactions', (route) =>
+    failing ? route.fulfill({ status: 500 }) : route.fulfill({ json: [] }),
+  );
+  await page.goto('/transactions');
+  await expect(page.getByRole('alert')).toContainText(
+    'Could not load transactions',
+  );
+  await attachScreenshot(page, testInfo, 'transactions-load-failed');
+  failing = false;
+
+  await page.getByRole('button', { name: 'Retry' }).click();
+
+  await expect(
+    page.getByText('No transactions yet. Import a statement to get started.'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Categorize selected transactions' }),
+  ).toHaveCount(0);
+  await attachScreenshot(page, testInfo, 'transactions-empty');
+});
+
+for (const viewport of [
+  { name: 'desktop', width: 1280, height: 720 },
+  { name: 'mobile', width: 390, height: 844 },
+]) {
+  test(`keeps the categorize controls in view while scrolling a long list on ${viewport.name}`, async ({
+    page,
+  }, testInfo) => {
+    const rows = Array.from({ length: 40 }, (_, index) => ({
+      id: index + 1,
+      account_name: 'NatWest',
+      transaction_date: '2026-09-01',
+      amount_minor: -(index + 1) * 100,
+      raw_description: `SYNTHETIC SHOP ${index + 1}`,
+      source_type: 'POS',
+      category_id: null,
+    }));
+    await page.route('**/api/categories', (route) =>
+      route.fulfill({ json: categories }),
+    );
+    await page.route('**/api/transactions', (route) =>
+      route.fulfill({ json: rows }),
+    );
+    await page.setViewportSize(viewport);
+    await page.goto('/transactions');
+    await choose(page, 'Category for selection', 'Eating out');
+
+    await page.getByLabel('Select transaction 40:', { exact: false }).check();
+
+    await expect(
+      page.getByRole('button', { name: 'Apply to selected' }),
+    ).toBeInViewport();
+    await expect(
+      page.getByLabel('Select transaction 40:', { exact: false }),
+    ).toBeInViewport();
+    await testInfo.attach(`transactions-scrolled-${viewport.name}`, {
+      body: await page.screenshot({ animations: 'disabled' }),
+      contentType: 'image/png',
+    });
+  });
+}

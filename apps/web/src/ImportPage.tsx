@@ -1,5 +1,9 @@
 import { useRef, useState, type DragEvent } from 'react';
 
+import { PageHeading } from '@/components/PageHeading';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
 import { importStatement, type ImportResult, type StatementError } from './api';
 
 type StatementStatus =
@@ -31,6 +35,12 @@ export function ImportPage() {
     );
   }
 
+  function removeStatement(key: number) {
+    setStatements((current) =>
+      current.filter((statement) => statement.key !== key),
+    );
+  }
+
   function addFiles(files: File[]) {
     const added = files.map((file): QueuedStatement => ({
       key: nextKey.current++,
@@ -58,43 +68,51 @@ export function ImportPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
-      <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-        Finances No MI
-      </p>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-        Import statements
-      </h1>
-      <p className="mt-2 text-slate-600">
-        Each statement goes into the account for its bank, which is created on
-        its first import.
-      </p>
+    <main className="mx-auto max-w-6xl px-6 py-10">
+      <PageHeading
+        title="Import statements"
+        description="Each statement goes into the account for its bank, which is created on its first import."
+      />
 
       <StatementDropZone onFiles={addFiles} />
       {statements.length > 0 && (
         <>
           <ul className="mt-6 space-y-3">
             {statements.map((statement) => (
-              <li
-                key={statement.key}
-                aria-label={statement.file.name}
-                className="rounded-md border border-slate-200 bg-white p-4"
-              >
-                <span className="font-medium break-all text-slate-900">
-                  {statement.file.name}
-                </span>
-                <StatementStatusMessage status={statement.status} />
+              <li key={statement.key} aria-label={statement.file.name}>
+                <Card size="sm">
+                  <CardContent className="flex items-start justify-between gap-4">
+                    <div>
+                      <span className="font-medium break-all">
+                        {statement.file.name}
+                      </span>
+                      <StatementStatusMessage status={statement.status} />
+                    </div>
+                    {!isImporting && pending.includes(statement) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Remove ${statement.file.name}`}
+                        onClick={() => removeStatement(statement.key)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
               </li>
             ))}
           </ul>
-          <button
-            type="button"
-            className="mt-6 rounded-md bg-slate-900 px-4 py-2 font-medium text-white disabled:opacity-50"
-            disabled={isImporting || pending.length === 0}
-            onClick={() => void importPendingStatements()}
-          >
-            {isImporting ? 'Importing…' : importLabel(pending.length)}
-          </button>
+          {(isImporting || pending.length > 0) && (
+            <Button
+              size="lg"
+              className="mt-6 px-4"
+              disabled={isImporting}
+              onClick={() => void importPendingStatements()}
+            >
+              {isImporting ? 'Importing…' : importLabel(pending.length)}
+            </Button>
+          )}
         </>
       )}
     </main>
@@ -102,9 +120,6 @@ export function ImportPage() {
 }
 
 function importLabel(count: number) {
-  if (count === 0) {
-    return 'Import';
-  }
   return `Import ${count} ${count === 1 ? 'statement' : 'statements'}`;
 }
 
@@ -124,15 +139,15 @@ function StatementDropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
 
   return (
     <label
-      className={`mt-8 flex cursor-pointer flex-col items-center rounded-lg border-2 border-dashed px-6 py-10 text-center ${isDragging ? 'border-slate-900 bg-slate-100' : 'border-slate-300 bg-white'}`}
+      className={`mt-8 flex cursor-pointer flex-col items-center rounded-xl border border-dashed px-6 py-12 text-center transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50 ${isDragging ? 'border-foreground bg-accent' : 'border-input bg-card hover:bg-accent'}`}
       onDragOver={handleDragOver}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
-      <span className="pointer-events-none font-medium text-slate-900">
+      <span className="pointer-events-none font-medium">
         Drop statement CSVs here
       </span>
-      <span className="pointer-events-none mt-1 text-sm text-slate-600">
+      <span className="pointer-events-none mt-1 text-sm text-muted-foreground">
         or click to choose files
       </span>
       <input
@@ -152,14 +167,16 @@ function StatementDropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
 function StatementStatusMessage({ status }: { status: StatementStatus }) {
   switch (status.kind) {
     case 'waiting':
-      return null;
+      return (
+        <p className="mt-2 text-sm text-muted-foreground">Ready to import</p>
+      );
     case 'importing':
-      return <p className="mt-2 text-sm text-slate-600">Importing…</p>;
+      return <p className="mt-2 text-sm text-muted-foreground">Importing…</p>;
     case 'imported':
       return <ImportOutcome result={status.result} />;
     case 'failed':
       return (
-        <p role="alert" className="mt-2 text-sm text-red-800">
+        <p role="alert" className="mt-2 text-sm text-destructive">
           {status.message}. Import again to retry.
         </p>
       );
@@ -170,14 +187,14 @@ function ImportOutcome({ result }: { result: ImportResult }) {
   switch (result.kind) {
     case 'completed':
       return (
-        <p role="status" className="mt-2 text-sm text-emerald-800">
+        <p role="status" className="mt-2 text-sm text-positive">
           Imported into {result.accountName}: {result.newTransactionCount} new
           transactions, {result.existingTransactionCount} already imported.
         </p>
       );
     case 'rejected':
       return (
-        <p role="alert" className="mt-2 text-sm text-amber-800">
+        <p role="alert" className="mt-2 text-sm text-warning">
           {result.message}.
         </p>
       );
@@ -188,7 +205,7 @@ function ImportOutcome({ result }: { result: ImportResult }) {
 
 function StatementErrors({ errors }: { errors: StatementError[] }) {
   return (
-    <div role="alert" className="mt-2 text-sm text-red-800">
+    <div role="alert" className="mt-2 text-sm text-destructive">
       <p>The statement was not imported:</p>
       <ul className="mt-1 list-disc space-y-1 pl-5">
         {errors.map((error, index) => (

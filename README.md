@@ -54,6 +54,20 @@ pnpm --filter web test:e2e
 
 Playwright starts only the frontend. API and external network requests are blocked unless a test explicitly provides a synthetic response.
 
+Open the report, including a screenshot of each tested state:
+
+```bash
+pnpm --filter web exec playwright show-report
+```
+
+To click through the app with synthetic data, run from the repository root:
+
+```bash
+pnpm demo
+```
+
+This recreates `.data/demo.db` with synthetic statements for all three banks, then starts the API on port 8001 and the frontend at `http://localhost:5173`. It never reads your real database. Stop it with Ctrl+C.
+
 For interactive browser exploration, start the frontend and use the project-local CLI in another terminal:
 
 ```bash
