@@ -39,6 +39,7 @@ class AccountSpending:
     id: int
     name: str
     spent_pence: int
+    earliest_transaction_date: date | None
     latest_transaction_date: date | None
 
 
@@ -278,7 +279,12 @@ def _accounts(session: Session, rows: list[_Row]) -> list[AccountSpending]:
     for row in rows:
         spent[row.account_id] += spent_pence(row.amount_pence, row.category_name)
     statement = (
-        select(Account.id, Account.name, func.max(Transaction.transaction_date))
+        select(
+            Account.id,
+            Account.name,
+            func.min(Transaction.transaction_date),
+            func.max(Transaction.transaction_date),
+        )
         .outerjoin(Transaction)
         .group_by(Account.id)
         .order_by(Account.id)
@@ -288,9 +294,10 @@ def _accounts(session: Session, rows: list[_Row]) -> list[AccountSpending]:
             id=account_id,
             name=name,
             spent_pence=spent[account_id],
+            earliest_transaction_date=earliest,
             latest_transaction_date=latest,
         )
-        for account_id, name, latest in session.execute(statement)
+        for account_id, name, earliest, latest in session.execute(statement)
     ]
 
 

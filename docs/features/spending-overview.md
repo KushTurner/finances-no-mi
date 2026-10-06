@@ -33,6 +33,7 @@ Exports do not state the date range they cover, so an account is only known to b
 
 - A requested range that ends after the latest transaction across the selected accounts instead ends on that date, provided the latest transaction falls inside the range. The page shows the range it was given back, for example "1 – 26 Sep", rather than "today".
 - A range with no transactions yet keeps its requested end, and the page shows that the period has no transactions.
+- A comparison is only shown when the imported data covers the whole previous period, meaning the selected accounts' earliest transaction is on or before its first day. A period is never compared with one the data only partly covers.
 
 ### Account cards
 
@@ -84,7 +85,7 @@ A toggle replaces every monetary amount on the page with the same fixed mask, in
 
 The API is three read-only endpoints. Each accepts optional repeated `account_id` parameters; without them it covers every account. A range that ends before it starts, or an unknown account, is rejected with a 400 response. Amounts are integer pence in fields ending `_pence`; every amount is GBP. Spent and the uncategorized amounts are magnitudes, while transaction amounts keep their sign.
 
-- `GET /summary?from=YYYY-MM-DD&to=YYYY-MM-DD` returns the resolved `start` and `end` (see [Data freshness](#data-freshness)), the transaction count, Spent, Income, and Net, the uncategorized outgoing and incoming counts and amounts, Spent per spending category ranked highest first, every account with its Spent and latest transaction date (unaffected by the account filter, so every card can still be shown), and the eight largest payments.
+- `GET /summary?from=YYYY-MM-DD&to=YYYY-MM-DD` returns the resolved `start` and `end` (see [Data freshness](#data-freshness)), the transaction count, Spent, Income, and Net, the uncategorized outgoing and incoming counts and amounts, Spent per spending category ranked highest first, every account with its Spent and earliest and latest transaction dates (unaffected by the account filter, so every card can still be shown), and the eight largest payments.
 - `GET /summary/months?from=YYYY-MM&to=YYYY-MM` returns Spent, Income, and whether the month is complete for every month in the range, with the average Spent and the amount kept (Income minus Spent) over complete months.
 - `GET /summary/days?from=YYYY-MM-DD&to=YYYY-MM-DD` returns Spent and the running total of Spent for every day in the range.
 

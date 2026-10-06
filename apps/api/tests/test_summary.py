@@ -126,6 +126,7 @@ def test_account_filter_narrows_totals_but_every_account_is_listed(
     natwest = add_account(session, "NatWest")
     amex = add_account(session, "Amex")
     nationwide = add_account(session, "Nationwide")
+    add_transaction(session, natwest, "2026-08-20", -500, "Groceries")
     add_transaction(session, natwest, "2026-09-02", -1000, "Groceries")
     add_transaction(session, amex, "2026-09-03", -2500, "Eating out")
 
@@ -137,10 +138,23 @@ def test_account_filter_narrows_totals_but_every_account_is_listed(
             "id": natwest,
             "name": "NatWest",
             "spent_pence": 1000,
+            "earliest_transaction_date": "2026-08-20",
             "latest_transaction_date": "2026-09-02",
         },
-        {"id": amex, "name": "Amex", "spent_pence": 2500, "latest_transaction_date": "2026-09-03"},
-        {"id": nationwide, "name": "Nationwide", "spent_pence": 0, "latest_transaction_date": None},
+        {
+            "id": amex,
+            "name": "Amex",
+            "spent_pence": 2500,
+            "earliest_transaction_date": "2026-09-03",
+            "latest_transaction_date": "2026-09-03",
+        },
+        {
+            "id": nationwide,
+            "name": "Nationwide",
+            "spent_pence": 0,
+            "earliest_transaction_date": None,
+            "latest_transaction_date": None,
+        },
     ]
 
 
