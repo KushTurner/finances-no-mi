@@ -1,17 +1,20 @@
 import type { Summary } from '@/api';
 import { categorySpendingRows, share } from '@/lib';
 import { cn } from '@/lib/utils';
+import { useMoney } from '@/providers';
 
-import { useMoney } from './money';
-import { Panel, ValuesTable } from './Panel';
+import { Panel } from './Panel';
+import { ValuesTable } from './ValuesTable';
+
+type CategorySpendingProps = {
+  summary: Summary;
+  periodLabel: string;
+};
 
 export function CategorySpending({
   summary,
   periodLabel,
-}: {
-  summary: Summary;
-  periodLabel: string;
-}) {
+}: CategorySpendingProps) {
   const money = useMoney();
   const rows = categorySpendingRows(summary);
 

@@ -1,6 +1,4 @@
-import { createContext, useContext, useState } from 'react';
-
-import { moneyFormat } from '@/lib';
+import { useCallback, useEffect, useState } from 'react';
 
 const hiddenAmountsKey = 'overview-hide-amounts';
 
@@ -15,21 +13,15 @@ function readHiddenAmounts() {
 export function useHiddenAmounts() {
   const [hidden, setHidden] = useState(readHiddenAmounts);
 
-  function toggle() {
-    const next = !hidden;
-    setHidden(next);
+  useEffect(() => {
     try {
-      localStorage.setItem(hiddenAmountsKey, String(next));
+      localStorage.setItem(hiddenAmountsKey, String(hidden));
     } catch {
       // The setting still applies for this visit when storage is unavailable.
     }
-  }
+  }, [hidden]);
+
+  const toggle = useCallback(() => setHidden((current) => !current), []);
 
   return [hidden, toggle] as const;
-}
-
-export const MoneyContext = createContext(moneyFormat(false));
-
-export function useMoney() {
-  return useContext(MoneyContext);
 }

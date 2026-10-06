@@ -1,16 +1,18 @@
 import type { Summary } from '@/api';
 import { formatDay } from '@/lib';
+import { useMoney } from '@/providers';
 
-import { useMoney } from './money';
 import { Panel } from './Panel';
+
+type LargestPaymentsProps = {
+  payments: Summary['largest_payments'];
+  periodLabel: string;
+};
 
 export function LargestPayments({
   payments,
   periodLabel,
-}: {
-  payments: Summary['largest_payments'];
-  periodLabel: string;
-}) {
+}: LargestPaymentsProps) {
   const money = useMoney();
 
   return (

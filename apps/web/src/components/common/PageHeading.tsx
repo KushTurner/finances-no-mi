@@ -1,10 +1,9 @@
-export function PageHeading({
-  title,
-  description,
-}: {
+type PageHeadingProps = {
   title: string;
   description?: string;
-}) {
+};
+
+export function PageHeading({ title, description }: PageHeadingProps) {
   return (
     <div>
       <h1 className="font-heading text-4xl font-bold tracking-tight">
