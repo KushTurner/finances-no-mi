@@ -6,6 +6,9 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 
+import { isPeriod } from './overview/periods';
+import type { Period } from './overview/periods';
+
 import { ImportPage } from './ImportPage';
 import { OverviewPage } from './OverviewPage';
 import { TransactionsPage } from './TransactionsPage';
@@ -33,7 +36,7 @@ const rootRoute = createRootRoute({
           <Link
             to="/"
             className={navLink}
-            activeOptions={{ exact: true }}
+            activeOptions={{ exact: true, includeSearch: false }}
             activeProps={activeNavLink}
           >
             Overview
@@ -41,6 +44,7 @@ const rootRoute = createRootRoute({
           <Link
             to="/transactions"
             className={navLink}
+            activeOptions={{ includeSearch: false }}
             activeProps={activeNavLink}
           >
             Transactions
@@ -55,16 +59,63 @@ const rootRoute = createRootRoute({
   ),
 });
 
+type OverviewSearch = { period?: Period; accounts?: number[] };
+
+function accountIdsFrom(value: unknown) {
+  if (!Array.isArray(value)) return undefined;
+  const ids = value.filter(
+    (id): id is number => Number.isInteger(id) && id > 0,
+  );
+  return ids.length > 0 ? ids : undefined;
+}
+
 const overviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: OverviewPage,
+  validateSearch: (search: Record<string, unknown>): OverviewSearch => ({
+    period: isPeriod(search.period) ? search.period : undefined,
+    accounts: accountIdsFrom(search.accounts),
+  }),
+  component: function OverviewRoute() {
+    const search = overviewRoute.useSearch();
+    const navigate = overviewRoute.useNavigate();
+    return (
+      <OverviewPage
+        period={search.period ?? 'this_month'}
+        accountIds={search.accounts ?? []}
+        onPeriodChange={(period) =>
+          void navigate({
+            search: (current) => ({
+              ...current,
+              period: period === 'this_month' ? undefined : period,
+            }),
+            replace: true,
+          })
+        }
+        onAccountsChange={(accounts) =>
+          void navigate({
+            search: (current) => ({
+              ...current,
+              accounts: accounts.length > 0 ? accounts : undefined,
+            }),
+            replace: true,
+          })
+        }
+      />
+    );
+  },
 });
 
 const transactionsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/transactions',
-  component: TransactionsPage,
+  validateSearch: (search: Record<string, unknown>): { category?: string } => ({
+    category: typeof search.category === 'string' ? search.category : undefined,
+  }),
+  component: function TransactionsRoute() {
+    const { category } = transactionsRoute.useSearch();
+    return <TransactionsPage key={category} initialFilter={category} />;
+  },
 });
 
 const importRoute = createRoute({
@@ -73,7 +124,7 @@ const importRoute = createRoute({
   component: ImportPage,
 });
 
-const routeTree = rootRoute.addChildren([
+export const routeTree = rootRoute.addChildren([
   overviewRoute,
   transactionsRoute,
   importRoute,

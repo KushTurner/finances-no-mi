@@ -39,9 +39,13 @@ const date = new Intl.DateTimeFormat('en-GB', {
 const field = 'grid gap-2';
 const fieldLabel = 'text-sm text-muted-foreground';
 
-export function TransactionsPage() {
+export function TransactionsPage({
+  initialFilter = 'all',
+}: {
+  initialFilter?: string;
+}) {
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState(initialFilter);
   const [selected, setSelected] = useState<number[]>([]);
   const [choice, setChoice] = useState('');
   const [notice, setNotice] = useState('');
