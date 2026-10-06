@@ -55,7 +55,7 @@ src/
 
 - Keep state in the lowest component that needs it.
 - State that belongs in the URL, such as the selected period, filters, and selected accounts, lives in route search params. Components read it with `getRouteApi('<route>').useSearch()` and update it with `useNavigate`, instead of receiving it through props.
-- State shared by several components that does not belong in the URL lives in a context provider in `providers/`. The provider file exports the provider and a `use<Name>` hook that reads it.
+- State shared by several components that does not belong in the URL lives in a context provider in `providers/`. The provider component has its own file; the context and the `use<Name>` hooks that read it live in a `.ts` file beside it, so fast refresh keeps working.
 - Passing a prop through more than one component that does not use it is a sign the value belongs in search params or a provider.
 
 ## Components and logic

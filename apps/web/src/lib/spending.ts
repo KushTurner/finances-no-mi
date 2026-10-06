@@ -81,3 +81,11 @@ export function spendingPace(current: DailySpending, previous: DailySpending) {
     ),
   };
 }
+
+export type MonthlySpendingChartData = ReturnType<typeof monthlySpendingChart>;
+
+export type IncomeAndSpendingChartData = ReturnType<
+  typeof incomeAndSpendingChart
+>;
+
+export type SpendingPaceData = ReturnType<typeof spendingPace>;

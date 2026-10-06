@@ -6,7 +6,16 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 const deepImports = {
-  group: ['@/api/*', '@/hooks/*', '@/lib/*', '!@/lib/utils'],
+  group: [
+    '@/api/*',
+    '@/components/*/*',
+    '!@/components/ui/*',
+    '@/hooks/*',
+    '@/lib/*',
+    '!@/lib/utils',
+    '@/providers/*',
+    '@/routes/*',
+  ],
   message: 'Import from the folder barrel instead.',
 };
 
@@ -54,6 +63,11 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    files: ['src/**/*.tsx'],
+    ignores: ['src/components/ui/**', 'src/**/*.test.tsx'],
+    rules: { 'max-lines': ['error', { max: 150, skipBlankLines: true }] },
   },
   {
     files: ['src/api/**/*.ts'],
