@@ -7,7 +7,7 @@ These rules apply to everything under `apps/web`, in addition to the root `AGENT
 ```
 src/
   api/           One module per API resource, plus client.ts for the shared fetch helper
-  hooks/         Query, mutation, and other reusable hooks, plus queryKeys.ts
+  hooks/         Query, mutation, and other reusable hooks
   providers/     Context providers for state shared across components
   lib/           Pure functions: formatting, dates, money, calculations
   components/
@@ -24,7 +24,7 @@ src/
 ## Files and naming
 
 - One component per file. The file is named after the component in PascalCase, for example `AccountCard.tsx`.
-- Non-component modules use camelCase file names, for example `queryKeys.ts`.
+- Non-component modules use camelCase file names, for example `periods.ts`.
 - Use named exports only.
 - Keep a component file under about 150 lines. A larger component is a sign it should be split, or that it holds logic that belongs in `lib/` or a hook.
 - Declare props as a named type, `type AccountCardProps = { ... }`, above the component.
@@ -45,18 +45,9 @@ src/
   - `use<Resource>Query` for a `useQuery` hook, for example `useSummaryQuery`.
   - `use<Action>Mutation` for a `useMutation` hook, for example `useAssignCategoryMutation`.
   - `use<Thing>` for other hooks, for example `useHiddenAmounts`.
-- Define every query key in `hooks/queryKeys.ts` with one factory per resource:
-
-  ```ts
-  export const summaryKeys = {
-    all: ['summary'] as const,
-    range: (range: DateRange, accountIds: number[]) =>
-      [...summaryKeys.all, 'range', range, accountIds] as const,
-  };
-  ```
-
-- A query key contains every value its query function uses.
-- A mutation invalidates every resource whose data it changes, using the resource's `all` key. Changing a transaction's category, for example, invalidates both `transactionKeys.all` and `summaryKeys.all`.
+- Write each query key in exactly one place: the `use<Resource>Query` hook that runs the query.
+- Start every key with its resource name, then add every value the query function uses, for example `['summary', 'months', range, accountIds]`.
+- A mutation invalidates every resource whose data it changes, by resource name. Changing a transaction's category, for example, invalidates both `['transactions']` and `['summary']`.
 - Keep the query client's defaults. Set `staleTime` or other cache options on a query only when there is a specific reason.
 
 ## Client state
