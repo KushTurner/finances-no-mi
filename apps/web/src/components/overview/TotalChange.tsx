@@ -1,4 +1,5 @@
 import { compareTotals } from '@/lib';
+import { cn } from '@/lib/utils';
 import { useMoney } from '@/providers';
 
 type TotalChangeProps = {
@@ -33,27 +34,27 @@ export function TotalChange({
   switch (comparison.kind) {
     case 'not-enough-history':
       return (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           Not enough history to compare
         </p>
       );
     case 'comparing':
-      return <p className="text-[13px] text-muted-foreground">Comparing…</p>;
+      return <p className="text-caption text-muted-foreground">Comparing…</p>;
     case 'no-previous-transactions':
       return (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           No transactions in {against} to compare
         </p>
       );
     case 'nothing-to-compare':
       return (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           None in {against} to compare
         </p>
       );
     case 'about-the-same':
       return (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           <b className="font-semibold text-foreground">→ About the same</b> as{' '}
           {against}
         </p>
@@ -63,9 +64,12 @@ export function TotalChange({
         ? money.wholePounds(comparison.differencePence)
         : `${comparison.percent.toFixed(0)}%`;
       return (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           <b
-            className={`font-semibold ${comparison.favourable ? 'text-positive' : 'text-destructive'}`}
+            className={cn(
+              'font-semibold',
+              comparison.favourable ? 'text-positive' : 'text-destructive',
+            )}
           >
             {comparison.more ? '↑' : '↓'} {amount}{' '}
             {comparison.more ? 'more' : 'less'}

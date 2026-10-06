@@ -5,6 +5,8 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+const designValue = String.raw`/\[#|\b(text|rounded|shadow)-\[/`;
+
 const deepImports = {
   group: [
     '@/api/*',
@@ -67,7 +69,26 @@ export default tseslint.config(
   {
     files: ['src/**/*.tsx'],
     ignores: ['src/components/ui/**', 'src/**/*.test.tsx'],
-    rules: { 'max-lines': ['error', { max: 150, skipBlankLines: true }] },
+    rules: {
+      'max-lines': ['error', { max: 150, skipBlankLines: true }],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `Literal[value=${designValue}], TemplateElement[value.raw=${designValue}]`,
+          message:
+            'Use a theme token from src/index.css instead of a hex colour or an arbitrary text, radius, or shadow value.',
+        },
+        {
+          selector:
+            "JSXAttribute[name.name='className'] > JSXExpressionContainer > TemplateLiteral",
+          message: 'Combine conditional classes with cn from @/lib/utils.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/components/ui/**/*.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
   {
     files: ['src/api/**/*.ts'],

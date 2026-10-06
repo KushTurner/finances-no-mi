@@ -71,8 +71,9 @@ src/
 - Use a shadcn component before building a control by hand. Add new ones with `pnpm dlx shadcn@latest add <component>`.
 - Do not edit files in `components/ui` by hand, except to apply the project's design tokens. Customise usage through `className` and variants.
 - Style with Tailwind classes. Use `style` only for values computed at runtime, such as a bar width or a series colour.
-- Use theme tokens from `src/index.css` for colours, sizes, radii, and shadows. Do not use hex colours or arbitrary values such as `text-[13px]` or `bg-[#3a3a3e]`; add a token instead.
+- Use theme tokens from `src/index.css` for colours, font sizes, radii, and shadows. Do not use hex colours or arbitrary values for them, such as `text-[13px]` or `bg-[#3a3a3e]`; add a token instead. Arbitrary values are fine for one-off layout, such as grid templates and widths.
 - Combine conditional classes with `cn` from `@/lib/utils`, not template literals.
+- Register every new text size or shadow token in `src/lib/utils.ts` so `cn` knows which classes it replaces.
 
 ## Accessibility
 

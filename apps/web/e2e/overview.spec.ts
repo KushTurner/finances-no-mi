@@ -47,7 +47,7 @@ test('shows this month up to the latest transaction and switches period in the U
   );
   await attachScreenshot(page, testInfo, 'overview-this-month');
 
-  await page.getByRole('button', { name: 'Last month', exact: true }).click();
+  await page.getByRole('radio', { name: 'Last month', exact: true }).click();
 
   await expect(page).toHaveURL(/period=last_month/);
   await expect(
@@ -58,7 +58,7 @@ test('shows this month up to the latest transaction and switches period in the U
     'than August overall',
   );
   await attachScreenshot(page, testInfo, 'overview-last-month');
-  await page.getByRole('button', { name: 'Last 12 months' }).click();
+  await page.getByRole('radio', { name: 'Last 12 months' }).click();
   await expect(panel(page, 'Totals')).toContainText(
     'Not enough history to compare',
   );

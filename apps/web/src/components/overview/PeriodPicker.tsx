@@ -1,4 +1,5 @@
-import { periodLabels, periods } from '@/lib';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { isPeriod, periodLabels, periods } from '@/lib';
 import type { Period } from '@/lib';
 
 type PeriodPickerProps = {
@@ -8,22 +9,25 @@ type PeriodPickerProps = {
 
 export function PeriodPicker({ period, onChange }: PeriodPickerProps) {
   return (
-    <div
-      role="group"
+    <ToggleGroup
+      type="single"
       aria-label="Period"
-      className="inline-flex flex-wrap gap-0.5 rounded-[9px] bg-secondary p-0.5"
+      value={period}
+      onValueChange={(value) => {
+        if (isPeriod(value)) onChange(value);
+      }}
+      spacing={0.5}
+      className="flex-wrap rounded-md bg-secondary p-0.5"
     >
       {periods.map((option) => (
-        <button
+        <ToggleGroupItem
           key={option}
-          type="button"
-          aria-pressed={option === period}
-          onClick={() => onChange(option)}
-          className="rounded-[7px] px-3 py-1.5 text-[13px] font-medium whitespace-nowrap aria-pressed:bg-[#3a3a3e] aria-pressed:shadow-[0_1px_3px_rgb(0_0_0/50%)] sm:px-3.5"
+          value={option}
+          className="h-auto rounded-sm px-3 py-1.5 text-caption sm:px-3.5 data-[state=on]:bg-control-active data-[state=on]:shadow-control"
         >
           {periodLabels[option]}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }
