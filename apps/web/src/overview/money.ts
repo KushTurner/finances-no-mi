@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 
-import { moneyFormat } from './format';
+import { moneyFormat } from '@/lib';
 
 const hiddenAmountsKey = 'overview-hide-amounts';
 

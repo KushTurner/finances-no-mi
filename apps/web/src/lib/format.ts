@@ -1,20 +1,3 @@
-export const MASK = '£••••';
-
-const pounds = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP',
-});
-const wholePounds = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP',
-  maximumFractionDigits: 0,
-});
-const compactPounds = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP',
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
 const longMonth = new Intl.DateTimeFormat('en-GB', {
   month: 'long',
   timeZone: 'UTC',
@@ -38,23 +21,6 @@ const shortMonths = [
   'Nov',
   'Dec',
 ];
-
-export type MoneyFormat = {
-  pounds: (pence: number) => string;
-  wholePounds: (pence: number) => string;
-  compact: (pence: number) => string;
-};
-
-export function moneyFormat(hidden: boolean): MoneyFormat {
-  if (hidden) {
-    return { pounds: () => MASK, wholePounds: () => MASK, compact: () => MASK };
-  }
-  return {
-    pounds: (pence) => pounds.format(pence / 100),
-    wholePounds: (pence) => wholePounds.format(Math.round(pence / 100)),
-    compact: (pence) => compactPounds.format(pence / 100),
-  };
-}
 
 function utc(isoDate: string) {
   return new Date(`${isoDate}T00:00:00Z`);
@@ -122,4 +88,27 @@ export function axisTicks(largestPence: number) {
     { length: Math.ceil(largest / step) + 1 },
     (_, index) => index * step,
   );
+}
+
+export function formatCount(
+  count: number,
+  singular: string,
+  plural = `${singular}s`,
+) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+export function formatShownRange(
+  start: string,
+  end: string,
+  requestedEnd: string,
+) {
+  const formatted = formatRange(start, end);
+  return end < requestedEnd
+    ? `${formatted} · up to your latest transaction`
+    : formatted;
+}
+
+export function formatChartMonth(month: string, complete: boolean) {
+  return `${formatMonthWithYear(month)}${complete ? '' : ' (incomplete)'}`;
 }

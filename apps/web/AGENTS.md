@@ -20,6 +20,7 @@ src/
 - Each folder outside `components/ui` exposes its public API through an `index.ts` barrel.
 - Import another folder through its barrel, never from a file inside it. Files within the same folder import each other directly.
 - Import `components/ui` components from their own files, as the shadcn CLI generates them. Do not add a barrel there.
+- Import `cn` from `@/lib/utils`, the path the shadcn CLI generates. Everything else in `lib/` comes from `@/lib`.
 
 ## Files and naming
 

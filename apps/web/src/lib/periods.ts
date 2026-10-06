@@ -1,5 +1,7 @@
 import type { DateRange } from '@/api';
 
+import { formatMonthName } from './format';
+
 export const periods = [
   'this_month',
   'last_month',
@@ -121,4 +123,10 @@ export function paceRanges(end: string) {
 export function monthOverlaps(month: string, range: DateRange) {
   const first = `${month}-01`;
   return first <= range.to && endOfMonth(first) >= range.from;
+}
+
+export function comparisonLabel(period: Period, range: DateRange) {
+  if (period === 'last_month') return formatMonthName(monthOf(range.from));
+  if (period === 'last_90_days') return 'the previous 90 days';
+  return 'the previous 12 months';
 }

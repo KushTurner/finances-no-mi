@@ -13,11 +13,16 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { useDailySpendingQuery } from '@/hooks';
+import {
+  formatMonthName,
+  isLastDayOfMonth,
+  monthOf,
+  paceRanges,
+  spendingPace,
+} from '@/lib';
 
-import { axisTicks, formatMonthName } from './format';
 import { useMoney } from './money';
 import { LegendItem, Panel, ValuesTable } from './Panel';
-import { isLastDayOfMonth, monthOf, paceRanges } from './periods';
 
 export function SpendingPace({
   end,
@@ -51,20 +56,10 @@ export function SpendingPace({
     );
   }
 
-  const days = Math.max(current.data.length, previous.data.length);
-  const rows = Array.from({ length: days }, (_, index) => ({
-    day: index + 1,
-    current: current.data[index]?.running_spent_pence,
-    previous: previous.data[index]?.running_spent_pence,
-  }));
-  const ticks = axisTicks(
-    Math.max(...rows.flatMap((row) => [row.current ?? 0, row.previous ?? 0])),
+  const { rows, sameDay, difference, ticks } = spendingPace(
+    current.data,
+    previous.data,
   );
-  const latest = current.data.at(-1)?.running_spent_pence ?? 0;
-  const sameDay = Math.min(current.data.length, previous.data.length);
-  const previousAtSameDay =
-    previous.data[sameDay - 1]?.running_spent_pence ?? 0;
-  const difference = latest - previousAtSameDay;
   const comparedWith = monthComplete
     ? `${previousName} overall`
     : `by ${sameDay} ${previousName}`;

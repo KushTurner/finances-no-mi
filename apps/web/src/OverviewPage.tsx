@@ -2,35 +2,35 @@ import { Link } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useMemo } from 'react';
 
-import type { DateRange, Summary } from '@/api';
+import type { Summary } from '@/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSummaryQuery } from '@/hooks';
-
-import { AccountCards } from './overview/AccountCards';
-import { CategorySpending } from './overview/CategorySpending';
-import { formatMonthName, formatRange, moneyFormat } from './overview/format';
-import { LargestPayments } from './overview/LargestPayments';
-import { MoneyContext, useHiddenAmounts } from './overview/money';
-import { IncomeAndSpending, MonthlySpending } from './overview/MonthlyCharts';
 import {
+  comparisonLabel,
   comparisonRange,
+  formatRange,
+  formatShownRange,
+  hasHistorySince,
+  latestTransactionDate,
   localToday,
-  monthOf,
+  moneyFormat,
   periodLabels,
   periodRange,
   periods,
-} from './overview/periods';
-import type { Period } from './overview/periods';
+  selectedAccounts,
+  toggleAccountSelection,
+} from '@/lib';
+import type { Period } from '@/lib';
+
+import { AccountCards } from './overview/AccountCards';
+import { CategorySpending } from './overview/CategorySpending';
+import { LargestPayments } from './overview/LargestPayments';
+import { MoneyContext, useHiddenAmounts } from './overview/money';
+import { IncomeAndSpending, MonthlySpending } from './overview/MonthlyCharts';
 import { SpendingPace } from './overview/SpendingPace';
 import { Totals, UncategorizedNotice } from './overview/Totals';
-
-function comparisonLabel(period: Period, range: DateRange) {
-  if (period === 'last_month') return formatMonthName(monthOf(range.from));
-  if (period === 'last_90_days') return 'the previous 90 days';
-  return 'the previous 12 months';
-}
 
 export function OverviewPage({
   period,
@@ -62,7 +62,11 @@ export function OverviewPage({
             </h1>
             <p className="mt-1.5 text-muted-foreground">
               {summary.data
-                ? describeRange(summary.data, range)
+                ? formatShownRange(
+                    summary.data.start,
+                    summary.data.end,
+                    range.to,
+                  )
                 : formatRange(range.from, range.to)}
             </p>
           </div>
@@ -141,13 +145,6 @@ export function OverviewPage({
   );
 }
 
-function describeRange(summary: Summary, range: DateRange) {
-  const formatted = formatRange(summary.start, summary.end);
-  return summary.end < range.to
-    ? `${formatted} · up to your latest transaction`
-    : formatted;
-}
-
 function Overview({
   summary,
   previous,
@@ -185,30 +182,15 @@ function Overview({
   }
 
   function toggleAccount(id: number) {
-    const next = accountIds.includes(id)
-      ? accountIds.filter((selected) => selected !== id)
-      : [...accountIds, id].sort((a, b) => a - b);
-    onAccountsChange(next.length === summary.accounts.length ? [] : next);
+    onAccountsChange(
+      toggleAccountSelection(accountIds, id, summary.accounts.length),
+    );
   }
 
   const shownRange = { from: summary.start, to: summary.end };
-  const selectedAccounts = summary.accounts.filter(
-    (account) => accountIds.length === 0 || accountIds.includes(account.id),
-  );
-  const latestTransaction = selectedAccounts
-    .map((account) => account.latest_transaction_date)
-    .filter((date) => date !== null)
-    .sort()
-    .at(-1);
-  const earliestTransaction = selectedAccounts
-    .map((account) => account.earliest_transaction_date)
-    .filter((date) => date !== null)
-    .sort()
-    .at(0);
-  const comparisonCovered =
-    comparisonStart !== null &&
-    earliestTransaction !== undefined &&
-    earliestTransaction <= comparisonStart;
+  const accounts = selectedAccounts(summary.accounts, accountIds);
+  const latestTransaction = latestTransactionDate(accounts);
+  const comparisonCovered = hasHistorySince(accounts, comparisonStart);
 
   return (
     <div

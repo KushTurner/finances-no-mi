@@ -1,6 +1,6 @@
 import type { Summary } from '@/api';
+import { formatDay } from '@/lib';
 
-import { formatDay } from './format';
 import { useMoney } from './money';
 import { Panel } from './Panel';
 

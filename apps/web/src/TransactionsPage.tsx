@@ -26,14 +26,14 @@ import {
   useCategoriesQuery,
   useTransactionsQuery,
 } from '@/hooks';
+import {
+  categoryName,
+  formatCount,
+  formatDayWithYear,
+  formatSignedPounds,
+  toggleId,
+} from '@/lib';
 
-import { formatDayWithYear } from './overview/format';
-
-const money = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP',
-  signDisplay: 'exceptZero',
-});
 const field = 'grid gap-2';
 const fieldLabel = 'text-sm text-muted-foreground';
 
@@ -65,7 +65,7 @@ export function TransactionsPage({
         onSuccess: (result) => {
           setSelected([]);
           setNotice(
-            `Updated ${result.updated_count} ${result.updated_count === 1 ? 'transaction' : 'transactions'}.`,
+            `Updated ${formatCount(result.updated_count, 'transaction')}.`,
           );
         },
       },
@@ -73,11 +73,7 @@ export function TransactionsPage({
   }
 
   function toggleSelection(id: number) {
-    setSelected((current) =>
-      current.includes(id)
-        ? current.filter((value) => value !== id)
-        : [...current, id],
-    );
+    setSelected((current) => toggleId(current, id));
     setNotice('');
     assignment.reset();
   }
@@ -120,8 +116,7 @@ export function TransactionsPage({
         </div>
         {ready && (
           <p className="pb-1.5 text-sm text-muted-foreground">
-            {transactions.data.length}{' '}
-            {transactions.data.length === 1 ? 'transaction' : 'transactions'}
+            {formatCount(transactions.data.length, 'transaction')}
           </p>
         )}
       </div>
@@ -302,12 +297,10 @@ export function TransactionsPage({
                       <TableCell
                         className={`text-right tabular-nums ${transaction.amount_pence > 0 ? 'text-positive' : ''}`}
                       >
-                        {money.format(transaction.amount_pence / 100)}
+                        {formatSignedPounds(transaction.amount_pence)}
                       </TableCell>
                       <TableCell className="pr-4">
-                        {categories.data.find(
-                          (category) => category.id === transaction.category_id,
-                        )?.name ?? 'Uncategorized'}
+                        {categoryName(categories.data, transaction.category_id)}
                       </TableCell>
                     </TableRow>
                   ))}

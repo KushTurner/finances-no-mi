@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 
 import type { Summary } from '@/api';
+import { compareTotals, splitPence } from '@/lib';
 
-import { percentChange } from './format';
 import { useMoney } from './money';
 
 export type Comparison = {
@@ -90,9 +90,7 @@ function Total({
 }) {
   const money = useMoney();
   const formatted = money.pounds(value);
-  const [whole, pence] = formatted.includes('.')
-    ? formatted.split('.')
-    : [formatted, ''];
+  const { whole, pence } = splitPence(formatted);
 
   return (
     <div className="flex flex-col gap-1 border-border px-6 py-5 not-first:border-t sm:not-first:border-t-0 sm:not-first:border-l">
@@ -131,65 +129,63 @@ function Change({
   inPounds?: boolean;
 }) {
   const money = useMoney();
+  const comparison = compareTotals({
+    current,
+    previous,
+    hasPrevious,
+    covered,
+    higherIsBetter,
+    inPounds,
+  });
 
-  if (!covered) {
-    return (
-      <p className="text-[13px] text-muted-foreground">
-        Not enough history to compare
-      </p>
-    );
+  switch (comparison.kind) {
+    case 'not-enough-history':
+      return (
+        <p className="text-[13px] text-muted-foreground">
+          Not enough history to compare
+        </p>
+      );
+    case 'comparing':
+      return <p className="text-[13px] text-muted-foreground">Comparing…</p>;
+    case 'no-previous-transactions':
+      return (
+        <p className="text-[13px] text-muted-foreground">
+          No transactions in {against} to compare
+        </p>
+      );
+    case 'nothing-to-compare':
+      return (
+        <p className="text-[13px] text-muted-foreground">
+          None in {against} to compare
+        </p>
+      );
+    case 'about-the-same':
+      return (
+        <p className="text-[13px] text-muted-foreground">
+          <b className="font-semibold text-foreground">→ About the same</b> as{' '}
+          {against}
+        </p>
+      );
+    case 'changed': {
+      const amount = inPounds
+        ? money.wholePounds(comparison.differencePence)
+        : `${comparison.percent.toFixed(0)}%`;
+      return (
+        <p className="text-[13px] text-muted-foreground">
+          <b
+            className={`font-semibold ${comparison.favourable ? 'text-positive' : 'text-destructive'}`}
+          >
+            {comparison.more ? '↑' : '↓'} {amount}{' '}
+            {comparison.more ? 'more' : 'less'}
+          </b>{' '}
+          than {against}
+          <span className="sr-only">
+            , {comparison.favourable ? 'favourable' : 'unfavourable'}
+          </span>
+        </p>
+      );
+    }
   }
-  if (previous === undefined) {
-    return <p className="text-[13px] text-muted-foreground">Comparing…</p>;
-  }
-  if (!hasPrevious) {
-    return (
-      <p className="text-[13px] text-muted-foreground">
-        No transactions in {against} to compare
-      </p>
-    );
-  }
-
-  const difference = current - previous;
-  const percent = percentChange(current, previous);
-  if (!inPounds && percent === null) {
-    return (
-      <p className="text-[13px] text-muted-foreground">
-        None in {against} to compare
-      </p>
-    );
-  }
-
-  const flat = inPounds
-    ? Math.abs(difference) < 100
-    : Math.abs(percent ?? 0) < 0.5;
-  if (flat) {
-    return (
-      <p className="text-[13px] text-muted-foreground">
-        <b className="font-semibold text-foreground">→ About the same</b> as{' '}
-        {against}
-      </p>
-    );
-  }
-
-  const amount = inPounds
-    ? money.wholePounds(Math.abs(difference))
-    : `${Math.abs(percent ?? 0).toFixed(0)}%`;
-  const favourable = difference > 0 === higherIsBetter;
-
-  return (
-    <p className="text-[13px] text-muted-foreground">
-      <b
-        className={`font-semibold ${favourable ? 'text-positive' : 'text-destructive'}`}
-      >
-        {difference > 0 ? '↑' : '↓'} {amount} {difference > 0 ? 'more' : 'less'}
-      </b>{' '}
-      than {against}
-      <span className="sr-only">
-        , {favourable ? 'favourable' : 'unfavourable'}
-      </span>
-    </p>
-  );
 }
 
 export function UncategorizedNotice({

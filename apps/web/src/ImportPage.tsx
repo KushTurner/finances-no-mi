@@ -5,6 +5,7 @@ import { PageHeading } from '@/components/PageHeading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useImportStatementMutation } from '@/hooks';
+import { formatCount } from '@/lib';
 
 type StatementStatus =
   | { kind: 'waiting' }
@@ -111,17 +112,15 @@ export function ImportPage() {
               disabled={isImporting}
               onClick={() => void importPendingStatements()}
             >
-              {isImporting ? 'Importing…' : importLabel(pending.length)}
+              {isImporting
+                ? 'Importing…'
+                : `Import ${formatCount(pending.length, 'statement')}`}
             </Button>
           )}
         </>
       )}
     </main>
   );
-}
-
-function importLabel(count: number) {
-  return `Import ${count} ${count === 1 ? 'statement' : 'statements'}`;
 }
 
 function StatementDropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
