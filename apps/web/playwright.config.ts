@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
   forbidOnly: Boolean(process.env.CI),
+  fullyParallel: true,
   workers: process.env.CI ? 2 : undefined,
   reporter: [
     ['list'],
