@@ -1,20 +1,16 @@
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useOverviewSearch } from '@/hooks';
 import { isPeriod, periodLabels, periods } from '@/lib';
-import type { Period } from '@/lib';
 
-type PeriodPickerProps = {
-  period: Period;
-  onChange: (period: Period) => void;
-};
-
-export function PeriodPicker({ period, onChange }: PeriodPickerProps) {
+export function PeriodPicker() {
+  const { period, setPeriod } = useOverviewSearch();
   return (
     <ToggleGroup
       type="single"
       aria-label="Period"
       value={period}
       onValueChange={(value) => {
-        if (isPeriod(value)) onChange(value);
+        if (isPeriod(value)) setPeriod(value);
       }}
       spacing={0.5}
       className="flex-wrap rounded-md bg-secondary p-0.5"

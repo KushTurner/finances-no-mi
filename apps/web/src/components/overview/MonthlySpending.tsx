@@ -1,5 +1,5 @@
 import type { DateRange } from '@/api';
-import { useMonthlySummaryQuery } from '@/hooks';
+import { useMonthlySummaryQuery, useOverviewSearch } from '@/hooks';
 import { chartMonths, formatChartMonth, monthlySpendingChart } from '@/lib';
 import { useMoney } from '@/providers';
 
@@ -11,15 +11,11 @@ import { ValuesTable } from './ValuesTable';
 
 type MonthlySpendingProps = {
   range: DateRange;
-  accountIds: number[];
   className?: string;
 };
 
-export function MonthlySpending({
-  range,
-  accountIds,
-  className,
-}: MonthlySpendingProps) {
+export function MonthlySpending({ range, className }: MonthlySpendingProps) {
+  const { accountIds } = useOverviewSearch();
   const money = useMoney();
   const summary = useMonthlySummaryQuery(chartMonths(range.to), accountIds);
   const title = 'Monthly spending';

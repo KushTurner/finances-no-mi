@@ -3,24 +3,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Summary } from '@/api';
 import { Button } from '@/components/ui/button';
+import { useOverviewSearch } from '@/hooks';
+import { periodLabels, toggleAccountSelection } from '@/lib';
 
 import { AccountCard } from './AccountCard';
 
 type AccountCardsProps = {
   accounts: Summary['accounts'];
-  selectedIds: number[];
-  periodLabel: string;
-  onToggle: (id: number) => void;
-  onClear: () => void;
 };
 
-export function AccountCards({
-  accounts,
-  selectedIds,
-  periodLabel,
-  onToggle,
-  onClear,
-}: AccountCardsProps) {
+export function AccountCards({ accounts }: AccountCardsProps) {
+  const { period, accountIds, setAccountIds } = useOverviewSearch();
+  const periodLabel = periodLabels[period];
   const wallet = useRef<HTMLDivElement>(null);
   const [scroll, setScroll] = useState({
     overflows: false,
@@ -47,6 +41,10 @@ export function AccountCards({
     return () => observer.disconnect();
   }, [measure, accounts.length]);
 
+  function toggleAccount(id: number) {
+    setAccountIds(toggleAccountSelection(accountIds, id, accounts.length));
+  }
+
   function scrollByCard(direction: 1 | -1) {
     const element = wallet.current;
     const card = element?.querySelector('button');
@@ -67,10 +65,10 @@ export function AccountCards({
           Accounts
         </h2>
         <div className="flex items-center gap-3">
-          {selectedIds.length > 0 && (
+          {accountIds.length > 0 && (
             <Button
               variant="link"
-              onClick={onClear}
+              onClick={() => setAccountIds([])}
               className="h-auto px-0 font-normal text-foreground"
             >
               Show all accounts
@@ -112,9 +110,9 @@ export function AccountCards({
             key={account.id}
             account={account}
             periodLabel={periodLabel}
-            selected={selectedIds.includes(account.id)}
-            dimmed={selectedIds.length > 0 && !selectedIds.includes(account.id)}
-            onToggle={() => onToggle(account.id)}
+            selected={accountIds.includes(account.id)}
+            dimmed={accountIds.length > 0 && !accountIds.includes(account.id)}
+            onToggle={() => toggleAccount(account.id)}
           />
         ))}
       </div>
