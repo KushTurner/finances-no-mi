@@ -24,24 +24,23 @@ import {
 } from '@/components/ui/table';
 
 import { assignCategory, listCategories, listTransactions } from './api';
+import { formatDayWithYear } from './overview/format';
 
 const money = new Intl.NumberFormat('en-GB', {
   style: 'currency',
   currency: 'GBP',
   signDisplay: 'exceptZero',
 });
-const date = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
 const field = 'grid gap-2';
 const fieldLabel = 'text-sm text-muted-foreground';
 
-export function TransactionsPage() {
+export function TransactionsPage({
+  initialFilter = 'all',
+}: {
+  initialFilter?: string;
+}) {
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState(initialFilter);
   const [selected, setSelected] = useState<number[]>([]);
   const [choice, setChoice] = useState('');
   const [notice, setNotice] = useState('');
@@ -286,9 +285,7 @@ export function TransactionsPage() {
                         />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {date.format(
-                          new Date(`${transaction.transaction_date}T00:00:00Z`),
-                        )}
+                        {formatDayWithYear(transaction.transaction_date)}
                       </TableCell>
                       <TableCell className="min-w-48 max-w-sm font-medium break-words whitespace-pre-wrap">
                         {transaction.raw_description}

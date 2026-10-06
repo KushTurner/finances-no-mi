@@ -52,19 +52,19 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Moved Import to `/import` and added one navigation bar for Overview, Transactions, and Import, with a placeholder overview at `/`.
 - Updated browser tests and synthetic screenshots for the new markup and routes.
 
+### Show a spending overview
+
+- Replaced the placeholder at `/` with the dark Graphite overview in [Spending overview](features/spending-overview.md): period presets (This month, Last month, Last 90 days, This year, Last 12 months) and selected accounts kept in the URL search parameters.
+- Plain account cards that filter the whole page, scrolling sideways with previous and next controls when they do not fit.
+- Spent, Income, and Net for the range the summary API resolves, ending at the latest transaction. Complete periods are compared with the period of the same shape before them; This month and This year are not compared.
+- A notice stating uncategorized spending counted and incoming money not counted, linking to the transactions page filtered to uncategorized.
+- Spending pace, spending by category, monthly spending with the complete-month average, income and spending with the amount kept, and largest payments. Every chart has a table view.
+- A hide-amounts toggle that masks every amount with one fixed mask, remembered in the browser.
+- Browser tests run against a synthetic in-test API and attach desktop and mobile screenshots of every state.
+
 ## Planned
 
-### 1. Show a spending overview
-
-- Follow [Spending overview](features/spending-overview.md) and replace the placeholder overview at `/`.
-- Add a dark Graphite overview page with period presets, previous-period comparisons, and plain account cards that filter the page.
-- Show Spent, Income, and Net, excluding own-account transfers and stating how much uncategorized spending is included.
-- Show spending pace, spending by category, monthly spending, income and spending, and largest payments, each with a table view.
-- Let the user hide every amount on the page.
-- Add a summary service and endpoint that aggregate in integer pence.
-- Exercise the UI with mocked API responses and synthetic screenshots.
-
-### 2. Suggest transaction categories
+### 1. Suggest transaction categories
 
 - Add a small LLM client behind an application interface.
 - Choose the provider/model and implement the documented data boundary before making external requests.
@@ -75,21 +75,21 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Show suggestions and allow individual approval or correction, retaining the prediction and review outcome.
 - Stub every LLM call in automated tests.
 
-### 3. Review suggestions in groups
+### 2. Review suggestions in groups
 
 - Group or filter pending suggestions by proposed category while keeping each transaction inspectable.
 - Show distinct descriptions and transaction counts; allow excluding mismatches from a selection.
 - Approve or correct selected transactions together, including payments involving different people or merchants.
 - Apply decisions only to selected transactions; do not infer future matching rules from bulk approval.
 
-### 4. Evaluate suggestions using reviewed examples
+### 3. Evaluate suggestions using reviewed examples
 
 - Compare predictions with human decisions on later transactions, without exposing the answers in their suggestion context.
 - Evaluate whether relevant previously reviewed examples improve suggestions.
 - Define the permitted example context before sending any historical transaction information externally.
 - Measure category errors and potential review reduction, including ambiguous personal payments.
 
-### 5. Introduce selective automatic categorization
+### 4. Introduce selective automatic categorization
 
 - Evaluate candidate approval thresholds while the user still reviews all predictions.
 - Enable automatic assignment only where measured accuracy supports the chosen target with enough evidence.

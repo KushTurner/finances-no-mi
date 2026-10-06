@@ -127,9 +127,7 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   page,
 }, testInfo) => {
   const decisions = await mockTransactions(page);
-  await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
-  await attachScreenshot(page, testInfo, 'overview-placeholder');
+  await page.goto('/import');
   await page.getByRole('link', { name: 'Transactions', exact: true }).click();
   await expect(
     page.getByRole('cell', { name: '+£2,000.00', exact: true }),

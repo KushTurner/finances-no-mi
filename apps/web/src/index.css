@@ -33,6 +33,13 @@
   --input: rgb(255 255 255 / 22%);
   --ring: #a0a0a5;
   --radius: 0.75rem;
+  --series-spend: #3987e5;
+  --series-income: #199e70;
+  --series-previous: #6e6e75;
+  --series-muted: #3a3a3e;
+  --notice: #1f1b10;
+  --notice-foreground: #e9cf8a;
+  --notice-border: #3d3218;
 }
 
 body {
@@ -52,6 +59,13 @@ body {
   --color-input: var(--input);
   --color-border: var(--border);
   --color-warning: var(--warning);
+  --color-series-spend: var(--series-spend);
+  --color-series-income: var(--series-income);
+  --color-series-previous: var(--series-previous);
+  --color-series-muted: var(--series-muted);
+  --color-notice: var(--notice);
+  --color-notice-foreground: var(--notice-foreground);
+  --color-notice-border: var(--notice-border);
   --color-positive: var(--positive);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
