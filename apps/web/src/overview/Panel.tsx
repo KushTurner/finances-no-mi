@@ -1,6 +1,5 @@
 import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import { cn } from 'cn';
 
 import {
   Table,
@@ -10,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 export function Panel({
   title,

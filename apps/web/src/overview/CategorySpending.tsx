@@ -1,6 +1,5 @@
-import { cn } from 'cn';
-
 import type { Summary } from '@/api';
+import { cn } from '@/lib/utils';
 
 import { share } from './format';
 import { useMoney } from './money';

@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from 'cn';
 
 import type { Summary } from '@/api';
+import { cn } from '@/lib/utils';
 
 import { formatDay } from './format';
 import { useMoney } from './money';
