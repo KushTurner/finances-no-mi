@@ -135,7 +135,7 @@ function Change({
   if (!covered) {
     return (
       <p className="text-[13px] text-muted-foreground">
-        Your imported data doesn’t cover {against} yet
+        Not enough history to compare
       </p>
     );
   }
