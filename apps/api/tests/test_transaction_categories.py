@@ -57,7 +57,7 @@ def test_lists_original_details_newest_first(client: TestClient) -> None:
         "id": 2,
         "account_name": "NatWest",
         "transaction_date": "2026-09-03",
-        "amount_minor": -450,
+        "amount_pence": -450,
         "raw_description": "SYNTHETIC CAFE",
         "source_type": "POS",
         "category_id": None,
@@ -97,7 +97,7 @@ def test_bulk_assignment_changes_only_selected_transactions(
 
     assert response.json() == {"updated_count": 2}
     assert [
-        (row["amount_minor"], row["category_id"]) for row in client.get("/transactions").json()
+        (row["amount_pence"], row["category_id"]) for row in client.get("/transactions").json()
     ] == [
         (2500, None),
         (-50000, None),

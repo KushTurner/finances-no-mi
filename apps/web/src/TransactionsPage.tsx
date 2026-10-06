@@ -300,9 +300,9 @@ export function TransactionsPage() {
                         {transaction.source_type ?? '—'}
                       </TableCell>
                       <TableCell
-                        className={`text-right tabular-nums ${transaction.amount_minor > 0 ? 'text-positive' : ''}`}
+                        className={`text-right tabular-nums ${transaction.amount_pence > 0 ? 'text-positive' : ''}`}
                       >
-                        {money.format(transaction.amount_minor / 100)}
+                        {money.format(transaction.amount_pence / 100)}
                       </TableCell>
                       <TableCell className="pr-4">
                         {categories.data.find(

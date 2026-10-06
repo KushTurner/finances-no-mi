@@ -13,7 +13,7 @@ class TransactionDetails:
     id: int
     account_name: str
     transaction_date: date
-    amount_minor: int
+    amount_pence: int
     raw_description: str
     source_type: str | None
     category_id: int | None
@@ -33,7 +33,7 @@ def list_transactions(
             id=transaction.id,
             account_name=account_name,
             transaction_date=transaction.transaction_date,
-            amount_minor=transaction.amount_minor,
+            amount_pence=transaction.amount_minor,
             raw_description=transaction.raw_description,
             source_type=transaction.source_type,
             category_id=transaction.category_id,
