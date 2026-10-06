@@ -6,7 +6,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 const deepImports = {
-  group: ['@/api/*', '@/hooks/*'],
+  group: ['@/api/*', '@/hooks/*', '@/lib/*', '!@/lib/utils'],
   message: 'Import from the folder barrel instead.',
 };
 

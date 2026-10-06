@@ -6,8 +6,8 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 
-import { isPeriod } from './overview/periods';
-import type { Period } from './overview/periods';
+import { isPeriod } from '@/lib';
+import type { Period } from '@/lib';
 
 import { ImportPage } from './ImportPage';
 import { OverviewPage } from './OverviewPage';

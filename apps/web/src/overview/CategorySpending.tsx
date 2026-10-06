@@ -1,11 +1,9 @@
 import type { Summary } from '@/api';
+import { categorySpendingRows, share } from '@/lib';
 import { cn } from '@/lib/utils';
 
-import { share } from './format';
 import { useMoney } from './money';
 import { Panel, ValuesTable } from './Panel';
-
-const uncategorizedLabel = 'Not categorized yet';
 
 export function CategorySpending({
   summary,
@@ -15,21 +13,7 @@ export function CategorySpending({
   periodLabel: string;
 }) {
   const money = useMoney();
-  const rows = summary.categories.map((category) => ({
-    key: String(category.id),
-    name: category.name,
-    spent: category.spent_pence,
-    muted: false,
-  }));
-  if (summary.uncategorized.outgoing_pence > 0) {
-    rows.push({
-      key: 'uncategorized',
-      name: uncategorizedLabel,
-      spent: summary.uncategorized.outgoing_pence,
-      muted: true,
-    });
-  }
-  const largest = Math.max(1, ...rows.map((row) => row.spent));
+  const rows = categorySpendingRows(summary);
 
   return (
     <Panel
@@ -81,9 +65,7 @@ export function CategorySpending({
                     'block h-full min-w-0.5 rounded-r',
                     row.muted ? 'bg-series-muted' : 'bg-series-spend',
                   )}
-                  style={{
-                    width: `${((Math.max(row.spent, 0) / largest) * 100).toFixed(1)}%`,
-                  }}
+                  style={{ width: `${row.barPercent.toFixed(1)}%` }}
                 />
               </span>
               <span className="text-right whitespace-nowrap tabular-nums">

@@ -8,28 +8,31 @@ import {
   YAxis,
 } from 'recharts';
 
-import type { DateRange, MonthlySummary } from '@/api';
+import type { DateRange } from '@/api';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { useMonthlySummaryQuery } from '@/hooks';
+import {
+  chartMonths,
+  formatChartMonth,
+  formatCount,
+  incomeAndSpendingChart,
+  monthlySpendingChart,
+} from '@/lib';
 
-import { axisTicks, formatMonthWithYear, formatShortMonth } from './format';
 import { useMoney } from './money';
 import { LegendItem, Panel, ValuesTable } from './Panel';
-import { chartMonths, monthOverlaps } from './periods';
 
-type Month = MonthlySummary['months'][number];
+type ChartMonth = { month: string; complete: boolean };
 
-function monthTitle(month: Month) {
-  return `${formatMonthWithYear(month.month)}${month.complete ? '' : ' (incomplete)'}`;
-}
-
-function tooltipTitle(payload: readonly { payload?: { month?: Month } }[]) {
+function tooltipTitle(
+  payload: readonly { payload?: { month?: ChartMonth } }[],
+) {
   const month = payload[0]?.payload?.month;
-  return month ? monthTitle(month) : '';
+  return month ? formatChartMonth(month.month, month.complete) : '';
 }
 
 function Placeholder({
@@ -77,16 +80,7 @@ export function MonthlySpending({
     );
   }
 
-  const hasAverage = summary.data.months.some((month) => month.complete);
-  const rows = summary.data.months.map((month) => ({
-    month,
-    label: formatShortMonth(month.month),
-    spent: month.spent_pence,
-    highlighted: monthOverlaps(month.month, range),
-  }));
-  const ticks = axisTicks(
-    Math.max(summary.data.average_spent_pence, ...rows.map((row) => row.spent)),
-  );
+  const { rows, hasAverage, ticks } = monthlySpendingChart(summary.data, range);
 
   return (
     <Panel
@@ -104,7 +98,10 @@ export function MonthlySpending({
           headings={['Month', 'Spent']}
           rows={summary.data.months.map((month) => ({
             key: month.month,
-            cells: [monthTitle(month), money.pounds(month.spent_pence)],
+            cells: [
+              formatChartMonth(month.month, month.complete),
+              money.pounds(month.spent_pence),
+            ],
           }))}
         />
       }
@@ -202,20 +199,9 @@ export function IncomeAndSpending({
     );
   }
 
-  const completeMonths = summary.data.months.filter(
-    (month) => month.complete,
-  ).length;
   const kept = summary.data.kept_pence;
-  const rows = summary.data.months.map((month) => ({
-    month,
-    label: formatShortMonth(month.month),
-    income: month.income_pence,
-    spent: month.spent_pence,
-  }));
-  const ticks = axisTicks(
-    Math.max(...rows.flatMap((row) => [row.income, row.spent])),
-  );
-  const over = `over the last ${completeMonths} complete ${completeMonths === 1 ? 'month' : 'months'}`;
+  const { rows, completeMonths, ticks } = incomeAndSpendingChart(summary.data);
+  const over = `over the last ${formatCount(completeMonths, 'complete month')}`;
 
   return (
     <Panel
@@ -263,7 +249,7 @@ export function IncomeAndSpending({
           rows={summary.data.months.map((month) => ({
             key: month.month,
             cells: [
-              monthTitle(month),
+              formatChartMonth(month.month, month.complete),
               money.pounds(month.income_pence),
               money.pounds(month.spent_pence),
               money.pounds(month.income_pence - month.spent_pence),

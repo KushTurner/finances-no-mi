@@ -1,37 +1,14 @@
 import { expect, test } from 'vitest';
 
 import {
-  MASK,
   axisTicks,
+  formatChartMonth,
+  formatCount,
   formatRange,
-  moneyFormat,
+  formatShownRange,
   percentChange,
   share,
 } from './format';
-
-test('formats pence as pounds, whole pounds, and compact axis labels', () => {
-  const money = moneyFormat(false);
-
-  const formatted = [
-    money.pounds(123456),
-    money.wholePounds(123456),
-    money.compact(123456),
-  ];
-
-  expect(formatted).toEqual(['£1,234.56', '£1,235', '£1.2k']);
-});
-
-test('hidden amounts use one fixed mask that does not reveal their length', () => {
-  const money = moneyFormat(true);
-
-  const formatted = [
-    money.pounds(450),
-    money.wholePounds(12345678),
-    money.compact(0),
-  ];
-
-  expect(formatted).toEqual([MASK, MASK, MASK]);
-});
 
 test('shortens a range to the parts that differ', () => {
   const ranges = [
@@ -67,4 +44,39 @@ test('a share too small to round to a percent still shows as present', () => {
   const shares = [share(82, 25118), share(0, 25118), share(2500, 10000)];
 
   expect(shares).toEqual(['<1%', '0%', '25%']);
+});
+
+test('counts use the singular only for one', () => {
+  const counts = [
+    formatCount(1, 'transaction'),
+    formatCount(0, 'transaction'),
+    formatCount(3, 'complete month'),
+  ];
+
+  expect(counts).toEqual([
+    '1 transaction',
+    '0 transactions',
+    '3 complete months',
+  ]);
+});
+
+test('a range ending before the requested end is marked as up to the latest transaction', () => {
+  const ranges = [
+    formatShownRange('2026-10-01', '2026-10-03', '2026-10-06'),
+    formatShownRange('2026-10-01', '2026-10-06', '2026-10-06'),
+  ];
+
+  expect(ranges).toEqual([
+    '1 – 3 Oct 2026 · up to your latest transaction',
+    '1 – 6 Oct 2026',
+  ]);
+});
+
+test('chart months say when they are incomplete', () => {
+  const titles = [
+    formatChartMonth('2026-09', true),
+    formatChartMonth('2026-10', false),
+  ];
+
+  expect(titles).toEqual(['September 2026', 'October 2026 (incomplete)']);
 });

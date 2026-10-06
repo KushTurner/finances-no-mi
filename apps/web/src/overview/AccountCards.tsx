@@ -2,9 +2,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Summary } from '@/api';
+import { formatDay, splitPence } from '@/lib';
 import { cn } from '@/lib/utils';
 
-import { formatDay } from './format';
 import { useMoney } from './money';
 
 type Account = Summary['accounts'][number];
@@ -139,7 +139,7 @@ function AccountCard({
 }) {
   const money = useMoney();
   const spent = money.pounds(account.spent_pence);
-  const [whole, pence] = spent.includes('.') ? spent.split('.') : [spent, ''];
+  const { whole, pence } = splitPence(spent);
 
   return (
     <button

@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 
 import {
   chartMonths,
+  comparisonLabel,
   comparisonRange,
   localToday,
   monthOverlaps,
@@ -96,4 +97,18 @@ test('today follows the local calendar date', () => {
   const today = localToday(new Date(2026, 9, 6, 23, 30));
 
   expect(today).toBe('2026-10-06');
+});
+
+test('comparison labels name the previous month or the length of the period', () => {
+  const labels = [
+    comparisonLabel('last_month', { from: '2026-08-01', to: '2026-08-31' }),
+    comparisonLabel('last_90_days', { from: '2026-04-09', to: '2026-07-08' }),
+    comparisonLabel('last_12_months', { from: '2024-10-07', to: '2025-10-06' }),
+  ];
+
+  expect(labels).toEqual([
+    'August',
+    'the previous 90 days',
+    'the previous 12 months',
+  ]);
 });
