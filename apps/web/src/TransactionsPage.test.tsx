@@ -31,8 +31,8 @@ test('guides the user to import when there are no transactions', async () => {
     ),
   ).toBeVisible();
   expect(
-    screen.getByRole('button', { name: 'Apply to selected' }),
-  ).toBeDisabled();
+    screen.queryByRole('region', { name: 'Categorize selected transactions' }),
+  ).toBeNull();
 });
 
 test('recovers from a failed load with an explicit retry', async () => {

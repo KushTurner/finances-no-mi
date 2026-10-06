@@ -160,6 +160,7 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   await expect(
     page.getByText('No transactions match this category.'),
   ).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('Updated 1 transaction.');
   await choose(page, 'Filter by category', 'All categories');
   await expect(
     page.getByRole('row').filter({ hasText: 'SYNTHETIC CAFE' }),
@@ -234,5 +235,49 @@ test('recovers from a failed load with an explicit retry', async ({
   await expect(
     page.getByText('No transactions yet. Import a statement to get started.'),
   ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Categorize selected transactions' }),
+  ).toHaveCount(0);
   await attachScreenshot(page, testInfo, 'transactions-empty');
 });
+
+for (const viewport of [
+  { name: 'desktop', width: 1280, height: 720 },
+  { name: 'mobile', width: 390, height: 844 },
+]) {
+  test(`keeps the categorize controls in view while scrolling a long list on ${viewport.name}`, async ({
+    page,
+  }, testInfo) => {
+    const rows = Array.from({ length: 40 }, (_, index) => ({
+      id: index + 1,
+      account_name: 'NatWest',
+      transaction_date: '2026-09-01',
+      amount_minor: -(index + 1) * 100,
+      raw_description: `SYNTHETIC SHOP ${index + 1}`,
+      source_type: 'POS',
+      category_id: null,
+    }));
+    await page.route('**/api/categories', (route) =>
+      route.fulfill({ json: categories }),
+    );
+    await page.route('**/api/transactions', (route) =>
+      route.fulfill({ json: rows }),
+    );
+    await page.setViewportSize(viewport);
+    await page.goto('/transactions');
+    await choose(page, 'Category for selection', 'Eating out');
+
+    await page.getByLabel('Select transaction 40:', { exact: false }).check();
+
+    await expect(
+      page.getByRole('button', { name: 'Apply to selected' }),
+    ).toBeInViewport();
+    await expect(
+      page.getByLabel('Select transaction 40:', { exact: false }),
+    ).toBeInViewport();
+    await testInfo.attach(`transactions-scrolled-${viewport.name}`, {
+      body: await page.screenshot({ animations: 'disabled' }),
+      contentType: 'image/png',
+    });
+  });
+}

@@ -152,86 +152,91 @@ export function TransactionsPage() {
 
       {ready && !loadError && (
         <>
-          <Card
-            role="region"
-            aria-label="Categorize selected transactions"
-            className="mt-6"
-          >
-            <CardContent>
-              <p className="text-sm font-medium">{selected.length} selected</p>
-              <div className="mt-3 flex flex-wrap items-end gap-4">
-                <div className={field}>
-                  <label htmlFor="category-choice" className={fieldLabel}>
-                    Category for selection
-                  </label>
-                  <Select
-                    value={choice}
-                    disabled={assignment.isPending}
-                    onValueChange={(value) => {
-                      setChoice(value);
-                      assignment.reset();
-                      setNotice('');
-                    }}
-                  >
-                    <SelectTrigger id="category-choice" className="min-w-52">
-                      <SelectValue placeholder="Choose a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.data.map((category) => (
-                        <SelectItem
-                          key={category.id}
-                          value={String(category.id)}
+          {(transactions.data.length > 0 || notice) && (
+            <div className="sticky top-0 z-10 mt-2 bg-background py-4">
+              <Card role="region" aria-label="Categorize selected transactions">
+                <CardContent>
+                  <p className="text-sm font-medium">
+                    {selected.length} selected
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-end gap-4">
+                    <div className={field}>
+                      <label htmlFor="category-choice" className={fieldLabel}>
+                        Category for selection
+                      </label>
+                      <Select
+                        value={choice}
+                        disabled={assignment.isPending}
+                        onValueChange={(value) => {
+                          setChoice(value);
+                          assignment.reset();
+                          setNotice('');
+                        }}
+                      >
+                        <SelectTrigger
+                          id="category-choice"
+                          className="min-w-52"
                         >
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="clear">Clear category</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button
-                  disabled={
-                    selected.length === 0 ||
-                    choice === '' ||
-                    assignment.isPending
-                  }
-                  onClick={() => assignment.mutate()}
-                >
-                  {assignment.isPending ? 'Saving…' : 'Apply to selected'}
-                </Button>
-                {selected.length > 0 && (
-                  <Button
-                    variant="outline"
-                    disabled={assignment.isPending}
-                    onClick={() => setSelected([])}
-                  >
-                    Deselect all
-                  </Button>
-                )}
-              </div>
-              {chosenCategory && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {chosenCategory.definition}
-                </p>
-              )}
-              {choice === 'clear' && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Selected transactions will become uncategorized.
-                </p>
-              )}
-              {assignment.error && (
-                <p role="alert" className="mt-3 text-sm text-destructive">
-                  Could not save categories. {assignment.error.message}. Try
-                  again.
-                </p>
-              )}
-              {notice && (
-                <p role="status" className="mt-3 text-sm text-positive">
-                  {notice}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                          <SelectValue placeholder="Choose a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.data.map((category) => (
+                            <SelectItem
+                              key={category.id}
+                              value={String(category.id)}
+                            >
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="clear">Clear category</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      disabled={
+                        selected.length === 0 ||
+                        choice === '' ||
+                        assignment.isPending
+                      }
+                      onClick={() => assignment.mutate()}
+                    >
+                      {assignment.isPending ? 'Saving…' : 'Apply to selected'}
+                    </Button>
+                    {selected.length > 0 && (
+                      <Button
+                        variant="outline"
+                        disabled={assignment.isPending}
+                        onClick={() => setSelected([])}
+                      >
+                        Deselect all
+                      </Button>
+                    )}
+                  </div>
+                  {chosenCategory && (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {chosenCategory.definition}
+                    </p>
+                  )}
+                  {choice === 'clear' && (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      Selected transactions will become uncategorized.
+                    </p>
+                  )}
+                  {assignment.error && (
+                    <p role="alert" className="mt-3 text-sm text-destructive">
+                      Could not save categories. {assignment.error.message}. Try
+                      again.
+                    </p>
+                  )}
+                  {notice && (
+                    <p role="status" className="mt-3 text-sm text-positive">
+                      {notice}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {transactions.data.length === 0 ? (
             <Card className="mt-6">
@@ -242,7 +247,7 @@ export function TransactionsPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="mt-6 py-0">
+            <Card className="mt-2 py-0">
               <Table>
                 <TableCaption className="sr-only">
                   Imported transactions, newest first
