@@ -4,34 +4,23 @@ import {
   OverviewContent,
   PeriodPicker,
 } from '@/components/overview';
-import { useSummaryQuery } from '@/hooks';
+import { useOverviewSearch, useSummaryQuery } from '@/hooks';
 import {
   comparisonLabel,
   comparisonRange,
   formatRange,
   formatShownRange,
   localToday,
-  periodLabels,
   periodRange,
 } from '@/lib';
-import type { Period } from '@/lib';
 import { MoneyProvider } from '@/providers';
 
 type OverviewPageProps = {
-  period: Period;
-  accountIds: number[];
-  onPeriodChange: (period: Period) => void;
-  onAccountsChange: (accountIds: number[]) => void;
   today?: string;
 };
 
-export function OverviewPage({
-  period,
-  accountIds,
-  onPeriodChange,
-  onAccountsChange,
-  today = localToday(),
-}: OverviewPageProps) {
+export function OverviewPage({ today = localToday() }: OverviewPageProps) {
+  const { period, accountIds } = useOverviewSearch();
   const range = periodRange(period, today);
   const previousRange = comparisonRange(period, range);
   const summary = useSummaryQuery(range, accountIds, { keepPrevious: true });
@@ -56,7 +45,7 @@ export function OverviewPage({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <PeriodPicker period={period} onChange={onPeriodChange} />
+            <PeriodPicker />
             <HideAmountsToggle />
           </div>
         </div>
@@ -76,10 +65,7 @@ export function OverviewPage({
               previousRange ? comparisonLabel(period, previousRange) : null
             }
             comparisonStart={previousRange?.from ?? null}
-            periodLabel={periodLabels[period]}
-            accountIds={accountIds}
             loading={summary.isPlaceholderData}
-            onAccountsChange={onAccountsChange}
           />
         )}
       </main>

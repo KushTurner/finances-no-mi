@@ -1,4 +1,4 @@
-import { useMonthlySummaryQuery } from '@/hooks';
+import { useMonthlySummaryQuery, useOverviewSearch } from '@/hooks';
 import {
   chartMonths,
   formatChartMonth,
@@ -15,10 +15,10 @@ import { ValuesTable } from './ValuesTable';
 
 type IncomeAndSpendingProps = {
   end: string;
-  accountIds: number[];
 };
 
-export function IncomeAndSpending({ end, accountIds }: IncomeAndSpendingProps) {
+export function IncomeAndSpending({ end }: IncomeAndSpendingProps) {
+  const { accountIds } = useOverviewSearch();
   const money = useMoney();
   const summary = useMonthlySummaryQuery(chartMonths(end), accountIds);
   const title = 'Income and spending';

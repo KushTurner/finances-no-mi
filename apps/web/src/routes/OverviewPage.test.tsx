@@ -4,7 +4,7 @@ import {
   createMemoryHistory,
   createRouter,
 } from '@tanstack/react-router';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { routeTree, searchSerialization } from './router';
@@ -87,6 +87,7 @@ function renderOverview(path: string) {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
+  return router;
 }
 
 function summaryRanges() {
@@ -112,6 +113,40 @@ test('last month is compared with the month before it', async () => {
     '2026-09-01..2026-09-30',
     '2026-08-01..2026-08-31',
   ]);
+});
+
+test('changing period preserves selected accounts and replaces the history entry', async () => {
+  const router = renderOverview('/?accounts=1');
+  await screen.findByRole('region', { name: 'Totals' });
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Last month' }));
+
+  await waitFor(() =>
+    expect(router.state.location.href).toBe('/?accounts=1&period=last_month'),
+  );
+  expect(router.history.length).toBe(1);
+});
+
+test('selecting this month removes the period from the URL and preserves accounts', async () => {
+  const router = renderOverview('/?period=last_month&accounts=1');
+  await screen.findByRole('region', { name: 'Totals' });
+
+  fireEvent.click(screen.getByRole('radio', { name: 'This month' }));
+
+  await waitFor(() => expect(router.state.location.href).toBe('/?accounts=1'));
+  expect(router.history.length).toBe(1);
+});
+
+test('clearing selected accounts removes the filter and preserves the period', async () => {
+  const router = renderOverview('/?period=last_month&accounts=1');
+  await screen.findByRole('region', { name: 'Totals' });
+
+  fireEvent.click(screen.getByRole('button', { name: 'Show all accounts' }));
+
+  await waitFor(() =>
+    expect(router.state.location.href).toBe('/?period=last_month'),
+  );
+  expect(router.history.length).toBe(1);
 });
 
 test('hiding amounts masks every total and is remembered for the next visit', async () => {

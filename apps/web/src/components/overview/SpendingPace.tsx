@@ -1,4 +1,4 @@
-import { useDailySpendingQuery } from '@/hooks';
+import { useDailySpendingQuery, useOverviewSearch } from '@/hooks';
 import {
   formatMonthName,
   isLastDayOfMonth,
@@ -16,10 +16,10 @@ import { ValuesTable } from './ValuesTable';
 
 type SpendingPaceProps = {
   end: string;
-  accountIds: number[];
 };
 
-export function SpendingPace({ end, accountIds }: SpendingPaceProps) {
+export function SpendingPace({ end }: SpendingPaceProps) {
+  const { accountIds } = useOverviewSearch();
   const money = useMoney();
   const ranges = paceRanges(end);
   const current = useDailySpendingQuery(ranges.current, accountIds);

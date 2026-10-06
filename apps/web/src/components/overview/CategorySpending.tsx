@@ -1,5 +1,6 @@
 import type { Summary } from '@/api';
-import { categorySpendingRows, share } from '@/lib';
+import { useOverviewSearch } from '@/hooks';
+import { categorySpendingRows, periodLabels, share } from '@/lib';
 import { cn } from '@/lib/utils';
 import { useMoney } from '@/providers';
 
@@ -8,13 +9,11 @@ import { ValuesTable } from './ValuesTable';
 
 type CategorySpendingProps = {
   summary: Summary;
-  periodLabel: string;
 };
 
-export function CategorySpending({
-  summary,
-  periodLabel,
-}: CategorySpendingProps) {
+export function CategorySpending({ summary }: CategorySpendingProps) {
+  const { period } = useOverviewSearch();
+  const periodLabel = periodLabels[period];
   const money = useMoney();
   const rows = categorySpendingRows(summary);
 

@@ -2,12 +2,12 @@ import { Link } from '@tanstack/react-router';
 
 import type { Summary } from '@/api';
 import { EmptyState } from '@/components/common';
+import { useOverviewSearch } from '@/hooks';
 import {
   formatRange,
   hasHistorySince,
   latestTransactionDate,
   selectedAccounts,
-  toggleAccountSelection,
 } from '@/lib';
 
 import { AccountCards } from './AccountCards';
@@ -24,10 +24,7 @@ type OverviewContentProps = {
   previous: Summary | undefined;
   comparisonLabel: string | null;
   comparisonStart: string | null;
-  periodLabel: string;
-  accountIds: number[];
   loading: boolean;
-  onAccountsChange: (accountIds: number[]) => void;
 };
 
 export function OverviewContent({
@@ -35,11 +32,10 @@ export function OverviewContent({
   previous,
   comparisonLabel,
   comparisonStart,
-  periodLabel,
-  accountIds,
   loading,
-  onAccountsChange,
 }: OverviewContentProps) {
+  const { accountIds } = useOverviewSearch();
+
   if (summary.accounts.length === 0) {
     return (
       <EmptyState>
@@ -55,12 +51,6 @@ export function OverviewContent({
     );
   }
 
-  function toggleAccount(id: number) {
-    onAccountsChange(
-      toggleAccountSelection(accountIds, id, summary.accounts.length),
-    );
-  }
-
   const shownRange = { from: summary.start, to: summary.end };
   const accounts = selectedAccounts(summary.accounts, accountIds);
   const latestTransaction = latestTransactionDate(accounts);
@@ -71,13 +61,7 @@ export function OverviewContent({
       aria-busy={loading}
       className="flex flex-col gap-7 transition-opacity aria-busy:opacity-60"
     >
-      <AccountCards
-        accounts={summary.accounts}
-        selectedIds={accountIds}
-        periodLabel={periodLabel}
-        onToggle={toggleAccount}
-        onClear={() => onAccountsChange([])}
-      />
+      <AccountCards accounts={summary.accounts} />
       {summary.transaction_count === 0 ? (
         <EmptyState>
           No transactions in this period
@@ -101,18 +85,11 @@ export function OverviewContent({
             }
           />
           <div className="grid gap-5 lg:grid-cols-2">
-            <SpendingPace end={summary.end} accountIds={accountIds} />
-            <CategorySpending summary={summary} periodLabel={periodLabel} />
-            <MonthlySpending
-              range={shownRange}
-              accountIds={accountIds}
-              className="lg:col-span-2"
-            />
-            <IncomeAndSpending end={summary.end} accountIds={accountIds} />
-            <LargestPayments
-              payments={summary.largest_payments}
-              periodLabel={periodLabel}
-            />
+            <SpendingPace end={summary.end} />
+            <CategorySpending summary={summary} />
+            <MonthlySpending range={shownRange} className="lg:col-span-2" />
+            <IncomeAndSpending end={summary.end} />
+            <LargestPayments payments={summary.largest_payments} />
           </div>
           <p className="max-w-[80ch] text-xs text-muted-foreground">
             Spending leaves out transfers between your own accounts. Refunds and
