@@ -6,7 +6,11 @@ import type { Summary } from '@/api';
 import { percentChange } from './format';
 import { useMoney } from './money';
 
-export type Comparison = { label: string; summary: Summary | undefined };
+export type Comparison = {
+  label: string;
+  summary: Summary | undefined;
+  covered: boolean;
+};
 
 export function Totals({
   summary,
@@ -31,6 +35,7 @@ export function Totals({
               current={summary.spent_pence}
               previous={previous?.spent_pence}
               hasPrevious={Boolean(previous?.transaction_count)}
+              covered={comparison.covered}
               higherIsBetter={false}
               against={comparison.label}
             />
@@ -46,6 +51,7 @@ export function Totals({
               current={summary.income_pence}
               previous={previous?.income_pence}
               hasPrevious={Boolean(previous?.transaction_count)}
+              covered={comparison.covered}
               higherIsBetter
               against={comparison.label}
             />
@@ -61,6 +67,7 @@ export function Totals({
               current={summary.net_pence}
               previous={previous?.net_pence}
               hasPrevious={Boolean(previous?.transaction_count)}
+              covered={comparison.covered}
               higherIsBetter
               against={comparison.label}
               inPounds
@@ -110,6 +117,7 @@ function Change({
   current,
   previous,
   hasPrevious,
+  covered,
   higherIsBetter,
   against,
   inPounds = false,
@@ -117,12 +125,20 @@ function Change({
   current: number;
   previous: number | undefined;
   hasPrevious: boolean;
+  covered: boolean;
   higherIsBetter: boolean;
   against: string;
   inPounds?: boolean;
 }) {
   const money = useMoney();
 
+  if (!covered) {
+    return (
+      <p className="text-[13px] text-muted-foreground">
+        Your imported data doesn’t cover {against} yet
+      </p>
+    );
+  }
   if (previous === undefined) {
     return <p className="text-[13px] text-muted-foreground">Comparing…</p>;
   }

@@ -15,7 +15,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-import { formatMonthName } from './format';
+import { axisTicks, formatMonthName } from './format';
 import { useMoney } from './money';
 import { LegendItem, Panel, ValuesTable } from './Panel';
 import { isLastDayOfMonth, monthOf, paceRanges } from './periods';
@@ -64,6 +64,9 @@ export function SpendingPace({
     current: current.data[index]?.running_spent_pence,
     previous: previous.data[index]?.running_spent_pence,
   }));
+  const ticks = axisTicks(
+    Math.max(...rows.flatMap((row) => [row.current ?? 0, row.previous ?? 0])),
+  );
   const latest = current.data.at(-1)?.running_spent_pence ?? 0;
   const sameDay = Math.min(current.data.length, previous.data.length);
   const previousAtSameDay =
@@ -135,6 +138,8 @@ export function SpendingPace({
             width={56}
             tickLine={false}
             axisLine={false}
+            ticks={ticks}
+            domain={[0, ticks.at(-1) ?? 0]}
             tickFormatter={money.compact}
           />
           <ChartTooltip
@@ -161,7 +166,11 @@ export function SpendingPace({
             strokeWidth={2}
             fill="var(--color-current)"
             fillOpacity={0.1}
-            dot={false}
+            dot={
+              current.data.length === 1
+                ? { r: 3, fill: 'var(--color-current)' }
+                : false
+            }
             isAnimationActive={false}
           />
         </ComposedChart>

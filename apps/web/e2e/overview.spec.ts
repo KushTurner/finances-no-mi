@@ -56,7 +56,7 @@ test('shows this month up to the latest transaction and switches period in the U
   await attachScreenshot(page, testInfo, 'overview-last-month');
   await page.getByRole('button', { name: 'Last 12 months' }).click();
   await expect(panel(page, 'Totals')).toContainText(
-    'than the previous 12 months',
+    'Your imported data doesn’t cover the previous 12 months yet',
   );
   await attachScreenshot(page, testInfo, 'overview-last-12-months');
 });

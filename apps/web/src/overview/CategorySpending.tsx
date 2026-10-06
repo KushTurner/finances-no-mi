@@ -46,7 +46,7 @@ export function CategorySpending({
               cells: [
                 row.name,
                 money.pounds(row.spent),
-                `${share(row.spent, summary.spent_pence)}%`,
+                share(row.spent, summary.spent_pence),
               ],
             }))}
           />
@@ -90,7 +90,7 @@ export function CategorySpending({
               <span className="text-right whitespace-nowrap tabular-nums">
                 {money.wholePounds(row.spent)}
                 <small className="ml-1.5 inline-block min-w-[4ch] text-xs text-muted-foreground">
-                  {share(row.spent, summary.spent_pence)}%
+                  {share(row.spent, summary.spent_pence)}
                 </small>
               </span>
             </li>

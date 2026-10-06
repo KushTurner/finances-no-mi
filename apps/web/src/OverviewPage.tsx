@@ -138,6 +138,7 @@ export function OverviewPage({
             comparisonLabel={
               previousRange ? comparisonLabel(period, previousRange) : null
             }
+            comparisonStart={previousRange?.from ?? null}
             periodLabel={periodLabels[period]}
             accountIds={accountIds}
             loading={summary.isPlaceholderData}
@@ -160,6 +161,7 @@ function Overview({
   summary,
   previous,
   comparisonLabel,
+  comparisonStart,
   periodLabel,
   accountIds,
   loading,
@@ -168,6 +170,7 @@ function Overview({
   summary: Summary;
   previous: Summary | undefined;
   comparisonLabel: string | null;
+  comparisonStart: string | null;
   periodLabel: string;
   accountIds: number[];
   loading: boolean;
@@ -198,14 +201,23 @@ function Overview({
   }
 
   const shownRange = { from: summary.start, to: summary.end };
-  const latestTransaction = summary.accounts
-    .filter(
-      (account) => accountIds.length === 0 || accountIds.includes(account.id),
-    )
+  const selectedAccounts = summary.accounts.filter(
+    (account) => accountIds.length === 0 || accountIds.includes(account.id),
+  );
+  const latestTransaction = selectedAccounts
     .map((account) => account.latest_transaction_date)
     .filter((date) => date !== null)
     .sort()
     .at(-1);
+  const earliestTransaction = selectedAccounts
+    .map((account) => account.earliest_transaction_date)
+    .filter((date) => date !== null)
+    .sort()
+    .at(0);
+  const comparisonCovered =
+    comparisonStart !== null &&
+    earliestTransaction !== undefined &&
+    earliestTransaction <= comparisonStart;
 
   return (
     <div
@@ -236,7 +248,11 @@ function Overview({
             comparison={
               comparisonLabel === null
                 ? null
-                : { label: comparisonLabel, summary: previous }
+                : {
+                    label: comparisonLabel,
+                    summary: previous,
+                    covered: comparisonCovered,
+                  }
             }
           />
           <div className="grid gap-5 lg:grid-cols-2">

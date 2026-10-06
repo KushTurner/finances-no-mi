@@ -1,6 +1,13 @@
 import { expect, test } from 'vitest';
 
-import { MASK, formatRange, moneyFormat, percentChange } from './format';
+import {
+  MASK,
+  axisTicks,
+  formatRange,
+  moneyFormat,
+  percentChange,
+  share,
+} from './format';
 
 test('formats pence as pounds, whole pounds, and compact axis labels', () => {
   const money = moneyFormat(false);
@@ -44,4 +51,20 @@ test('a change from zero has no percentage', () => {
   const changes = [percentChange(110, 100), percentChange(50, 0)];
 
   expect(changes).toEqual([10, null]);
+});
+
+test('axis ticks step in round amounts up to the largest value', () => {
+  const ticks = [axisTicks(255000), axisTicks(134400), axisTicks(0)];
+
+  expect(ticks).toEqual([
+    [0, 100000, 200000, 300000],
+    [0, 50000, 100000, 150000],
+    [0, 25, 50, 75, 100],
+  ]);
+});
+
+test('a share too small to round to a percent still shows as present', () => {
+  const shares = [share(82, 25118), share(0, 25118), share(2500, 10000)];
+
+  expect(shares).toEqual(['<1%', '0%', '25%']);
 });

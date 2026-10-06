@@ -261,17 +261,16 @@ export function syntheticApi(accounts = syntheticAccounts) {
           from,
           end,
         );
-        const ownLatest = transactions
+        const ownDates = transactions
           .filter((t) => t.accountId === account.id)
-          .reduce<string | null>(
-            (max, t) => (max === null || t.date > max ? t.date : max),
-            null,
-          );
+          .map((t) => t.date)
+          .sort();
         return {
           id: account.id,
           name: account.name,
           spent_pence: own.reduce((sum, t) => sum + spentOf(t), 0),
-          latest_transaction_date: ownLatest,
+          earliest_transaction_date: ownDates.at(0) ?? null,
+          latest_transaction_date: ownDates.at(-1) ?? null,
         };
       }),
       largest_payments: inRange

@@ -28,6 +28,7 @@ const summary = {
       id: 1,
       name: 'NatWest',
       spent_pence: 125000,
+      earliest_transaction_date: '2026-01-05',
       latest_transaction_date: '2026-10-03',
     },
   ],

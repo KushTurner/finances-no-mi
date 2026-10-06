@@ -17,7 +17,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-import { formatMonthWithYear, formatShortMonth } from './format';
+import { axisTicks, formatMonthWithYear, formatShortMonth } from './format';
 import { useMoney } from './money';
 import { LegendItem, Panel, ValuesTable } from './Panel';
 import { chartMonths, monthOverlaps } from './periods';
@@ -93,12 +93,20 @@ export function MonthlySpending({
     spent: month.spent_pence,
     highlighted: monthOverlaps(month.month, range),
   }));
+  const ticks = axisTicks(
+    Math.max(summary.data.average_spent_pence, ...rows.map((row) => row.spent)),
+  );
 
   return (
     <Panel
       title={title}
       description={description}
       className={className}
+      legend={
+        hasAverage && (
+          <LegendItem color="var(--muted-foreground)" label="Average" />
+        )
+      }
       table={
         <ValuesTable
           caption="Spending per month"
@@ -141,6 +149,8 @@ export function MonthlySpending({
             width={56}
             tickLine={false}
             axisLine={false}
+            ticks={ticks}
+            domain={[0, ticks.at(-1) ?? 0]}
             tickFormatter={money.compact}
           />
           <ChartTooltip
@@ -157,13 +167,6 @@ export function MonthlySpending({
             <ReferenceLine
               y={summary.data.average_spent_pence}
               stroke="var(--muted-foreground)"
-              ifOverflow="extendDomain"
-              label={{
-                value: `Average ${money.wholePounds(summary.data.average_spent_pence)}`,
-                position: 'insideTopRight',
-                fill: 'var(--muted-foreground)',
-                fontSize: 11,
-              }}
             />
           )}
           <Bar
@@ -218,6 +221,9 @@ export function IncomeAndSpending({
     income: month.income_pence,
     spent: month.spent_pence,
   }));
+  const ticks = axisTicks(
+    Math.max(...rows.flatMap((row) => [row.income, row.spent])),
+  );
   const over = `over the last ${completeMonths} complete ${completeMonths === 1 ? 'month' : 'months'}`;
 
   return (
@@ -301,6 +307,8 @@ export function IncomeAndSpending({
             width={56}
             tickLine={false}
             axisLine={false}
+            ticks={ticks}
+            domain={[0, ticks.at(-1) ?? 0]}
             tickFormatter={money.compact}
           />
           <ChartTooltip

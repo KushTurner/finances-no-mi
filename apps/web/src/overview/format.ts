@@ -105,6 +105,21 @@ export function percentChange(current: number, previous: number) {
 }
 
 export function share(part: number, total: number) {
-  if (total <= 0) return 0;
-  return Math.round((part / total) * 100);
+  if (total <= 0) return '0%';
+  const percent = Math.round((part / total) * 100);
+  return percent === 0 && part > 0 ? '<1%' : `${percent}%`;
+}
+
+export function axisTicks(largestPence: number) {
+  const largest = Math.max(largestPence, 100);
+  const roughStep = largest / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const step =
+    [1, 2, 2.5, 5, 10]
+      .map((multiple) => multiple * magnitude)
+      .find((candidate) => candidate >= roughStep) ?? 10 * magnitude;
+  return Array.from(
+    { length: Math.ceil(largest / step) + 1 },
+    (_, index) => index * step,
+  );
 }

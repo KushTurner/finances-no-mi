@@ -135,6 +135,7 @@ export type Summary = {
     id: number;
     name: string;
     spent_pence: number;
+    earliest_transaction_date: string | null;
     latest_transaction_date: string | null;
   }[];
   largest_payments: {
