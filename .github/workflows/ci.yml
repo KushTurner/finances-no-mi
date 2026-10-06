@@ -46,7 +46,7 @@ jobs:
       - run: pnpm --filter web typecheck
       - run: pnpm --filter web test
       - run: pnpm --filter web build
-      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - run: pnpm --filter web exec playwright install --with-deps --only-shell chromium
       - run: pnpm --filter web test:e2e
       - uses: actions/upload-artifact@v7.0.1
         if: ${{ !cancelled() }}
