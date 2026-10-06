@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
   forbidOnly: Boolean(process.env.CI),
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
