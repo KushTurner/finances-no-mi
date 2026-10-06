@@ -1,10 +1,10 @@
 import { useRef, useState, type DragEvent } from 'react';
 
+import type { ImportResult, StatementError } from '@/api';
 import { PageHeading } from '@/components/PageHeading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-
-import { importStatement, type ImportResult, type StatementError } from './api';
+import { useImportStatementMutation } from '@/hooks';
 
 type StatementStatus =
   | { kind: 'waiting' }
@@ -22,6 +22,7 @@ export function ImportPage() {
   const [statements, setStatements] = useState<QueuedStatement[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const nextKey = useRef(0);
+  const importMutation = useImportStatementMutation();
   const pending = statements.filter(
     (statement) =>
       statement.status.kind === 'waiting' || statement.status.kind === 'failed',
@@ -55,7 +56,7 @@ export function ImportPage() {
     for (const statement of pending) {
       updateStatus(statement.key, { kind: 'importing' });
       try {
-        const result = await importStatement(statement.file);
+        const result = await importMutation.mutateAsync(statement.file);
         updateStatus(statement.key, { kind: 'imported', result });
       } catch (error) {
         updateStatus(statement.key, {
@@ -188,8 +189,9 @@ function ImportOutcome({ result }: { result: ImportResult }) {
     case 'completed':
       return (
         <p role="status" className="mt-2 text-sm text-positive">
-          Imported into {result.accountName}: {result.newTransactionCount} new
-          transactions, {result.existingTransactionCount} already imported.
+          Imported into {result.imported.account_name}:{' '}
+          {result.imported.new_transaction_count} new transactions,{' '}
+          {result.imported.existing_transaction_count} already imported.
         </p>
       );
     case 'rejected':

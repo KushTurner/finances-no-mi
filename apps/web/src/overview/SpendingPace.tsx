@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import {
   Area,
   CartesianGrid,
@@ -8,12 +7,12 @@ import {
   YAxis,
 } from 'recharts';
 
-import { getDailySpending } from '@/api';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { useDailySpendingQuery } from '@/hooks';
 
 import { axisTicks, formatMonthName } from './format';
 import { useMoney } from './money';
@@ -29,14 +28,8 @@ export function SpendingPace({
 }) {
   const money = useMoney();
   const ranges = paceRanges(end);
-  const current = useQuery({
-    queryKey: ['summary-days', ranges.current, accountIds],
-    queryFn: () => getDailySpending(ranges.current, accountIds),
-  });
-  const previous = useQuery({
-    queryKey: ['summary-days', ranges.previous, accountIds],
-    queryFn: () => getDailySpending(ranges.previous, accountIds),
-  });
+  const current = useDailySpendingQuery(ranges.current, accountIds);
+  const previous = useDailySpendingQuery(ranges.previous, accountIds);
   const monthName = formatMonthName(monthOf(end));
   const previousName = formatMonthName(monthOf(ranges.previous.from));
   const monthComplete = isLastDayOfMonth(end);
