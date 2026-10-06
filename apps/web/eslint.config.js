@@ -5,6 +5,11 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+const deepImports = {
+  group: ['@/api/*', '@/hooks/*'],
+  message: 'Import from the folder barrel instead.',
+};
+
 export default tseslint.config(
   { ignores: ['dist'] },
   {
@@ -35,10 +40,32 @@ export default tseslint.config(
           message: 'Call the API through a function in src/api.',
         },
       ],
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/api',
+              allowTypeImports: true,
+              message: 'Call the API through a hook in src/hooks.',
+            },
+          ],
+          patterns: [deepImports],
+        },
+      ],
     },
   },
   {
-    files: ['src/api.ts', 'src/api/**/*.ts'],
+    files: ['src/api/**/*.ts'],
     rules: { 'no-restricted-globals': 'off' },
+  },
+  {
+    files: ['src/hooks/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        { patterns: [deepImports] },
+      ],
+    },
   },
 );

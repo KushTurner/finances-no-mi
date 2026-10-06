@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { PageHeading } from '@/components/PageHeading';
@@ -22,8 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  useAssignCategoryMutation,
+  useCategoriesQuery,
+  useTransactionsQuery,
+} from '@/hooks';
 
-import { assignCategory, listCategories, listTransactions } from './api';
 import { formatDayWithYear } from './overview/format';
 
 const money = new Intl.NumberFormat('en-GB', {
@@ -39,35 +42,35 @@ export function TransactionsPage({
 }: {
   initialFilter?: string;
 }) {
-  const queryClient = useQueryClient();
   const [filter, setFilter] = useState(initialFilter);
   const [selected, setSelected] = useState<number[]>([]);
   const [choice, setChoice] = useState('');
   const [notice, setNotice] = useState('');
-  const categories = useQuery({
-    queryKey: ['categories'],
-    queryFn: listCategories,
-  });
-  const transactions = useQuery({
-    queryKey: ['transactions', filter],
-    queryFn: () => listTransactions(filter),
-  });
-  const assignment = useMutation({
-    mutationFn: () =>
-      assignCategory(selected, choice === 'clear' ? null : Number(choice)),
-    onSuccess: async (result) => {
-      setSelected([]);
-      setNotice(
-        `Updated ${result.updated_count} ${result.updated_count === 1 ? 'transaction' : 'transactions'}.`,
-      );
-      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    },
-  });
+  const categories = useCategoriesQuery();
+  const transactions = useTransactionsQuery(filter);
+  const assignment = useAssignCategoryMutation();
   const chosenCategory = categories.data?.find(
     (category) => String(category.id) === choice,
   );
   const loadError = categories.error ?? transactions.error;
   const ready = categories.isSuccess && transactions.isSuccess;
+
+  function assignSelected() {
+    assignment.mutate(
+      {
+        transaction_ids: selected,
+        category_id: choice === 'clear' ? null : Number(choice),
+      },
+      {
+        onSuccess: (result) => {
+          setSelected([]);
+          setNotice(
+            `Updated ${result.updated_count} ${result.updated_count === 1 ? 'transaction' : 'transactions'}.`,
+          );
+        },
+      },
+    );
+  }
 
   function toggleSelection(id: number) {
     setSelected((current) =>
@@ -197,7 +200,7 @@ export function TransactionsPage({
                         choice === '' ||
                         assignment.isPending
                       }
-                      onClick={() => assignment.mutate()}
+                      onClick={assignSelected}
                     >
                       {assignment.isPending ? 'Saving…' : 'Apply to selected'}
                     </Button>

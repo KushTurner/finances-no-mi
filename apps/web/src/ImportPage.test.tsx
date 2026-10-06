@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 
@@ -30,6 +31,14 @@ function completedImport(accountName: string) {
     );
 }
 
+function renderPage() {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <ImportPage />
+    </QueryClientProvider>,
+  );
+}
+
 function dropStatements(...names: string[]) {
   const files = names.map((name) => new File(['Date\n'], name));
   fireEvent.drop(screen.getByLabelText(/Drop statement CSVs/), {
@@ -46,7 +55,7 @@ test('imports each dropped statement into the account for its bank', async () =>
     'natwest.csv': completedImport('NatWest'),
     'amex.csv': completedImport('Amex'),
   });
-  render(<ImportPage />);
+  renderPage();
   dropStatements('natwest.csv', 'amex.csv');
 
   fireEvent.click(screen.getByRole('button', { name: 'Import 2 statements' }));
@@ -62,7 +71,7 @@ test('imports each dropped statement into the account for its bank', async () =>
 });
 
 test('removes a statement added by mistake before importing', () => {
-  render(<ImportPage />);
+  renderPage();
   dropStatements('natwest.csv', 'notes.csv');
 
   fireEvent.click(screen.getByRole('button', { name: 'Remove notes.csv' }));
@@ -81,7 +90,7 @@ test('shows why a statement was rejected', async () => {
         { status: 409 },
       ),
   });
-  render(<ImportPage />);
+  renderPage();
   dropStatements('natwest.csv');
 
   fireEvent.click(screen.getByRole('button', { name: 'Import 1 statement' }));
@@ -104,7 +113,7 @@ test('lists validation errors with their row numbers', async () => {
         { status: 400 },
       ),
   });
-  render(<ImportPage />);
+  renderPage();
   dropStatements('natwest.csv');
 
   fireEvent.click(screen.getByRole('button', { name: 'Import 1 statement' }));
@@ -122,7 +131,7 @@ test('retries a statement whose import failed', async () => {
     completedImport('NatWest'),
   ];
   stubImports({ 'natwest.csv': () => responses.shift()!() });
-  render(<ImportPage />);
+  renderPage();
   dropStatements('natwest.csv');
   fireEvent.click(screen.getByRole('button', { name: 'Import 1 statement' }));
   expect(

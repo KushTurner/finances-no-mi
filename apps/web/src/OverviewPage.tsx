@@ -1,13 +1,12 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { getSummary } from '@/api';
 import type { DateRange, Summary } from '@/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useSummaryQuery } from '@/hooks';
 
 import { AccountCards } from './overview/AccountCards';
 import { CategorySpending } from './overview/CategorySpending';
@@ -50,16 +49,8 @@ export function OverviewPage({
   const money = useMemo(() => moneyFormat(amountsHidden), [amountsHidden]);
   const range = periodRange(period, today);
   const previousRange = comparisonRange(period, range);
-  const summary = useQuery({
-    queryKey: ['summary', range, accountIds],
-    queryFn: () => getSummary(range, accountIds),
-    placeholderData: keepPreviousData,
-  });
-  const previous = useQuery({
-    queryKey: ['summary', previousRange, accountIds],
-    queryFn: () => getSummary(previousRange as DateRange, accountIds),
-    enabled: previousRange !== null,
-  });
+  const summary = useSummaryQuery(range, accountIds, { keepPrevious: true });
+  const previous = useSummaryQuery(previousRange, accountIds);
 
   return (
     <MoneyContext value={money}>

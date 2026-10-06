@@ -5,10 +5,14 @@ import { syntheticAccounts, syntheticApi } from './overview-data';
 
 test.use({ deviceScaleFactor: 2 });
 
+function isSummaryRequest(url: URL) {
+  return url.pathname.startsWith('/api/summary');
+}
+
 async function mockOverview(page: Page, api = syntheticApi()) {
   const requests: URL[] = [];
   await page.clock.setFixedTime(new Date('2026-10-06T12:00:00'));
-  await page.route('**/api/summary**', (route) => {
+  await page.route(isSummaryRequest, (route) => {
     const url = new URL(route.request().url());
     requests.push(url);
     const from = url.searchParams.get('from') ?? '';
@@ -206,7 +210,7 @@ test('recovers from a failed load with an explicit retry', async ({
   await page.clock.setFixedTime(new Date('2026-10-06T12:00:00'));
   let failing = true;
   const api = syntheticApi();
-  await page.route('**/api/summary**', (route) => {
+  await page.route(isSummaryRequest, (route) => {
     const url = new URL(route.request().url());
     if (failing) return route.fulfill({ status: 500, body: '' });
     const ids = url.searchParams.getAll('account_id').map(Number);

@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import {
   Bar,
   BarChart,
@@ -9,13 +8,13 @@ import {
   YAxis,
 } from 'recharts';
 
-import { getMonthlySummary } from '@/api';
 import type { DateRange, MonthlySummary } from '@/api';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { useMonthlySummaryQuery } from '@/hooks';
 
 import { axisTicks, formatMonthWithYear, formatShortMonth } from './format';
 import { useMoney } from './money';
@@ -23,14 +22,6 @@ import { LegendItem, Panel, ValuesTable } from './Panel';
 import { chartMonths, monthOverlaps } from './periods';
 
 type Month = MonthlySummary['months'][number];
-
-function useMonthlySummary(end: string, accountIds: number[]) {
-  const months = chartMonths(end);
-  return useQuery({
-    queryKey: ['summary-months', months, accountIds],
-    queryFn: () => getMonthlySummary(months, accountIds),
-  });
-}
 
 function monthTitle(month: Month) {
   return `${formatMonthWithYear(month.month)}${month.complete ? '' : ' (incomplete)'}`;
@@ -72,7 +63,7 @@ export function MonthlySpending({
   className?: string;
 }) {
   const money = useMoney();
-  const summary = useMonthlySummary(range.to, accountIds);
+  const summary = useMonthlySummaryQuery(chartMonths(range.to), accountIds);
   const title = 'Monthly spending';
   const description = 'Last 12 months. The selected period is highlighted.';
 
@@ -197,7 +188,7 @@ export function IncomeAndSpending({
   accountIds: number[];
 }) {
   const money = useMoney();
-  const summary = useMonthlySummary(end, accountIds);
+  const summary = useMonthlySummaryQuery(chartMonths(end), accountIds);
   const title = 'Income and spending';
   const description = 'Last 12 months';
 
