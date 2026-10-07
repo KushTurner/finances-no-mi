@@ -65,6 +65,11 @@ per selected example, runs one at a time, and disables automatic retries. Start
 with five examples to check credentials and structured output, then omit
 `--limit` to evaluate the entire starter dataset.
 
+If an Anthropic key covers multiple workspaces, set `ANTHROPIC_WORKSPACE_ID` in
+the local `.env` file. Find it under **Settings → Workspaces** in the Claude
+Console. A workspace-scoped key does not need this setting. See
+[Anthropic authentication](https://platform.claude.com/docs/en/manage-claude/authentication).
+
 The command prints an experiment link. In **Datasets & Experiments**, inspect
 predictions alongside reference outputs and select experiments to compare
 models. Each experiment records its model, prompt version, category-definition
@@ -84,6 +89,52 @@ examples out of prompts and any historical-example retrieval. The current runner
 uses one transaction only; reviewed-history retrieval still needs implementation.
 A future comparison must use the same fixed reviewed history and test transactions
 for both variants, with only the history input changing.
+
+## Run a local benchmark
+
+Keep real benchmark files and results under the Git-ignored `.data/evals/`
+directory. The local runner accepts a JSON array with this shape:
+
+```json
+[
+  {
+    "case_id": "example-001",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC CAFE RESTAURANT MEAL",
+      "institution": "amex",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {"category": "Food"}
+  }
+]
+```
+
+Reference labels are never model input. Review worksheets with descriptions,
+dates, amounts and notes must first be converted into this limited format; do
+not send worksheet rows directly. The local runner validates every example
+before constructing the model, including rows outside `--limit`.
+
+From `apps/api`, run a prepared local benchmark:
+
+```bash
+uv run --env-file .env --with langchain-openai python -m finances_api.evals run-local \
+  --model 'openai:MODEL_NAME' \
+  --data ../../.data/evals/benchmark.json \
+  --output ../../.data/evals/results.json \
+  --model-settings '{"max_tokens":256}' --limit 5
+```
+
+`--model-settings` supplies provider-specific configuration, such as output
+limits or reasoning settings. Choose settings supported by the selected model.
+The runner always uses a 30-second timeout and disables automatic retries.
+
+`run-local` does not require a LangSmith key and disables LangSmith tracing even
+when `.env` enables it. Only permitted inputs go to the model provider. Console
+output contains aggregate metrics; the local report contains case IDs, reference
+categories, predictions, token usage and latency, without descriptions or other
+input fields. Keep the report private too. Use the hosted `run` command when you
+want a reviewed, sanitized dataset and its experiment traces stored in LangSmith.
 
 ## Review and label examples
 

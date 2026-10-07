@@ -1,5 +1,6 @@
 import json
-from typing import Any, Literal, Self
+import os
+from typing import Any, Literal, Self, cast
 
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
@@ -104,6 +105,14 @@ class Categorizer:
         ).model_dump()
 
 
-def create_categorizer(model_name: str) -> Categorizer:
-    model = init_chat_model(model_name, timeout=30, max_retries=0)
-    return Categorizer(model)
+def create_categorizer(model_name: str, **model_settings: Any) -> Categorizer:
+    if model_name.startswith("anthropic:") and (
+        workspace := os.environ.get("ANTHROPIC_WORKSPACE_ID")
+    ):
+        headers = {**model_settings.get("default_headers", {}), "anthropic-workspace-id": workspace}
+        model_settings["default_headers"] = headers
+    return Categorizer(
+        cast(
+            BaseChatModel, init_chat_model(model_name, timeout=30, max_retries=0, **model_settings)
+        )
+    )
