@@ -17,6 +17,7 @@ function summary(overrides: Partial<Summary>): Summary {
     transaction_count: 3,
     spent_pence: 0,
     income_pence: 0,
+    savings_pence: 0,
     net_pence: 0,
     uncategorized: {
       outgoing_count: 0,
@@ -59,8 +60,8 @@ test('uncategorized spending comes last and bars scale to the largest category',
   const rows = categorySpendingRows(
     summary({
       categories: [
-        { id: 1, name: 'Groceries', spent_pence: 20000 },
-        { id: 2, name: 'Travel', spent_pence: 5000 },
+        { id: 1, name: 'Food', spent_pence: 20000 },
+        { id: 2, name: 'Other', spent_pence: 5000 },
       ],
       uncategorized: {
         outgoing_count: 1,
@@ -72,8 +73,8 @@ test('uncategorized spending comes last and bars scale to the largest category',
   );
 
   expect(rows.map((row) => [row.name, row.barPercent, row.muted])).toEqual([
-    ['Groceries', 100, false],
-    ['Travel', 25, false],
+    ['Food', 100, false],
+    ['Other', 25, false],
     [uncategorizedLabel, 50, true],
   ]);
 });

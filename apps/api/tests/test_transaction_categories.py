@@ -30,20 +30,19 @@ def category_id(client: TestClient, name: str) -> int:
     )
 
 
-def test_lists_the_ten_defined_categories(client: TestClient) -> None:
+def test_lists_the_nine_defined_categories(client: TestClient) -> None:
     response = client.get("/categories")
 
     assert [category["name"] for category in response.json()] == [
-        "Home & bills",
-        "Groceries",
-        "Eating out",
+        "Bills",
+        "Food",
+        "Subscriptions",
         "Transport",
-        "Travel",
-        "Shopping & leisure",
-        "Health & personal care",
+        "Shopping",
+        "Savings & investments",
         "Other",
         "Income",
-        "Own-account transfers",
+        "Transfers",
     ]
     assert all(category["definition"] for category in response.json())
 
@@ -69,7 +68,7 @@ def test_assigns_changes_and_clears_a_human_decision(
     client: TestClient, session: Session, imported: list[int]
 ) -> None:
     selected_id = imported[0]
-    for category in [category_id(client, "Other"), category_id(client, "Travel"), None]:
+    for category in [category_id(client, "Other"), category_id(client, "Other"), None]:
         response = client.patch(
             "/transactions/category",
             json={"transaction_ids": [selected_id], "category_id": category},
@@ -89,7 +88,7 @@ def test_assigns_changes_and_clears_a_human_decision(
 def test_bulk_assignment_changes_only_selected_transactions(
     client: TestClient, imported: list[int]
 ) -> None:
-    eating_out = category_id(client, "Eating out")
+    eating_out = category_id(client, "Food")
 
     response = client.patch(
         "/transactions/category", json={"transaction_ids": imported[-2:], "category_id": eating_out}
@@ -110,7 +109,7 @@ def test_bulk_assignment_changes_only_selected_transactions(
 def test_same_merchant_key_can_have_different_categories(
     client: TestClient, imported: list[int]
 ) -> None:
-    category = category_id(client, "Travel")
+    category = category_id(client, "Other")
 
     client.patch(
         "/transactions/category", json={"transaction_ids": [imported[-1]], "category_id": category}
@@ -153,7 +152,7 @@ def test_unknown_category_changes_nothing(client: TestClient, imported: list[int
 def test_uncategorized_filter_includes_cleared_transactions(
     client: TestClient, imported: list[int]
 ) -> None:
-    category = category_id(client, "Own-account transfers")
+    category = category_id(client, "Transfers")
     client.patch(
         "/transactions/category", json={"transaction_ids": imported[:2], "category_id": category}
     )
@@ -173,7 +172,7 @@ def test_categorization_preserves_source_evidence_and_overlapping_import_identit
 ) -> None:
     original = natwest_csv(natwest_row())
     upload(client, original)
-    category = category_id(client, "Eating out")
+    category = category_id(client, "Food")
 
     client.patch("/transactions/category", json={"transaction_ids": [1], "category_id": category})
     response = upload(client, natwest_csv(natwest_row(), natwest_row(date="04 Sep 2026")))
@@ -195,10 +194,11 @@ def test_categorization_preserves_source_evidence_and_overlapping_import_identit
     assert len(session.scalars(select(ImportFileTransaction)).all()) == 3
 
 
+@pytest.mark.parametrize("definition", ["", "A synthetic custom category definition"])
 def test_unseeded_legacy_category_is_not_an_allowed_choice(
-    client: TestClient, session: Session, imported: list[int]
+    client: TestClient, session: Session, imported: list[int], definition: str
 ) -> None:
-    legacy = Category(name="Legacy category")
+    legacy = Category(name="Legacy category", definition=definition)
     session.add(legacy)
     session.commit()
 
@@ -207,4 +207,4 @@ def test_unseeded_legacy_category_is_not_an_allowed_choice(
     )
 
     assert response.status_code == 400
-    assert len(client.get("/categories").json()) == 10
+    assert len(client.get("/categories").json()) == 9

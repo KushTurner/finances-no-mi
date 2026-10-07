@@ -8,8 +8,7 @@
       "transaction_type": "D/D"
     },
     "outputs": {
-      "category": "Home & bills",
-      "context_sufficient": true
+      "category": "Bills"
     }
   },
   {
@@ -21,21 +20,19 @@
       "transaction_type": "Direct debit"
     },
     "outputs": {
-      "category": "Home & bills",
-      "context_sufficient": true
+      "category": "Bills"
     }
   },
   {
     "case_id": "groceries",
     "inputs": {
-      "sanitized_description": "SYNTHETIC MARKET FOOD AND HOUSEHOLD GROCERIES",
+      "sanitized_description": "SYNTHETIC MARKET GROCERIES",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
     },
     "outputs": {
-      "category": "Groceries",
-      "context_sufficient": true
+      "category": "Food"
     }
   },
   {
@@ -47,8 +44,7 @@
       "transaction_type": "POS"
     },
     "outputs": {
-      "category": "Groceries",
-      "context_sufficient": true
+      "category": "Food"
     }
   },
   {
@@ -60,8 +56,7 @@
       "transaction_type": null
     },
     "outputs": {
-      "category": "Eating out",
-      "context_sufficient": true
+      "category": "Food"
     }
   },
   {
@@ -73,8 +68,7 @@
       "transaction_type": "FPI"
     },
     "outputs": {
-      "category": "Eating out",
-      "context_sufficient": true
+      "category": "Food"
     }
   },
   {
@@ -86,8 +80,7 @@
       "transaction_type": "Visa purchase"
     },
     "outputs": {
-      "category": "Transport",
-      "context_sufficient": true
+      "category": "Transport"
     }
   },
   {
@@ -99,8 +92,7 @@
       "transaction_type": null
     },
     "outputs": {
-      "category": "Transport",
-      "context_sufficient": true
+      "category": "Transport"
     }
   },
   {
@@ -112,8 +104,7 @@
       "transaction_type": null
     },
     "outputs": {
-      "category": "Travel",
-      "context_sufficient": true
+      "category": "Other"
     }
   },
   {
@@ -125,8 +116,7 @@
       "transaction_type": "Bank credit"
     },
     "outputs": {
-      "category": "Travel",
-      "context_sufficient": true
+      "category": "Other"
     }
   },
   {
@@ -138,8 +128,7 @@
       "transaction_type": null
     },
     "outputs": {
-      "category": "Shopping & leisure",
-      "context_sufficient": true
+      "category": "Shopping"
     }
   },
   {
@@ -151,8 +140,7 @@
       "transaction_type": "D/D"
     },
     "outputs": {
-      "category": "Shopping & leisure",
-      "context_sufficient": true
+      "category": "Subscriptions"
     }
   },
   {
@@ -164,8 +152,7 @@
       "transaction_type": null
     },
     "outputs": {
-      "category": "Health & personal care",
-      "context_sufficient": true
+      "category": "Other"
     }
   },
   {
@@ -177,8 +164,7 @@
       "transaction_type": "Direct debit"
     },
     "outputs": {
-      "category": "Health & personal care",
-      "context_sufficient": true
+      "category": "Subscriptions"
     }
   },
   {
@@ -190,8 +176,7 @@
       "transaction_type": "FPO"
     },
     "outputs": {
-      "category": "Other",
-      "context_sufficient": true
+      "category": "Other"
     }
   },
   {
@@ -203,8 +188,7 @@
       "transaction_type": "Charge"
     },
     "outputs": {
-      "category": "Other",
-      "context_sufficient": true
+      "category": "Other"
     }
   },
   {
@@ -216,8 +200,7 @@
       "transaction_type": "BAC"
     },
     "outputs": {
-      "category": "Income",
-      "context_sufficient": true
+      "category": "Income"
     }
   },
   {
@@ -229,8 +212,7 @@
       "transaction_type": "Bank credit"
     },
     "outputs": {
-      "category": "Income",
-      "context_sufficient": true
+      "category": "Income"
     }
   },
   {
@@ -242,8 +224,7 @@
       "transaction_type": "TFR"
     },
     "outputs": {
-      "category": "Own-account transfers",
-      "context_sufficient": true
+      "category": "Savings & investments"
     }
   },
   {
@@ -255,12 +236,11 @@
       "transaction_type": null
     },
     "outputs": {
-      "category": "Own-account transfers",
-      "context_sufficient": true
+      "category": "Transfers"
     }
   },
   {
-    "case_id": "thanks-known-trip",
+    "case_id": "vague-trip-repayment",
     "inputs": {
       "sanitized_description": "PERSON THANKS",
       "institution": "natwest",
@@ -268,8 +248,7 @@
       "transaction_type": "FPI"
     },
     "outputs": {
-      "category": "Travel",
-      "context_sufficient": false
+      "category": "Other"
     }
   },
   {
@@ -281,8 +260,7 @@
       "transaction_type": "Transfer"
     },
     "outputs": {
-      "category": null,
-      "context_sufficient": false
+      "category": "Subscriptions"
     }
   },
   {
@@ -294,8 +272,7 @@
       "transaction_type": null
     },
     "outputs": {
-      "category": null,
-      "context_sufficient": false
+      "category": "Shopping"
     }
   },
   {
@@ -307,8 +284,103 @@
       "transaction_type": "D/D"
     },
     "outputs": {
-      "category": null,
-      "context_sufficient": false
+      "category": "Bills"
+    }
+  },
+  {
+    "case_id": "car-finance",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC MOTOR FINANCE REPAYMENT",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Bills"
+    }
+  },
+  {
+    "case_id": "family-loan",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC FAMILY LOAN REPAYMENT",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Bills"
+    }
+  },
+  {
+    "case_id": "alcoholic-drinks",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC TAVERN ALCOHOLIC DRINKS",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Food"
+    }
+  },
+  {
+    "case_id": "drinks-refund",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC TAVERN DRINKS REFUND",
+      "institution": "natwest",
+      "direction": "incoming",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Food"
+    }
+  },
+  {
+    "case_id": "investment-contribution",
+    "inputs": {
+      "sanitized_description": "TRANSFER TO MY OWN INVESTMENT ACCOUNT",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Savings & investments"
+    }
+  },
+  {
+    "case_id": "investment-withdrawal",
+    "inputs": {
+      "sanitized_description": "WITHDRAWAL FROM MY OWN INVESTMENT ACCOUNT",
+      "institution": "natwest",
+      "direction": "incoming",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Savings & investments"
+    }
+  },
+  {
+    "case_id": "retail-refund",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC ELECTRONICS SHOP PURCHASE REFUND",
+      "institution": "natwest",
+      "direction": "incoming",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Shopping"
+    }
+  },
+  {
+    "case_id": "own-current-transfer",
+    "inputs": {
+      "sanitized_description": "TRANSFER TO MY OWN CURRENT ACCOUNT",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Transfers"
     }
   }
 ]

@@ -53,7 +53,7 @@ def model() -> MagicMock:
     return create_autospec(BaseChatModel, instance=True)
 
 
-@pytest.mark.parametrize(("category", "status"), [("Eating out", "suggested"), (None, "abstained")])
+@pytest.mark.parametrize(("category", "status"), [("Food", "suggested"), (None, "abstained")])
 def test_returns_validated_suggestion_and_usage(
     model: MagicMock, category: str | None, status: str
 ) -> None:
@@ -81,10 +81,10 @@ def test_returns_validated_suggestion_and_usage(
     "response",
     [
         {"parsed": {"category": "Invented category"}},
-        {"parsed": {"category": "Eating out", "confidence": 1}},
+        {"parsed": {"category": "Food", "confidence": 1}},
         {"parsed": {}},
         {"parsed": None},
-        {"parsed": {"category": "Eating out"}, "parsing_error": ValueError("synthetic error")},
+        {"parsed": {"category": "Food"}, "parsing_error": ValueError("synthetic error")},
         "invalid response",
     ],
 )
@@ -113,7 +113,17 @@ def test_provider_failure_does_not_expose_its_message(
 
 
 @pytest.mark.parametrize(
-    "field", ["raw_description", "account_id", "amount_pence", "source_reference", "category"]
+    "field",
+    [
+        "raw_description",
+        "account_id",
+        "amount_pence",
+        "source_reference",
+        "category",
+        "user_context",
+        "context_sufficient",
+        "reference_outputs",
+    ],
 )
 def test_prohibited_context_is_rejected_before_a_model_call(model: MagicMock, field: str) -> None:
     target = Categorizer(model)
@@ -132,21 +142,22 @@ def test_model_receives_only_context_and_category_definitions(model: MagicMock) 
 
     messages = model.with_structured_output.return_value.invoke.call_args.args[0]
     assert json.loads(messages[1].content) == CONTEXT
-    assert "Groceries" in messages[0].content
+    assert "Food" in messages[0].content
 
 
 @pytest.mark.parametrize(
     ("prediction", "expected"),
     [
-        (Prediction(category=None, status="abstained"), True),
-        (Prediction(category="Travel", status="suggested"), False),
+        (Prediction(category=None, status="abstained"), False),
+        (Prediction(category="Subscriptions", status="suggested"), True),
+        (Prediction(category="Other", status="suggested"), False),
         (Prediction(category=None, status="failed", error="provider_error"), False),
     ],
 )
-def test_unknown_purpose_rewards_abstention_even_when_the_true_category_is_known(
+def test_scores_the_actual_category_even_when_the_description_is_ambiguous(
     prediction: Prediction, expected: bool
 ) -> None:
-    reference = ReferenceDecision(category="Travel", context_sufficient=False)
+    reference = ReferenceDecision(category="Subscriptions")
 
     result = correctness(prediction.model_dump(), reference.model_dump())
 
@@ -167,18 +178,15 @@ def test_always_abstaining_has_zero_coverage_and_misses_answerable_cases() -> No
 
     scores = {metric.key: metric.score for metric in result.get("results", [])}
     assert scores["suggestion_coverage"] == 0
-    assert scores["correctness"] == 4 / 24
+    assert scores["correctness"] == 0
     assert "suggestion_accuracy" not in scores
 
 
 def test_summary_distinguishes_failure_and_counts_wrong_suggestions() -> None:
-    examples = [
-        Example(id=uuid4(), outputs={"category": "Eating out", "context_sufficient": True})
-        for _ in range(4)
-    ]
+    examples = [Example(id=uuid4(), outputs={"category": "Food"}) for _ in range(4)]
     predictions = [
-        Prediction(category="Eating out", status="suggested", input_tokens=100, output_tokens=10),
-        Prediction(category="Travel", status="suggested"),
+        Prediction(category="Food", status="suggested", input_tokens=100, output_tokens=10),
+        Prediction(category="Other", status="suggested"),
         Prediction(category=None, status="abstained"),
         Prediction(category=None, status="failed", error="invalid_response"),
     ]
@@ -219,9 +227,7 @@ def test_starter_definitions_match_the_app_and_cover_every_category(session: Ses
     cases = starter_examples()
 
     assert CATEGORY_DEFINITIONS == app_definitions
-    assert {case.outputs.category for case in cases if case.outputs.context_sufficient} == set(
-        CATEGORY_DEFINITIONS
-    )
+    assert {case.outputs.category for case in cases} == set(CATEGORY_DEFINITIONS)
 
 
 def test_seed_preserves_existing_labels_and_fills_only_missing_examples() -> None:
@@ -231,7 +237,7 @@ def test_seed_preserves_existing_labels_and_fills_only_missing_examples() -> Non
     cases = starter_examples()
     existing = Example(
         id=uuid5(dataset.id, cases[0].case_id),
-        outputs={"category": "Other", "context_sufficient": True},
+        outputs={"category": "Other"},
     )
     client.list_examples.return_value = iter([existing])
 
@@ -239,17 +245,15 @@ def test_seed_preserves_existing_labels_and_fills_only_missing_examples() -> Non
 
     uploaded = client.create_examples.call_args.kwargs["examples"]
     assert existing.id not in {example.id for example in uploaded}
-    assert len(uploaded) == 23
+    assert len(uploaded) == len(cases) - 1
 
 
 def test_sdk_runs_the_target_and_scorer_without_uploads(model: MagicMock) -> None:
     def respond(inputs: object) -> dict[str, Any]:
-        return {"parsed": {"category": "Eating out"}}
+        return {"parsed": {"category": "Food"}}
 
     model.with_structured_output.return_value = RunnableLambda(respond)
-    example = Example(
-        id=uuid4(), inputs=CONTEXT, outputs={"category": "Eating out", "context_sufficient": True}
-    )
+    example = Example(id=uuid4(), inputs=CONTEXT, outputs={"category": "Food"})
     client = Client(api_key="synthetic-test-key", auto_batch_tracing=False)
 
     results = client.evaluate(  # pyright: ignore[reportUnknownMemberType]
@@ -264,7 +268,7 @@ def test_sdk_runs_the_target_and_scorer_without_uploads(model: MagicMock) -> Non
     row = list(results)[0]
     assert row["evaluation_results"].get("results", [])[0].score == 1
     outputs = cast(dict[str, Any], row["run"].outputs)  # pyright: ignore[reportUnknownMemberType]
-    assert outputs["category"] == "Eating out"
+    assert outputs["category"] == "Food"
 
 
 @pytest.mark.parametrize("examples", [[], [Example(id=uuid4(), inputs=CONTEXT, outputs={})]])
@@ -283,3 +287,16 @@ def test_missing_key_gives_setup_instructions_without_connecting(
 
     assert error.value.code == 2
     assert "Set LANGSMITH_API_KEY" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "outputs",
+    [
+        {"category": None},
+        {"category": "Food", "context_sufficient": False},
+        {"category": "Food", "user_context": "Synthetic explanation"},
+    ],
+)
+def test_reference_requires_only_a_known_category(outputs: dict[str, Any]) -> None:
+    with pytest.raises(ValidationError):
+        ReferenceDecision.model_validate(outputs)

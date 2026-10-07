@@ -17,7 +17,7 @@ export function LargestPayments({ payments }: LargestPaymentsProps) {
   return (
     <Panel
       title="Largest payments"
-      description={`${periodLabel} · excluding transfers between your accounts`}
+      description={`${periodLabel} · excluding transfers, savings and investments`}
     >
       {payments.length === 0 ? (
         <p className="text-sm text-muted-foreground">

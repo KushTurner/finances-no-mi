@@ -5,6 +5,7 @@ from typing import Literal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from finances_api.categories import CATEGORY_DEFINITIONS
 from finances_api.models import Account, Category, Transaction
 
 
@@ -60,7 +61,11 @@ def assign_category(
             return InvalidDecision("Select each transaction once")
         if category_id is not None:
             category = session.get(Category, category_id)
-            if category is None or not category.definition:
+            if (
+                category is None
+                or category.name not in CATEGORY_DEFINITIONS
+                or not category.definition
+            ):
                 return InvalidDecision("Unknown category")
         transactions = session.scalars(
             select(Transaction).where(Transaction.id.in_(transaction_ids))

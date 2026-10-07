@@ -4,8 +4,8 @@ import os
 from langsmith import Client
 from pydantic import ValidationError
 
+from finances_api.categories import CATEGORY_DEFINITIONS_VERSION
 from finances_api.evals.categorization import (
-    CATEGORY_DEFINITIONS_VERSION,
     PROMPT_VERSION,
     create_categorizer,
 )

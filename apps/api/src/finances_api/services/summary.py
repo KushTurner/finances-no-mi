@@ -7,10 +7,11 @@ from datetime import date, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from finances_api.categories import NON_SPENDING_CATEGORIES
 from finances_api.models import Account, Category, Transaction
 
 INCOME = "Income"
-OWN_ACCOUNT_TRANSFERS = "Own-account transfers"
+SAVINGS = "Savings & investments"
 LARGEST_PAYMENT_LIMIT = 8
 
 
@@ -59,6 +60,7 @@ class Summary:
     transaction_count: int
     spent_pence: int
     income_pence: int
+    savings_pence: int
     net_pence: int
     uncategorized: UncategorizedTotals
     categories: list[CategorySpending]
@@ -101,7 +103,7 @@ class _Row:
 
 
 def spent_pence(amount_pence: int, category_name: str | None) -> int:
-    if category_name in (INCOME, OWN_ACCOUNT_TRANSFERS):
+    if category_name in NON_SPENDING_CATEGORIES:
         return 0
     if category_name is None:
         return -amount_pence if amount_pence < 0 else 0
@@ -133,6 +135,7 @@ def summarize(
         transaction_count=len(rows),
         spent_pence=spent,
         income_pence=income,
+        savings_pence=-sum(row.amount_pence for row in rows if row.category_name == SAVINGS),
         net_pence=income - spent,
         uncategorized=_uncategorized(rows),
         categories=_categories(rows),
@@ -261,7 +264,7 @@ def _categories(rows: list[_Row]) -> list[CategorySpending]:
     for row in rows:
         if row.category_id is None or row.category_name is None:
             continue
-        if row.category_name in (INCOME, OWN_ACCOUNT_TRANSFERS):
+        if row.category_name in NON_SPENDING_CATEGORIES:
             continue
         spent[(row.category_id, row.category_name)] += spent_pence(
             row.amount_pence, row.category_name
@@ -305,7 +308,7 @@ def _largest_payments(rows: list[_Row]) -> list[Payment]:
     payments = [
         row
         for row in rows
-        if row.amount_pence < 0 and row.category_name not in (INCOME, OWN_ACCOUNT_TRANSFERS)
+        if row.amount_pence < 0 and row.category_name not in NON_SPENDING_CATEGORIES
     ]
     payments.sort(key=lambda row: (row.amount_pence, -row.date.toordinal(), -row.id))
     return [

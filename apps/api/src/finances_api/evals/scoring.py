@@ -10,7 +10,7 @@ from finances_api.evals.categorization import Prediction, ReferenceDecision
 def correct_prediction(outputs: dict[str, Any], reference_outputs: dict[str, Any]) -> bool:
     prediction = Prediction.model_validate(outputs)
     reference = ReferenceDecision.model_validate(reference_outputs)
-    return prediction.status != "failed" and prediction.category == reference.expected_category
+    return prediction.status == "suggested" and prediction.category == reference.category
 
 
 def correctness(outputs: dict[str, Any], reference_outputs: dict[str, Any]) -> EvaluationResult:

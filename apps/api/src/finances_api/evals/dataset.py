@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from finances_api.evals.categorization import ReferenceDecision, TransactionContext
 
-STARTER_DATASET_NAME = "finances-no-mi-synthetic-v1"
+STARTER_DATASET_NAME = "finances-no-mi-synthetic-v2"
 
 
 class StarterExample(BaseModel):
@@ -20,7 +20,7 @@ class StarterExample(BaseModel):
 
 
 def starter_examples() -> list[StarterExample]:
-    content = Path(__file__).with_name("synthetic-v1.json").read_bytes()
+    content = Path(__file__).with_name("synthetic-v2.json").read_bytes()
     return TypeAdapter(list[StarterExample]).validate_json(content)
 
 

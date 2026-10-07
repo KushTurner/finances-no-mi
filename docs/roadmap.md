@@ -37,7 +37,7 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ### Browse and categorize transactions manually
 
-- Seeded the ten categories and definitions in [Transaction categorization](features/transaction-categorization.md).
+- Seeded the nine categories and definitions in [Transaction categorization](features/transaction-categorization.md), with a migration that preserves direct renames and reopens ambiguous legacy assignments for review.
 - Added transaction-level category assignments and human decision metadata through Alembic.
 - List transactions with account, date, signed amount, raw description, transaction type, and assigned category.
 - Filter by category, including uncategorized transactions.
@@ -56,7 +56,7 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 - Replaced the placeholder at `/` with the dark Graphite overview in [Spending overview](features/spending-overview.md): period presets (This month, Last month, Last 90 days, This year, Last 12 months) and selected accounts kept in the URL search parameters.
 - Plain account cards that filter the whole page, scrolling sideways with previous and next controls when they do not fit.
-- Spent, Income, and Net for the range the summary API resolves, ending at the latest transaction. Complete periods are compared with the period of the same shape before them; This month and This year are not compared.
+- Spent, Income, Savings & investments, and Net for the range the summary API resolves, ending at the latest transaction. Savings is separate from spending. Complete periods are compared with the period of the same shape before them; This month and This year are not compared.
 - A notice stating uncategorized spending counted and incoming money not counted, linking to the transactions page filtered to uncategorized.
 - Spending pace, spending by category, monthly spending with the complete-month average, income and spending with the amount kept, and largest payments. Every chart has a table view.
 - A hide-amounts toggle that masks every amount with one fixed mask, remembered in the browser.
@@ -68,8 +68,9 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 - The starter runner uses LangChain model calls and LangSmith datasets and experiments;
   see [Categorization evals](evals.md) for setup.
-- The committed synthetic examples cover all categories and abstention, with deterministic
-  scoring and external calls stubbed in automated tests.
+- The 32 committed synthetic examples cover all nine categories and ambiguous inputs, with
+  the user-selected category as the sole reference. Scoring reports accuracy, coverage,
+  abstention and failures separately; automated tests stub external calls.
 - Try the synthetic workflow, then define and test sanitization and permitted hosted storage
   before preparing a privately labelled representative sample.
 - Compare model accuracy, suggestion coverage, failures, latency, and cost on a held-out set
