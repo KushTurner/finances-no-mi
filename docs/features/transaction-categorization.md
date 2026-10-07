@@ -26,12 +26,6 @@ Uncategorized is the absence of an assignment. Other is for spending outside the
 
 Transport tickets keep Transport during a holiday. Accommodation and recreational activities use Other. Food includes drinks and alcohol. A supermarket or marketplace name alone may not establish the purchase purpose.
 
-## Updating existing categories
-
-Alembic migration `20261007_0003` renames Home & bills to Bills and Own-account transfers to Transfers, and merges Groceries and Eating out into Food. These changes retain decision provenance and imported source evidence.
-
-Travel, Shopping & leisure, and Health & personal care each span multiple new categories. Their transaction assignments are cleared for human review, including decision metadata, rather than converted into an invented approved label. Legacy merchant references move to Other, without assigning that category to transactions, and obsolete cached merchant suggestions are removed. The downgrade clears Food and newly introduced category assignments because their old categories cannot be reconstructed uniquely.
-
 ## Business rules
 
 - Preserve raw descriptions, signed amounts, source types, and import identity.
@@ -56,7 +50,7 @@ For example, two synthetic incoming payments with references `COASTAL TRIP REPAY
 
 The backend lists categories with their definitions, lists transactions, and applies category decisions atomically through a service. Reject unknown category IDs and invalid transaction selections without partial writes. Category creation and a general category-management interface are not required for this slice.
 
-Use Alembic to seed categories, add definitions, and add transaction-level assignments and decision metadata. Existing merchant tables need not be removed, but they do not supply authoritative categories. Existing transactions start uncategorized unless an explicit migration policy is agreed; new imports do not inherit categories from matching descriptions.
+Use Alembic to seed categories, add definitions, and add transaction-level assignments and decision metadata. Existing merchant tables need not be removed, but they do not supply authoritative categories. New imports start uncategorized and do not inherit categories from matching descriptions.
 
 ## Suggestions and review
 

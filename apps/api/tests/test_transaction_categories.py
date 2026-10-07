@@ -195,15 +195,15 @@ def test_categorization_preserves_source_evidence_and_overlapping_import_identit
 
 
 @pytest.mark.parametrize("definition", ["", "A synthetic custom category definition"])
-def test_unseeded_legacy_category_is_not_an_allowed_choice(
+def test_custom_category_is_not_an_allowed_choice(
     client: TestClient, session: Session, imported: list[int], definition: str
 ) -> None:
-    legacy = Category(name="Legacy category", definition=definition)
-    session.add(legacy)
+    custom = Category(name="Custom category", definition=definition)
+    session.add(custom)
     session.commit()
 
     response = client.patch(
-        "/transactions/category", json={"transaction_ids": imported, "category_id": legacy.id}
+        "/transactions/category", json={"transaction_ids": imported, "category_id": custom.id}
     )
 
     assert response.status_code == 400

@@ -37,7 +37,7 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ### Browse and categorize transactions manually
 
-- Seeded the nine categories and definitions in [Transaction categorization](features/transaction-categorization.md), with a migration that preserves direct renames and reopens ambiguous legacy assignments for review.
+- Seeded the nine categories and definitions in [Transaction categorization](features/transaction-categorization.md).
 - Added transaction-level category assignments and human decision metadata through Alembic.
 - List transactions with account, date, signed amount, raw description, transaction type, and assigned category.
 - Filter by category, including uncategorized transactions.
