@@ -92,7 +92,9 @@ export function OverviewContent({
             <LargestPayments payments={summary.largest_payments} />
           </div>
           <p className="max-w-[80ch] text-xs text-muted-foreground">
-            Spending leaves out transfers between your own accounts. Refunds and
+            Spending leaves out savings, investments, and transfers between your
+            own accounts. Savings &amp; investments shows net money put aside,
+            after withdrawals. Net is income minus spending. Refunds and
             repayments reduce spending in their category. Uncategorized money
             going out counts as spending; uncategorized money coming in isn’t
             counted until you categorize it.

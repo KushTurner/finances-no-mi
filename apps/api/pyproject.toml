@@ -18,10 +18,15 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    { include-group = "eval" },
     "httpx2>=2.13.1",
     "pyright>=1.1.414",
     "pytest>=9.1.1",
     "ruff>=0.16.9",
+]
+eval = [
+    "langchain>=1.4.3",
+    "langsmith>=0.14.4",
 ]
 
 [tool.hatch.build.targets.wheel]

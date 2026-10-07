@@ -6,26 +6,25 @@ The user can understand spending through a small, fixed category list without fi
 
 This document describes the agreed plan. The [roadmap](../roadmap.md) separates manual categorization, suggestions, grouped review, evaluation, and eventual automation into implementation slices.
 
-## Initial categories
+## Categories
 
-The initial list contains ten categories. Both the UI and LLM use the same allowed categories and definitions. The LLM cannot create categories. Changes to the list or definitions are deliberate product changes; they do not silently recategorize existing transactions.
+The fixed list contains nine categories. The API and eval runner share their definitions; the UI uses the API list. Each transaction has one category, and the model cannot create categories.
 
 | Category | Definition |
 | --- | --- |
-| Home & bills | Rent, utilities, and recurring household services such as broadband. |
-| Groceries | Food and everyday household consumables purchased for home use. |
-| Eating out | Restaurants, cafés, takeaways, and pubs outside a known travel context. |
-| Transport | Everyday public transport, taxis, fuel, and other motoring costs. |
-| Travel | Holidays and trips, including their accommodation, transport, and other known trip expenses. |
-| Shopping & leisure | Clothing, electronics, entertainment, hobbies, and leisure subscriptions. |
-| Health & personal care | Healthcare, fitness, grooming, and personal care. |
-| Other | A known purpose outside the other categories, such as a gift sent or an unrelated bank fee. |
-| Income | Salary, interest received, and gifts received; excludes expense repayments, refunds, and transfers between the user's own accounts. |
-| Own-account transfers | Moving money between the user's own accounts, including paying their credit-card balance. Exclude these from spending and income totals. |
+| Bills | Rent, utilities, household bills, family loan repayments, and car finance repayments. |
+| Food | Groceries, work lunches, restaurants, takeaways, coffee, and drinks including alcohol. |
+| Subscriptions | Streaming, software, and recurring memberships including gyms. |
+| Transport | Public transport, taxis, transport tickets, fuel, parking, and car maintenance. |
+| Shopping | Clothes, electronics, household items, and general retail purchases. |
+| Savings & investments | Contributions to savings or investments and withdrawals from them. Exclude these movements from spending and income totals. |
+| Other | Spending outside the other categories, including gifts sent, personal support, recreation, accommodation, healthcare services, and unrelated bank fees. |
+| Income | Salary, interest received, and gifts received; excludes expense repayments, refunds, savings withdrawals, and transfers between the user's own accounts. |
+| Transfers | Other movements between the user's own accounts, including credit-card repayments. Use Savings & investments for saving or investing. Exclude these movements from spending and income totals. |
 
-Uncategorized is the absence of an assigned category, not an additional category. Other is not a substitute for uncertainty. A recurring payment is categorized by its purpose, not merely by being a subscription.
+Uncategorized is the absence of an assignment. Other is for spending outside the named categories, while an unclear purpose can stay unassigned. A direct debit is a payment method: utilities and loan repayments use Bills; streaming, software and memberships use Subscriptions.
 
-Travel context must be supported by the transaction or the user's decision. A country name alone does not establish Travel. Likewise, a supermarket name does not prove that every purchase was Groceries.
+Transport tickets keep Transport during a holiday. Accommodation and recreational activities use Other. Food includes drinks and alcohol. A supermarket or marketplace name alone may not establish the purchase purpose.
 
 ## Business rules
 
@@ -35,11 +34,12 @@ Travel context must be supported by the transaction or the user's decision. A co
 - A correction or bulk assignment applies only to the selected transactions. It does not create a sender, merchant, or substring matching rule for future imports.
 - Known refunds and expense repayments use the original spending category with their positive sign, offsetting that spending. They do not need a separate reimbursement category.
 - Payments between different people are not necessarily own-account transfers. The sender's name does not establish payment purpose or reliable personal identity.
+- Savings & investments and Transfers are excluded from spending and income. Savings contributions and withdrawals are shown as separate net activity.
 - For spending categories, net spending is the negative of the sum of signed amounts; positive repayments reduce it. Application code calculates totals in integer pence.
 - Ambiguous transactions remain uncategorized until the user chooses a category. Do not invent a purpose for vague personal payments.
 - Category changes must be correctable without editing imported source fields.
 
-For example, two synthetic incoming payments with references `COASTAL TRIP REPAYMENT` and `HOLIDAY SHARE` could both be Travel after the user confirms that they repay trip expenses. A later payment from either sender with a dinner reference could instead be Eating out. Only the user's confirmation or sufficient transaction context establishes the purpose.
+For example, two synthetic incoming payments with references `COASTAL TRIP REPAYMENT` and `HOLIDAY SHARE` could both be Other after the user confirms that they repay trip expenses. A later payment from either sender with a dinner reference could instead be Food. Only the user's confirmation or sufficient transaction context establishes the purpose.
 
 ## Manual categorization slice
 
@@ -50,7 +50,7 @@ For example, two synthetic incoming payments with references `COASTAL TRIP REPAY
 
 The backend lists categories with their definitions, lists transactions, and applies category decisions atomically through a service. Reject unknown category IDs and invalid transaction selections without partial writes. Category creation and a general category-management interface are not required for this slice.
 
-Use Alembic to seed categories, add definitions, and add transaction-level assignments and decision metadata. Existing merchant tables need not be removed, but they do not supply authoritative categories. Existing transactions start uncategorized unless an explicit migration policy is agreed; new imports do not inherit categories from matching descriptions.
+Use Alembic to seed categories, add definitions, and add transaction-level assignments and decision metadata. Existing merchant tables need not be removed, but they do not supply authoritative categories. New imports start uncategorized and do not inherit categories from matching descriptions.
 
 ## Suggestions and review
 
@@ -80,7 +80,7 @@ A failed, refused, or invalid response leaves the transaction available for manu
 
 Record enough to compare the proposed category with the human decision: transaction, prediction or abstention, optional confidence, provider/model, prompt and category-definition versions, suggestion time, final reviewed category, and review time. Keep previous reviewed outcomes stable if the user later changes an assignment or requests another suggestion.
 
-Reviewed examples may later provide context to new suggestions without training a model. Evaluate on later transactions with their answers withheld from the suggestion context. Measure accuracy and review reduction, including errors on ambiguous personal payments.
+Reviewed examples may later provide context to new suggestions without training a model. Evaluate on later transactions with their answers withheld from the suggestion context. The reference answer is only the user-selected category. Explanations are optional review notes and never extra test input. Keep a known reference category even when the description is vague; measure category accuracy, suggestion coverage, abstention and failures separately. History selection is still a later slice. Measure accuracy and review reduction, including errors on ambiguous personal payments.
 
 Before enabling automatic categorization, evaluate candidate thresholds while all decisions are still reviewed. An LLM's self-reported confidence is not calibrated accuracy, and a few matching examples are not enough evidence. Keep future automatic assignments distinguishable and correctable, sample them for review, and re-evaluate after category or model changes. Do not use unreviewed automatic assignments as human-confirmed labels. Custom model training is optional and deferred.
 

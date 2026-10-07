@@ -6,6 +6,7 @@ from sqlalchemy import MetaData, select, text
 from sqlalchemy.orm import Session
 
 from alembic import command
+from finances_api.categories import CATEGORY_DEFINITIONS
 from finances_api.database import create_database_engine
 from finances_api.models import Category, ImportFileTransaction, Transaction
 
@@ -48,7 +49,7 @@ def test_upgrade_preserves_existing_imports_without_inheriting_merchant_categori
         metadata.reflect(connection)
         source_before = connection.execute(select(metadata.tables["transactions"])).mappings().one()
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "20260927_0002")
 
     with Session(engine) as session:
         transaction = session.scalars(select(Transaction)).one()
@@ -63,4 +64,24 @@ def test_upgrade_preserves_existing_imports_without_inheriting_merchant_categori
         assert session.scalar(select(Category.definition).where(Category.id == 1))
     with engine.connect() as connection:
         assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
+    engine.dispose()
+
+
+def test_empty_database_upgrade_seeds_the_nine_categories(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'categories.db'}"
+    monkeypatch.setenv("FINANCES_DATABASE_URL", database_url)
+    config = Config(Path(__file__).resolve().parents[1] / "alembic.ini")
+    command.upgrade(config, "20260927_0002")
+    engine = create_database_engine(database_url)
+
+    command.upgrade(config, "head")
+
+    with Session(engine) as session:
+        categories = {
+            category.name: category.definition for category in session.scalars(select(Category))
+        }
+        assert categories == CATEGORY_DEFINITIONS
+        assert len(categories) == 9
     engine.dispose()

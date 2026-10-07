@@ -5,14 +5,13 @@ import { attachScreenshot, expect, test } from './fixtures';
 const categories = [
   {
     id: 1,
-    name: 'Eating out',
-    definition:
-      'Restaurants, cafés, takeaways, and pubs outside a known travel context.',
+    name: 'Food',
+    definition: 'Groceries, meals, coffee, and drinks including alcohol.',
   },
   {
     id: 2,
-    name: 'Travel',
-    definition: 'Holidays and trips, including accommodation and transport.',
+    name: 'Other',
+    definition: 'Spending outside the other categories.',
   },
   {
     id: 3,
@@ -21,8 +20,25 @@ const categories = [
   },
   {
     id: 4,
-    name: 'Own-account transfers',
+    name: 'Transfers',
     definition: 'Moving money between your own accounts.',
+  },
+  { id: 5, name: 'Bills', definition: 'Household bills and loan repayments.' },
+  {
+    id: 6,
+    name: 'Subscriptions',
+    definition: 'Streaming, software, and memberships.',
+  },
+  {
+    id: 7,
+    name: 'Transport',
+    definition: 'Transport tickets, fuel, parking, and maintenance.',
+  },
+  { id: 8, name: 'Shopping', definition: 'Retail purchases.' },
+  {
+    id: 9,
+    name: 'Savings & investments',
+    definition: 'Contributions and withdrawals.',
   },
 ];
 
@@ -138,7 +154,7 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   await choose(page, 'Filter by category', 'Uncategorized');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
   await page.getByLabel('Select transaction 2:', { exact: false }).check();
-  await choose(page, 'Category for selection', 'Eating out');
+  await choose(page, 'Category for selection', 'Food');
   await attachScreenshot(page, testInfo, 'transactions-selected');
 
   await page.getByRole('button', { name: 'Apply to selected' }).click();
@@ -146,12 +162,12 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   await expect(page.getByRole('status')).toHaveText('Updated 2 transactions.');
   await expect(page.getByRole('row')).toHaveCount(2);
   expect(decisions[0]).toEqual({ transaction_ids: [1, 2], category_id: 1 });
-  await choose(page, 'Filter by category', 'Eating out');
+  await choose(page, 'Filter by category', 'Food');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await choose(page, 'Category for selection', 'Travel');
+  await choose(page, 'Category for selection', 'Other');
   await page.getByRole('button', { name: 'Apply to selected' }).click();
   await expect(page.getByRole('status')).toHaveText('Updated 1 transaction.');
-  await choose(page, 'Filter by category', 'Travel');
+  await choose(page, 'Filter by category', 'Other');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
   await choose(page, 'Category for selection', 'Clear category');
   await page.getByRole('button', { name: 'Apply to selected' }).click();
@@ -172,7 +188,7 @@ test('keeps a failed decision selected for retry and clears selection when filte
   const decisions = await mockTransactions(page, true);
   await page.goto('/transactions');
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await choose(page, 'Category for selection', 'Eating out');
+  await choose(page, 'Category for selection', 'Food');
 
   await page.getByRole('button', { name: 'Apply to selected' }).click();
 
@@ -202,7 +218,7 @@ test('shows the transaction list and editing controls on a narrow screen', async
   await page.goto('/transactions');
   await expect(page.getByRole('table')).toBeVisible();
   await page.getByLabel('Select transaction 1:', { exact: false }).check();
-  await choose(page, 'Category for selection', 'Eating out');
+  await choose(page, 'Category for selection', 'Food');
   await expect(
     page.getByRole('button', { name: 'Apply to selected' }),
   ).toBeInViewport();
@@ -263,7 +279,7 @@ for (const viewport of [
     );
     await page.setViewportSize(viewport);
     await page.goto('/transactions');
-    await choose(page, 'Category for selection', 'Eating out');
+    await choose(page, 'Category for selection', 'Food');
 
     await page.getByLabel('Select transaction 40:', { exact: false }).check();
 
@@ -279,3 +295,27 @@ for (const viewport of [
     });
   });
 }
+
+test('offers all nine categories and assigns savings to a selected transaction', async ({
+  page,
+}, testInfo) => {
+  await mockTransactions(page);
+  await page.goto('/transactions');
+  await page.getByLabel('Select transaction 5:', { exact: false }).check();
+  await page.getByLabel('Category for selection').click();
+
+  for (const category of categories) {
+    await expect(
+      page.getByRole('option', { name: category.name, exact: true }),
+    ).toBeVisible();
+  }
+  await page
+    .getByRole('option', { name: 'Savings & investments', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Apply to selected' }).click();
+  await expect(page.getByRole('status')).toHaveText('Updated 1 transaction.');
+  await expect(
+    page.getByRole('row').filter({ hasText: 'SYNTHETIC PERSONAL PAYMENT' }),
+  ).toContainText('Savings & investments');
+  await attachScreenshot(page, testInfo, 'savings-category-assignment');
+});
