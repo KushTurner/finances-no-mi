@@ -64,6 +64,17 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ## Planned
 
+### 0. Benchmark category suggestions
+
+- The starter runner uses LangChain model calls and LangSmith datasets and experiments;
+  see [Categorization evals](evals.md) for setup.
+- The committed synthetic examples cover all categories and abstention, with deterministic
+  scoring and external calls stubbed in automated tests.
+- Try the synthetic workflow, then define and test sanitization and permitted hosted storage
+  before preparing a privately labelled representative sample.
+- Compare model accuracy, suggestion coverage, failures, latency, and cost on a held-out set
+  before choosing the first production model.
+
 ### 1. Suggest transaction categories
 
 - Add a small LLM client behind an application interface.

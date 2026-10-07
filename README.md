@@ -83,3 +83,4 @@ Local application data is stored under `.data/` and must never be committed.
 - [Roadmap](docs/roadmap.md)
 - [Transaction imports](docs/features/transaction-imports.md)
 - [Transaction categorization](docs/features/transaction-categorization.md)
+- [Categorization evals with LangChain and LangSmith](docs/evals.md)

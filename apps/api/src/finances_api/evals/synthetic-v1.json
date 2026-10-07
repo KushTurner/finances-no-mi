@@ -1,0 +1,314 @@
+[
+  {
+    "case_id": "rent",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC LETTINGS MONTHLY RENT",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": "D/D"
+    },
+    "outputs": {
+      "category": "Home & bills",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "broadband",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC BROADBAND MONTHLY BILL",
+      "institution": "nationwide",
+      "direction": "outgoing",
+      "transaction_type": "Direct debit"
+    },
+    "outputs": {
+      "category": "Home & bills",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "groceries",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC MARKET FOOD AND HOUSEHOLD GROCERIES",
+      "institution": "amex",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Groceries",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "grocery-refund",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC MARKET REFUND FOR GROCERIES",
+      "institution": "natwest",
+      "direction": "incoming",
+      "transaction_type": "POS"
+    },
+    "outputs": {
+      "category": "Groceries",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "restaurant",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC CAFE RESTAURANT MEAL",
+      "institution": "amex",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Eating out",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "dinner-repayment",
+    "inputs": {
+      "sanitized_description": "PERSON DINNER SHARE REPAYMENT",
+      "institution": "natwest",
+      "direction": "incoming",
+      "transaction_type": "FPI"
+    },
+    "outputs": {
+      "category": "Eating out",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "bus",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC LOCAL BUS FARE",
+      "institution": "nationwide",
+      "direction": "outgoing",
+      "transaction_type": "Visa purchase"
+    },
+    "outputs": {
+      "category": "Transport",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "fuel",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC FUEL STATION CAR FUEL",
+      "institution": "amex",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Transport",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "holiday-hotel",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC HOTEL HOLIDAY ACCOMMODATION",
+      "institution": "amex",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Travel",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "trip-repayment",
+    "inputs": {
+      "sanitized_description": "PERSON COASTAL HOLIDAY SHARE REPAYMENT",
+      "institution": "nationwide",
+      "direction": "incoming",
+      "transaction_type": "Bank credit"
+    },
+    "outputs": {
+      "category": "Travel",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "hobby",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC BOOKSHOP HOBBY BOOKS",
+      "institution": "amex",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Shopping & leisure",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "streaming",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC MOVIE STREAMING SUBSCRIPTION",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": "D/D"
+    },
+    "outputs": {
+      "category": "Shopping & leisure",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "dentist",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC DENTIST DENTAL CHECKUP",
+      "institution": "amex",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Health & personal care",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "gym",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC GYM FITNESS MEMBERSHIP",
+      "institution": "nationwide",
+      "direction": "outgoing",
+      "transaction_type": "Direct debit"
+    },
+    "outputs": {
+      "category": "Health & personal care",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "gift-sent",
+    "inputs": {
+      "sanitized_description": "PERSON BIRTHDAY GIFT SENT",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": "FPO"
+    },
+    "outputs": {
+      "category": "Other",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "bank-fee",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC UNRELATED BANK ADMINISTRATION FEE",
+      "institution": "nationwide",
+      "direction": "outgoing",
+      "transaction_type": "Charge"
+    },
+    "outputs": {
+      "category": "Other",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "salary",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC EMPLOYER MONTHLY SALARY",
+      "institution": "natwest",
+      "direction": "incoming",
+      "transaction_type": "BAC"
+    },
+    "outputs": {
+      "category": "Income",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "gift-received",
+    "inputs": {
+      "sanitized_description": "PERSON BIRTHDAY GIFT RECEIVED",
+      "institution": "nationwide",
+      "direction": "incoming",
+      "transaction_type": "Bank credit"
+    },
+    "outputs": {
+      "category": "Income",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "own-savings",
+    "inputs": {
+      "sanitized_description": "TRANSFER TO MY OWN SAVINGS ACCOUNT",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": "TFR"
+    },
+    "outputs": {
+      "category": "Own-account transfers",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "card-balance",
+    "inputs": {
+      "sanitized_description": "PAYMENT OF MY OWN CREDIT CARD BALANCE",
+      "institution": "amex",
+      "direction": "incoming",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": "Own-account transfers",
+      "context_sufficient": true
+    }
+  },
+  {
+    "case_id": "thanks-known-trip",
+    "inputs": {
+      "sanitized_description": "PERSON THANKS",
+      "institution": "natwest",
+      "direction": "incoming",
+      "transaction_type": "FPI"
+    },
+    "outputs": {
+      "category": "Travel",
+      "context_sufficient": false
+    }
+  },
+  {
+    "case_id": "vague-transfer",
+    "inputs": {
+      "sanitized_description": "PERSON TRANSFER",
+      "institution": "nationwide",
+      "direction": "outgoing",
+      "transaction_type": "Transfer"
+    },
+    "outputs": {
+      "category": null,
+      "context_sufficient": false
+    }
+  },
+  {
+    "case_id": "unclear-supermarket",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC SUPERMARKET",
+      "institution": "amex",
+      "direction": "outgoing",
+      "transaction_type": null
+    },
+    "outputs": {
+      "category": null,
+      "context_sufficient": false
+    }
+  },
+  {
+    "case_id": "unclear-recurring",
+    "inputs": {
+      "sanitized_description": "SYNTHETIC ONLINE SERVICE RECURRING PAYMENT",
+      "institution": "natwest",
+      "direction": "outgoing",
+      "transaction_type": "D/D"
+    },
+    "outputs": {
+      "category": null,
+      "context_sufficient": false
+    }
+  }
+]
