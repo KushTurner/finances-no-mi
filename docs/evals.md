@@ -17,7 +17,7 @@ From `apps/api`:
 
 ```bash
 uv sync --locked --group dev
-cp .env.example .env
+cp -n .env.example .env
 ```
 
 In [LangSmith](https://smith.langchain.com), open **Settings → API Keys** and create
