@@ -43,7 +43,7 @@ pnpm --filter web dev
 
 After importing statements, open **Transactions** to browse them, filter by category, and assign, change, or clear a category for selected rows. Category choices include their definitions. Decisions apply only to the selected transactions.
 
-The Vite dev server proxies `/api` requests to the API at `http://127.0.0.1:8000`. Importing a statement creates the account for its bank the first time that bank is seen.
+The Vite dev server proxies `/api` requests to the API at `http://127.0.0.1:8000`. Import OFX statements from the **Import** page. The first statement for a new account asks which account it is; later statements for that account import directly.
 
 Run the isolated browser tests:
 
@@ -81,6 +81,6 @@ Local application data is stored under `.data/` and must never be committed.
 - [Product](docs/product.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
-- [Transaction imports](docs/features/transaction-imports.md)
+- [OFX imports](docs/features/ofx-imports.md)
 - [Transaction categorization](docs/features/transaction-categorization.md)
 - [Categorization evals with LangChain and LangSmith](docs/evals.md)

@@ -62,15 +62,14 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - A hide-amounts toggle that masks every amount with one fixed mask, remembered in the browser.
 - Browser tests run against a synthetic in-test API and attach desktop and mobile screenshots of every state.
 
+### Replace CSV imports with OFX
+
+- Implemented [OFX imports](features/ofx-imports.md) with one shared ofxtools parser and account matcher, replacing the CSV adapters, fingerprints, and their data.
+- Statements matching a saved account import directly; an unmatched statement asks for an account preset and optional name, and the account is added in the same transaction as the import.
+- Accounts store their OFX identifiers, several accounts can share an institution or preset, and transactions are identified by account-scoped `FITID`, with `MEMO` kept out of the description.
+- Synthetic OFX demo data, tests, and mocked browser screenshots.
+
 ## Planned
-
-### Next. Replace CSV imports with OFX
-
-- Implement the agreed [OFX import plan](features/ofx-imports.md) using one shared parser and account matcher.
-- Import known accounts directly. For unmatched statements, show Add account with a predefined card/account preset and optional nickname, without an existing-account selector.
-- Store OFX account identifiers for future matching, support multiple accounts at one institution, and use account-scoped `FITID` values for transaction identity.
-- Design for fresh production data; remove CSV fingerprint identities and compatibility code through Alembic schema changes.
-- Update the API, UI, account themes, synthetic demo/tests, and documentation together.
 
 ### 0. Benchmark category suggestions
 

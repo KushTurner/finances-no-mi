@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 
+import type { NewAccount } from '@/api';
 import { PageHeading } from '@/components/common';
 import { StatementCard, StatementDropZone } from '@/components/import';
 import type { QueuedStatement, StatementStatus } from '@/components/import';
@@ -15,6 +16,12 @@ export function ImportPage() {
   const pending = statements.filter(
     (statement) =>
       statement.status.kind === 'waiting' || statement.status.kind === 'failed',
+  );
+  const removable = statements.filter(
+    (statement) =>
+      pending.includes(statement) ||
+      (statement.status.kind === 'imported' &&
+        statement.status.result.kind === 'needsAccount'),
   );
 
   function updateStatus(key: number, status: StatementStatus) {
@@ -40,18 +47,50 @@ export function ImportPage() {
     setStatements((current) => [...current, ...added]);
   }
 
+  async function importStatement(
+    statement: QueuedStatement,
+    newAccount?: NewAccount,
+  ) {
+    updateStatus(statement.key, { kind: 'importing' });
+    try {
+      const result = await importMutation.mutateAsync({
+        file: statement.file,
+        newAccount,
+      });
+      updateStatus(statement.key, { kind: 'imported', result });
+      return result;
+    } catch (error) {
+      updateStatus(statement.key, {
+        kind: 'failed',
+        message: (error as Error).message,
+      });
+      return undefined;
+    }
+  }
+
   async function importPendingStatements() {
     setIsImporting(true);
     for (const statement of pending) {
-      updateStatus(statement.key, { kind: 'importing' });
-      try {
-        const result = await importMutation.mutateAsync(statement.file);
-        updateStatus(statement.key, { kind: 'imported', result });
-      } catch (error) {
-        updateStatus(statement.key, {
-          kind: 'failed',
-          message: (error as Error).message,
-        });
+      await importStatement(statement);
+    }
+    setIsImporting(false);
+  }
+
+  async function addAccountAndImport(
+    statement: QueuedStatement,
+    newAccount: NewAccount,
+  ) {
+    const othersNeedingAccount = statements.filter(
+      (other) =>
+        other.key !== statement.key &&
+        other.status.kind === 'imported' &&
+        other.status.result.kind === 'needsAccount',
+    );
+    setIsImporting(true);
+    const result = await importStatement(statement, newAccount);
+    if (result?.kind === 'completed') {
+      for (const other of othersNeedingAccount) {
+        await importStatement(other);
       }
     }
     setIsImporting(false);
@@ -61,7 +100,7 @@ export function ImportPage() {
     <main className="mx-auto max-w-6xl px-6 py-10">
       <PageHeading
         title="Import statements"
-        description="Each statement goes into the account for its bank, which is created on its first import."
+        description="Each statement goes into the account it belongs to. The first statement for a new account asks which account it is."
       />
 
       <StatementDropZone onFiles={addFiles} />
@@ -72,8 +111,12 @@ export function ImportPage() {
               <li key={statement.key} aria-label={statement.file.name}>
                 <StatementCard
                   statement={statement}
-                  removable={!isImporting && pending.includes(statement)}
+                  removable={!isImporting && removable.includes(statement)}
+                  disabled={isImporting}
                   onRemove={() => removeStatement(statement.key)}
+                  onAddAccount={(newAccount) =>
+                    void addAccountAndImport(statement, newAccount)
+                  }
                 />
               </li>
             ))}
