@@ -1,5 +1,7 @@
 # Transaction Imports
 
+This document describes the implemented CSV importer. The agreed [OFX replacement plan](ofx-imports.md) defines the next import slice.
+
 ## Outcome
 
 Transactions from supported institutions can be imported into one canonical model without losing source evidence or creating duplicates when statement date ranges overlap.

@@ -64,6 +64,14 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ## Planned
 
+### Next. Replace CSV imports with OFX
+
+- Implement the agreed [OFX import plan](features/ofx-imports.md) using one shared parser and account matcher.
+- Import known accounts directly. For unmatched statements, show Add account with a predefined card/account preset and optional nickname, without an existing-account selector.
+- Store OFX account identifiers for future matching, support multiple accounts at one institution, and use account-scoped `FITID` values for transaction identity.
+- Design for fresh production data; remove CSV fingerprint identities and compatibility code through Alembic schema changes.
+- Update the API, UI, account themes, synthetic demo/tests, and documentation together.
+
 ### 0. Benchmark category suggestions
 
 - The starter runner uses LangChain model calls and LangSmith datasets and experiments;
@@ -110,11 +118,11 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ## Deferred
 
-- Account settings for account type, card design, and credit limit; account balances and credit-limit usage.
+- Account settings beyond import presets, including credit limit; account balances and credit-limit usage.
 - Suggested own-account transfer pairs.
 - Merchant search and conversational analysis over filtered transactions, with totals computed in code.
 - Merchant aliases, reusable matching rules, and institution-specific description cleanup.
 - Custom model training and any LangGraph workflow.
-- Additional institutions and import formats.
+- Additional account presets and import formats beyond OFX.
 - Editing imported source fields or historical import files. Category corrections are part of the planned workflow.
 - Hosted deployment.
