@@ -23,7 +23,7 @@ cp -n .env.example .env
 In [LangSmith](https://smith.langchain.com), open **Settings → API Keys** and create
 an API key following the [key setup guide](https://docs.langchain.com/langsmith/create-account-api-key).
 Add it to `LANGSMITH_API_KEY` in the local `.env` file. Keep
-`LANGSMITH_TRACING=true` to record the synthetic model calls. Leave
+`LANGSMITH_TRACING=true` to record model calls in your experiments. Leave
 `LANGSMITH_WORKSPACE_ID` empty unless your key has access to multiple workspaces;
 in that case, set it to the intended workspace's ID. If your account uses a region
 other than the default US region, set `LANGSMITH_ENDPOINT` to that region's API
@@ -79,7 +79,7 @@ comparisons:
 ```bash
 uv run --env-file .env --with langchain-openai python -m finances_api.evals run \
   --model 'openai:MODEL_NAME' \
-  --dataset finances-no-mi-synthetic-v2 --version baseline-v1
+  --dataset finances-no-mi-synthetic-v3 --version baseline-v1
 ```
 
 Create the `baseline-v1` tag in the dataset's **Examples** tab before using it.
@@ -90,17 +90,17 @@ uses one transaction only; reviewed-history retrieval still needs implementation
 A future comparison must use the same fixed reviewed history and test transactions
 for both variants, with only the history input changing.
 
-## Run a local benchmark
+## Use your labelled transactions
 
-Keep real benchmark files and results under the Git-ignored `.data/evals/`
-directory. The local runner accepts a JSON array with this shape:
+Keep real datasets under the Git-ignored `.data/evals/` directory. Import a JSON
+array containing transaction inputs and your chosen reference categories:
 
 ```json
 [
   {
     "case_id": "example-001",
     "inputs": {
-      "sanitized_description": "SYNTHETIC CAFE RESTAURANT MEAL",
+      "description": "SYNTHETIC CAFE RESTAURANT MEAL",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
@@ -110,31 +110,28 @@ directory. The local runner accepts a JSON array with this shape:
 ]
 ```
 
-Reference labels are never model input. Review worksheets with descriptions,
-dates, amounts and notes must first be converted into this limited format; do
-not send worksheet rows directly. The local runner validates every example
-before constructing the model, including rows outside `--limit`.
-
-From `apps/api`, run a prepared local benchmark:
+Use the transaction's original description. Your category is the reference
+answer, not model input. Optional review notes stay out of model input too.
+Each example needs a unique `case_id`. Import the file into a separate dataset:
 
 ```bash
-uv run --env-file .env --with langchain-openai python -m finances_api.evals run-local \
-  --model 'openai:MODEL_NAME' \
-  --data ../../.data/evals/benchmark.json \
-  --output ../../.data/evals/results.json \
-  --model-settings '{"max_tokens":256}' --limit 5
+uv run --env-file .env python -m finances_api.evals seed \
+  --data ../../.data/evals/benchmark.json --dataset finances-no-mi-reviewed-v1
+```
+
+Rerunning the import adds missing examples and preserves existing labels. Edit
+existing examples in LangSmith when correcting their inputs or reference labels.
+Then run a model against that dataset:
+
+```bash
+uv run --env-file .env --with langchain-openai python -m finances_api.evals run \
+  --model 'openai:MODEL_NAME' --dataset finances-no-mi-reviewed-v1 \
+  --model-settings '{"max_tokens":256}'
 ```
 
 `--model-settings` supplies provider-specific configuration, such as output
-limits or reasoning settings. Choose settings supported by the selected model.
+limits or thinking settings. Choose settings supported by the selected model.
 The runner always uses a 30-second timeout and disables automatic retries.
-
-`run-local` does not require a LangSmith key and disables LangSmith tracing even
-when `.env` enables it. Only permitted inputs go to the model provider. Console
-output contains aggregate metrics; the local report contains case IDs, reference
-categories, predictions, token usage and latency, without descriptions or other
-input fields. Keep the report private too. Use the hosted `run` command when you
-want a reviewed, sanitized dataset and its experiment traces stored in LangSmith.
 
 ## Review and label examples
 
@@ -143,7 +140,7 @@ with exactly these input fields:
 
 ```json
 {
-  "sanitized_description": "PERSON COASTAL HOLIDAY SHARE REPAYMENT",
+  "description": "PERSON COASTAL HOLIDAY SHARE REPAYMENT",
   "institution": "natwest",
   "direction": "incoming",
   "transaction_type": "FPI"
@@ -170,11 +167,6 @@ Unfinished or genuinely unlabelled examples stay out of the benchmark; `null`
 is a model abstention, not a reference category. Abstaining on a labelled example
 is not a correct category prediction, but coverage and abstention metrics report
 how much work remains for human review.
-
-The v2 dataset and prompt replace the old ten-category, `context_sufficient`
-contract. Seeding v2 creates a separate dataset and preserves the existing v1
-dataset. Old reference shapes are rejected before any model call; review and
-migrate their labels before using a custom v1 dataset with this runner.
 
 Predictions contain `category` and a `status`: `suggested`, `abstained`, or
 `failed`. Failures have a safe error code rather than a raw provider response.
@@ -208,19 +200,14 @@ charge for an LLM judge.
 
 ## Data boundary and verification
 
-Use synthetic examples for this first trial. Hosted LangSmith stores uploaded
-examples, reference labels, prompts, and model traces. `sanitized_description`
-is a manually prepared input, not an automatic redactor. Preparing real examples
-requires a defined, tested sanitization policy and a decision about permitted
-hosted storage. Keep original statements, filenames, account identifiers,
-balances, source references, and unreviewed descriptions out of the hosted
-dataset. Do not put original descriptions in labels, metadata, or reviewer notes.
+Model providers receive transaction inputs. LangSmith stores dataset examples,
+reference labels, prompts, and model traces so you can inspect and compare runs.
+Keep real transactions, statements, private result files, and credentials out of
+Git. Committed examples, tests, screenshots, and documentation use synthetic data.
 
-Automated tests stub every model response and block outbound connections in the
-eval tests. They also exercise the LangSmith SDK locally with result uploads
-disabled, test permitted input fields, and check the category definitions against
-the application's seeded categories. Live experiments are explicit manual runs
-and are not part of CI.
+Automated tests stub model responses and block outbound connections in the eval
+tests. They check our scoring, input/reference separation, dataset imports, and
+category definitions. Live experiments are explicit manual runs outside CI.
 
 Official documentation:
 

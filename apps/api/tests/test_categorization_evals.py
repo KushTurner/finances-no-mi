@@ -2,15 +2,14 @@ import json
 import socket
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 from unittest.mock import MagicMock, create_autospec
 from uuid import UUID, uuid4, uuid5
 
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
-from langchain_core.runnables import RunnableLambda
-from langsmith import Client, get_tracing_context
+from langsmith import Client
 from langsmith.schemas import Dataset, Example, Run
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -21,20 +20,19 @@ from finances_api.evals.categorization import (
     Categorizer,
     Prediction,
     ReferenceDecision,
-    create_categorizer,
 )
 from finances_api.evals.dataset import (
     STARTER_DATASET_NAME,
+    load_examples,
     seed_dataset,
     starter_examples,
     validate_examples,
 )
-from finances_api.evals.local import evaluate_local, load_local_examples
 from finances_api.evals.scoring import correctness, summarize
 from finances_api.services.categories import list_categories
 
 CONTEXT: dict[str, Any] = {
-    "sanitized_description": "SYNTHETIC CAFE RESTAURANT MEAL",
+    "description": "SYNTHETIC CAFE RESTAURANT MEAL",
     "institution": "amex",
     "direction": "outgoing",
     "transaction_type": None,
@@ -118,17 +116,14 @@ def test_provider_failure_does_not_expose_its_message(
 @pytest.mark.parametrize(
     "field",
     [
-        "raw_description",
-        "account_id",
-        "amount_pence",
-        "source_reference",
         "category",
         "user_context",
-        "context_sufficient",
         "reference_outputs",
     ],
 )
-def test_prohibited_context_is_rejected_before_a_model_call(model: MagicMock, field: str) -> None:
+def test_unexpected_input_fields_are_rejected_before_a_model_call(
+    model: MagicMock, field: str
+) -> None:
     target = Categorizer(model)
     inputs = {**CONTEXT, field: "synthetic prohibited value"}
 
@@ -244,34 +239,11 @@ def test_seed_preserves_existing_labels_and_fills_only_missing_examples() -> Non
     )
     client.list_examples.return_value = iter([existing])
 
-    seed_dataset(client)
+    seed_dataset(client, STARTER_DATASET_NAME, cases)
 
     uploaded = client.create_examples.call_args.kwargs["examples"]
     assert existing.id not in {example.id for example in uploaded}
     assert len(uploaded) == len(cases) - 1
-
-
-def test_sdk_runs_the_target_and_scorer_without_uploads(model: MagicMock) -> None:
-    def respond(inputs: object) -> dict[str, Any]:
-        return {"parsed": {"category": "Food"}}
-
-    model.with_structured_output.return_value = RunnableLambda(respond)
-    example = Example(id=uuid4(), inputs=CONTEXT, outputs={"category": "Food"})
-    client = Client(api_key="synthetic-test-key", auto_batch_tracing=False)
-
-    results = client.evaluate(  # pyright: ignore[reportUnknownMemberType]
-        Categorizer(model),
-        data=[example],
-        evaluators=[correctness],
-        summary_evaluators=[summarize],
-        upload_results=False,
-        max_concurrency=1,
-    )
-
-    row = list(results)[0]
-    assert row["evaluation_results"].get("results", [])[0].score == 1
-    outputs = cast(dict[str, Any], row["run"].outputs)  # pyright: ignore[reportUnknownMemberType]
-    assert outputs["category"] == "Food"
 
 
 @pytest.mark.parametrize("examples", [[], [Example(id=uuid4(), inputs=CONTEXT, outputs={})]])
@@ -305,114 +277,11 @@ def test_reference_requires_only_a_known_category(outputs: dict[str, Any]) -> No
         ReferenceDecision.model_validate(outputs)
 
 
-def test_local_evaluation_uses_only_inputs_and_disables_enabled_tracing(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    cases = starter_examples()[:1]
-    monkeypatch.setenv("LANGSMITH_TRACING", "true")
-    received: list[dict[str, Any]] = []
-
-    def respond(inputs: dict[str, Any]) -> dict[str, Any]:
-        assert get_tracing_context()["enabled"] is False
-        received.append(inputs)
-        return Prediction(category=cases[0].outputs.category, status="suggested").model_dump()
-
-    result = evaluate_local(respond, cases)
-
-    assert received == [cases[0].inputs.model_dump()]
-    assert result["metrics"]["correctness"] == 1
-    assert "sanitized_description" not in json.dumps(result)
-
-
-def test_local_cli_runs_without_a_langsmith_key_and_saves_only_results(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    data = tmp_path / "synthetic.json"
-    output = tmp_path / "results.json"
-    cases = starter_examples()[:2]
-    data.write_text(json.dumps([case.model_dump() for case in cases]))
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "evals",
-            "run-local",
-            "--model",
-            "openai:synthetic",
-            "--data",
-            str(data),
-            "--output",
-            str(output),
-            "--limit",
-            "1",
-        ],
-    )
-    target = MagicMock(
-        return_value=Prediction(category=cases[0].outputs.category, status="suggested").model_dump()
-    )
-    monkeypatch.setattr(cli, "create_categorizer", MagicMock(return_value=target))
-
-    result = cli.main()
-
-    report = json.loads(output.read_text())
-    assert (result, report["example_count"], report["metrics"]["correctness"]) == (0, 1, 1)
-    assert "sanitized_description" not in output.read_text() + capsys.readouterr().out
-    target.assert_called_once_with(cases[0].inputs.model_dump())
-
-
-def test_local_cli_validates_all_rows_before_calling_a_model_even_with_a_limit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    data = tmp_path / "synthetic.json"
-    cases = [case.model_dump() for case in starter_examples()[:2]]
-    cases[1]["inputs"]["raw_description"] = "SYNTHETIC PRIVATE DESCRIPTION"
-    data.write_text(json.dumps(cases))
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "evals",
-            "run-local",
-            "--model",
-            "openai:synthetic",
-            "--data",
-            str(data),
-            "--output",
-            str(tmp_path / "results.json"),
-            "--limit",
-            "1",
-        ],
-    )
-    factory = MagicMock()
-    monkeypatch.setattr(cli, "create_categorizer", factory)
-
-    with pytest.raises(SystemExit) as error:
-        cli.main()
-
-    assert error.value.code == 2
-    factory.assert_not_called()
-    assert "SYNTHETIC PRIVATE DESCRIPTION" not in capsys.readouterr().err
-
-
 @pytest.mark.parametrize("duplicate", [False, True])
-def test_local_dataset_rejects_empty_and_duplicate_cases(tmp_path: Path, duplicate: bool) -> None:
+def test_import_rejects_empty_files_and_duplicate_case_ids(tmp_path: Path, duplicate: bool) -> None:
     data = tmp_path / "synthetic.json"
     case = starter_examples()[0].model_dump()
     data.write_text(json.dumps([case, case] if duplicate else []))
 
     with pytest.raises(ValueError):
-        load_local_examples(data)
-
-
-@pytest.mark.parametrize("provider", ["anthropic", "openai"])
-def test_workspace_header_is_sent_only_to_anthropic(
-    model: MagicMock, monkeypatch: pytest.MonkeyPatch, provider: str
-) -> None:
-    monkeypatch.setenv("ANTHROPIC_WORKSPACE_ID", "wrkspc_synthetic")
-    factory = MagicMock(return_value=model)
-    monkeypatch.setattr("finances_api.evals.categorization.init_chat_model", factory)
-
-    create_categorizer(f"{provider}:synthetic-model", max_tokens=256)
-
-    expected: dict[str, Any] = {"timeout": 30, "max_retries": 0, "max_tokens": 256}
-    if provider == "anthropic":
-        expected["default_headers"] = {"anthropic-workspace-id": "wrkspc_synthetic"}
-    assert factory.call_args.kwargs == expected
+        load_examples(data)
