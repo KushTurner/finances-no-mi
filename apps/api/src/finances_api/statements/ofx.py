@@ -36,6 +36,7 @@ class StatementTransaction:
     amount_minor: int
     source_type: str
     raw_description: str
+    memo: str | None
 
 
 @dataclass(frozen=True)
@@ -145,7 +146,8 @@ def _read_transaction(position: int, stmttrn: Any, raw_date: str) -> StatementTr
         transaction_date=_read_source_date(raw_date),
         amount_minor=_read_pence(stmttrn.trnamt),
         source_type=stmttrn.trntype,
-        raw_description=_read_description(stmttrn),
+        raw_description=_read_name(stmttrn.name),
+        memo=stmttrn.memo,
     )
 
 
@@ -168,14 +170,10 @@ def _read_pence(amount: Decimal) -> int:
     return int(pence)
 
 
-def _read_description(stmttrn: Any) -> str:
-    name = stmttrn.name or (stmttrn.payee.name if stmttrn.payee is not None else None)
-    parts = [part for part in (name, stmttrn.memo) if part and part.strip()]
-    if not parts:
-        raise InvalidTransaction("NAME or MEMO is required")
-    if len(parts) == 2 and parts[0] == parts[1]:
-        return parts[0]
-    return " ".join(parts)
+def _read_name(name: str | None) -> str:
+    if not name or not name.strip():
+        raise InvalidTransaction("NAME is required")
+    return name
 
 
 def _file_error(message: str) -> InvalidStatement:

@@ -75,6 +75,7 @@ def test_converts_a_transaction_into_the_canonical_model() -> None:
         amount_minor=-450,
         source_type="POS",
         raw_description="CAFE",
+        memo=None,
     )
 
 
@@ -94,28 +95,12 @@ def test_keeps_the_source_date_when_the_time_has_a_positive_offset() -> None:
     assert transaction.transaction_date == date(2026, 9, 3)
 
 
-def test_combines_distinct_name_and_memo() -> None:
-    content = bank_statement_ofx(ofx_transaction(name="SYNTHETIC CAFE", memo="LONDON GB"))
+def test_describes_a_transaction_by_its_name_and_keeps_the_memo_separately() -> None:
+    content = bank_statement_ofx(ofx_transaction(name="SYNTHETIC CAFE", memo="AB SAMPLE-0001"))
 
     transaction = only_transaction(content)
 
-    assert transaction.raw_description == "SYNTHETIC CAFE LONDON GB"
-
-
-def test_does_not_repeat_a_memo_identical_to_the_name() -> None:
-    content = bank_statement_ofx(ofx_transaction(name="SYNTHETIC CAFE", memo="SYNTHETIC CAFE"))
-
-    transaction = only_transaction(content)
-
-    assert transaction.raw_description == "SYNTHETIC CAFE"
-
-
-def test_uses_the_memo_when_there_is_no_name() -> None:
-    content = bank_statement_ofx(ofx_transaction(name=None, memo="SYNTHETIC TRANSFER"))
-
-    transaction = only_transaction(content)
-
-    assert transaction.raw_description == "SYNTHETIC TRANSFER"
+    assert (transaction.raw_description, transaction.memo) == ("SYNTHETIC CAFE", "AB SAMPLE-0001")
 
 
 def test_numbers_transactions_by_their_position_in_the_statement() -> None:
@@ -204,7 +189,7 @@ def test_reports_every_invalid_transaction_by_position() -> None:
     content = bank_statement_ofx(
         ofx_transaction(fitid="A"),
         ofx_transaction(fitid="B", trnamt="-1.005"),
-        ofx_transaction(fitid="C", name=None),
+        ofx_transaction(fitid="C", name=None, memo="SYNTHETIC MEMO"),
         ofx_transaction(fitid="A"),
     )
 
@@ -213,7 +198,7 @@ def test_reports_every_invalid_transaction_by_position() -> None:
     assert result == InvalidStatement(
         (
             StatementError(2, "TRNAMT has more than two decimal places"),
-            StatementError(3, "NAME or MEMO is required"),
+            StatementError(3, "NAME is required"),
             StatementError(4, "FITID is repeated in this statement"),
         )
     )
