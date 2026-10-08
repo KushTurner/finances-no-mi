@@ -7,6 +7,8 @@
 *.p12
 *.pfx
 *.csv
+*.[oO][fF][xX]
+*.[oO][fF][xX] (*)
 
 .data/
 data/
