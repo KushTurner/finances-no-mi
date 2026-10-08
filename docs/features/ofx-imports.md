@@ -21,6 +21,20 @@ There is no existing-account selector in the unmatched-file flow. The catalogue 
 
 Each uploaded file has its own outcome: imported with new/existing transaction counts, already imported, needs account setup, or invalid. The frontend retains a file while account setup is pending and resubmits it with the selected preset and nickname. Pending setup does not create an account or persist an import.
 
+## Initial account presets
+
+The initial catalogue contains these three presets:
+
+| Preset | Institution | Account type |
+| --- | --- | --- |
+| American Express Gold | `amex` | `credit_card` |
+| Nationwide FlexOne | `nationwide` | `current_account` (debit card) |
+| NatWest Select | `natwest` | `current_account` (debit card) |
+
+Each preset supplies its display name, institution, account type, and theme. The default account name is the preset's display name, with the optional nickname overriding it. Debit/credit is part of the preset rather than a separate form field.
+
+Adding another preset extends the catalogue; it does not add a new OFX parser or matching function. Two accounts using the same preset remain separate account records matched by their OFX identifiers.
+
 ## Account identity
 
 Account metadata belongs to the statement, not to an individual transaction. Read these standard fields through the same parser:
@@ -70,4 +84,4 @@ Parsing, normalization, persistence, and classification remain separate concerns
 - Verify overlapping exports, exact re-uploads, distinct same-valued transactions, multiple accounts at one institution, account setup, ambiguous identifiers, and invalid-file rollback.
 - Run the required backend/frontend checks and review the mocked browser report and screenshots for UI changes.
 
-Before implementation, confirm the initial catalogue's card/account products and check a repeated or overlapping real export for stable `FITID` values. A second Nationwide export should also confirm that its masked `ACCTID` remains consistent. These checks use local files without logging their contents or identifiers.
+The initial preset catalogue is confirmed above. Remaining real-file verification is to check a repeated or overlapping export for stable `FITID` values. A second Nationwide export should also confirm that its masked `ACCTID` remains consistent. These checks use local files without logging their contents or identifiers.
