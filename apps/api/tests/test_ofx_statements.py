@@ -1,3 +1,4 @@
+import warnings
 from datetime import date
 
 from ofx_helpers import bank_statement_ofx, credit_card_statement_ofx, ofx_transaction
@@ -210,3 +211,13 @@ def test_rejects_a_statement_without_transactions() -> None:
     result = parse_ofx(content)
 
     assert result == InvalidStatement((StatementError(None, "File contains no transactions"),))
+
+
+def test_does_not_emit_warnings_quoting_transaction_names() -> None:
+    content = bank_statement_ofx(ofx_transaction(name="SYNTHETIC NAME LONGER THAN 32 CHARACTERS"))
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        parse_ofx(content)
+
+    assert caught == []

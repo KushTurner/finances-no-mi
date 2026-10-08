@@ -2,10 +2,10 @@ import hashlib
 from datetime import date
 
 from httpx2 import Response
+from ofx_helpers import bank_statement_ofx, credit_card_statement_ofx, ofx_transaction
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
-from statement_helpers import csv_bytes
 
 from finances_api.models import (
     Account,
@@ -16,67 +16,190 @@ from finances_api.models import (
     Transaction,
 )
 
-NATWEST_HEADER = ["Date", "Type", "Description", "Value", "Balance"]
 
-
-def natwest_row(
+def upload(
+    client: TestClient,
+    content: bytes,
     *,
-    date: str = "03 Sep 2026",
-    description: str = "SYNTHETIC CAFE",
-    value: str = "-4.50",
-    balance: str = "995.50",
-) -> list[str]:
-    return [date, "POS", description, value, balance]
-
-
-def natwest_csv(*rows: list[str]) -> bytes:
-    return csv_bytes([NATWEST_HEADER, *rows])
-
-
-def upload(client: TestClient, content: bytes, filename: str = "statement.csv") -> Response:
-    return client.post("/imports", files={"file": (filename, content, "text/csv")})
+    preset: str | None = None,
+    name: str | None = None,
+    filename: str = "statement.ofx",
+) -> Response:
+    form = {key: value for key, value in (("preset", preset), ("name", name)) if value is not None}
+    return client.post(
+        "/imports", files={"file": (filename, content, "application/x-ofx")}, data=form
+    )
 
 
 def count(session: Session, model: type[Base]) -> int:
     return session.scalar(select(func.count()).select_from(model)) or 0
 
 
-def test_imports_every_transaction_as_new(client: TestClient) -> None:
-    content = natwest_csv(
-        natwest_row(date="02 Sep 2026", balance="1000.00"), natwest_row(balance="995.50")
-    )
+def test_an_unmatched_statement_needs_account_setup_and_stores_nothing(
+    client: TestClient, session: Session
+) -> None:
+    response = upload(client, bank_statement_ofx())
 
-    response = upload(client, content)
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": "Add an account for this statement",
+        "account_type": "current_account",
+    }
+    assert [count(session, model) for model in (Account, ImportFile, Transaction)] == [0, 0, 0]
+
+
+def test_adds_the_account_from_its_preset_and_imports_the_statement(client: TestClient) -> None:
+    content = bank_statement_ofx(ofx_transaction(fitid="A"), ofx_transaction(fitid="B"))
+
+    response = upload(client, content, preset="natwest_select")
 
     assert response.status_code == 201
     assert response.json() == {
         "import_id": 1,
-        "account_name": "NatWest",
+        "account_name": "NatWest Select",
         "new_transaction_count": 2,
         "existing_transaction_count": 0,
     }
+    assert client.get("/accounts").json() == [
+        {
+            "id": 1,
+            "name": "NatWest Select",
+            "institution": "natwest",
+            "account_type": "current_account",
+            "preset": "natwest_select",
+        }
+    ]
+
+
+def test_a_nickname_replaces_the_preset_name(client: TestClient) -> None:
+    response = upload(client, bank_statement_ofx(), preset="natwest_select", name=" Bills ")
+
+    assert response.json()["account_name"] == "Bills"
+
+
+def test_saves_the_statement_identifiers_on_the_new_account(
+    client: TestClient, session: Session
+) -> None:
+    content = credit_card_statement_ofx(acctid="XXXX-0001", org="SYNTH", fid="1234")
+
+    upload(client, content, preset="amex_gold")
+
+    account = session.scalars(select(Account)).one()
+    assert (account.acctid, account.bankid, account.org, account.fid) == (
+        "XXXX-0001",
+        None,
+        "SYNTH",
+        "1234",
+    )
+
+
+def test_a_later_statement_imports_directly_into_the_matching_account(
+    client: TestClient, session: Session
+) -> None:
+    upload(client, bank_statement_ofx(ofx_transaction(fitid="A")), preset="natwest_select")
+
+    response = upload(client, bank_statement_ofx(ofx_transaction(fitid="B")))
+
+    assert response.json()["account_name"] == "NatWest Select"
+    assert count(session, Account) == 1
+
+
+def test_a_preset_is_ignored_when_the_statement_already_matches_an_account(
+    client: TestClient, session: Session
+) -> None:
+    upload(client, bank_statement_ofx(ofx_transaction(fitid="A")), preset="natwest_select")
+
+    response = upload(
+        client, bank_statement_ofx(ofx_transaction(fitid="B")), preset="nationwide_flexone"
+    )
+
+    assert response.json()["account_name"] == "NatWest Select"
+    assert count(session, Account) == 1
+
+
+def test_accounts_from_the_same_preset_remain_separate(
+    client: TestClient, session: Session
+) -> None:
+    upload(client, bank_statement_ofx(acctid="00000001"), preset="natwest_select")
+
+    response = upload(client, bank_statement_ofx(acctid="00000002"), preset="natwest_select")
+
+    assert response.status_code == 201
+    assert session.scalars(select(Account.name)).all() == ["NatWest Select", "NatWest Select"]
+
+
+def test_rejects_a_preset_whose_account_type_contradicts_the_statement(
+    client: TestClient, session: Session
+) -> None:
+    response = upload(client, bank_statement_ofx(), preset="amex_gold")
+
+    assert response.json() == {
+        "errors": [
+            {
+                "position": None,
+                "message": "American Express Gold does not match this statement's account type",
+            }
+        ]
+    }
+    assert count(session, Account) == 0
+
+
+def test_rejects_a_statement_that_matches_more_than_one_account(
+    client: TestClient, session: Session
+) -> None:
+    session.add_all(
+        Account(
+            name=name,
+            institution="nationwide",
+            account_type="current_account",
+            preset="nationwide_flexone",
+            acctid="****0001",
+        )
+        for name in ("First", "Second")
+    )
+    session.commit()
+
+    response = upload(client, bank_statement_ofx(acctid="****0001", bankid="000000"))
+
+    assert response.json() == {
+        "errors": [
+            {"position": None, "message": "This statement matches more than one saved account"}
+        ]
+    }
+    assert count(session, ImportFile) == 0
 
 
 def test_stores_the_canonical_transaction_with_its_source_evidence(
     client: TestClient, session: Session
 ) -> None:
+    content = bank_statement_ofx(
+        ofx_transaction(
+            fitid="SYNTH-1",
+            trntype="POS",
+            dtposted="20260903",
+            trnamt="-4.50",
+            name="SYNTHETIC CAFE",
+            memo="SYNTHETIC MEMO",
+        )
+    )
 
-    upload(client, natwest_csv(natwest_row()))
+    upload(client, content, preset="natwest_select")
 
     transaction = session.scalars(select(Transaction)).one()
     assert (
+        transaction.fitid,
         transaction.transaction_date,
         transaction.amount_minor,
-        transaction.balance_after_minor,
         transaction.source_type,
         transaction.raw_description,
-    ) == (date(2026, 9, 3), -450, 99550, "POS", "SYNTHETIC CAFE")
+        transaction.memo,
+    ) == ("SYNTH-1", date(2026, 9, 3), -450, "POS", "SYNTHETIC CAFE", "SYNTHETIC MEMO")
 
 
 def test_stores_the_original_file_bytes_and_hash(client: TestClient, session: Session) -> None:
-    content = natwest_csv(natwest_row())
+    content = bank_statement_ofx()
 
-    upload(client, content)
+    upload(client, content, preset="natwest_select")
 
     import_file = session.scalars(select(ImportFile)).one()
     assert (import_file.content, import_file.content_sha256) == (
@@ -86,40 +209,42 @@ def test_stores_the_original_file_bytes_and_hash(client: TestClient, session: Se
 
 
 def test_rejects_an_exact_file_reupload(client: TestClient, session: Session) -> None:
-    content = natwest_csv(natwest_row())
-    upload(client, content)
+    content = bank_statement_ofx()
+    upload(client, content, preset="natwest_select")
 
-    response = upload(client, content, filename="renamed.csv")
+    response = upload(client, content, filename="renamed.ofx")
 
     assert response.status_code == 409
     assert count(session, ImportFile) == 1
 
 
-def test_overlapping_exports_reuse_the_shared_transaction(
+def test_overlapping_statements_reuse_the_shared_transaction(
     client: TestClient, session: Session
 ) -> None:
-    shared_row = natwest_row(date="02 Sep 2026", balance="1000.00")
-    earlier_export = natwest_csv(natwest_row(date="01 Sep 2026", balance="1004.50"), shared_row)
-    later_export = natwest_csv(shared_row, natwest_row(date="03 Sep 2026", balance="995.50"))
-    upload(client, earlier_export)
+    shared = ofx_transaction(fitid="SHARED")
+    upload(
+        client,
+        bank_statement_ofx(ofx_transaction(fitid="EARLIER"), shared),
+        preset="natwest_select",
+    )
 
-    response = upload(client, later_export)
+    response = upload(client, bank_statement_ofx(shared, ofx_transaction(fitid="LATER")))
 
     assert response.json() == {
         "import_id": 2,
-        "account_name": "NatWest",
+        "account_name": "NatWest Select",
         "new_transaction_count": 1,
         "existing_transaction_count": 1,
     }
     assert (count(session, Transaction), count(session, ImportFileTransaction)) == (3, 4)
 
 
-def test_identical_same_day_purchases_are_stored_separately(
+def test_the_same_fitid_in_different_accounts_is_stored_separately(
     client: TestClient, session: Session
 ) -> None:
-    content = natwest_csv(natwest_row(balance="1000.00"), natwest_row(balance="995.50"))
+    upload(client, bank_statement_ofx(acctid="00000001"), preset="natwest_select")
 
-    upload(client, content)
+    upload(client, bank_statement_ofx(acctid="00000002"), preset="natwest_select")
 
     assert count(session, Transaction) == 2
 
@@ -127,78 +252,26 @@ def test_identical_same_day_purchases_are_stored_separately(
 def test_equivalent_descriptions_share_one_merchant_key(
     client: TestClient, session: Session
 ) -> None:
-    upload(client, natwest_csv(natwest_row(description="Synthetic Cafe")))
-
     upload(
         client,
-        natwest_csv(natwest_row(date="04 Sep 2026", description="SYNTHETIC  CAFE")),
+        bank_statement_ofx(ofx_transaction(fitid="A", name="Synthetic Cafe")),
+        preset="natwest_select",
     )
+
+    upload(client, bank_statement_ofx(ofx_transaction(fitid="B", name="SYNTHETIC  CAFE")))
 
     assert session.scalars(select(MerchantKey.value)).all() == ["SYNTHETIC CAFE"]
 
 
-def test_an_invalid_row_is_reported_and_nothing_is_stored(
+def test_an_invalid_statement_is_reported_and_creates_nothing(
     client: TestClient, session: Session
 ) -> None:
-    content = natwest_csv(natwest_row(), natwest_row(value="four pounds"))
+    content = bank_statement_ofx(ofx_transaction(fitid="A"), ofx_transaction(fitid="A"))
 
-    response = upload(client, content)
+    response = upload(client, content, preset="natwest_select")
 
     assert response.status_code == 400
     assert response.json() == {
-        "errors": [{"row_number": 3, "message": "Value is not a valid GBP amount"}]
+        "errors": [{"position": 2, "message": "FITID is repeated in this statement"}]
     }
-    assert [count(session, model) for model in (ImportFile, Transaction, MerchantKey)] == [0, 0, 0]
-
-
-def test_creates_the_institution_account_on_its_first_detected_import(
-    client: TestClient,
-) -> None:
-    response = upload(client, natwest_csv(natwest_row()))
-
-    assert response.json()["account_name"] == "NatWest"
-    assert client.get("/accounts").json() == [
-        {"id": 1, "name": "NatWest", "institution": "natwest", "account_type": "current_account"}
-    ]
-
-
-def test_imports_later_statements_into_the_existing_institution_account(
-    client: TestClient, session: Session
-) -> None:
-    upload(client, natwest_csv(natwest_row(date="02 Sep 2026", balance="1000.00")))
-
-    response = upload(client, natwest_csv(natwest_row(balance="995.50")))
-
-    assert response.json()["account_name"] == "NatWest"
-    assert count(session, Account) == 1
-
-
-def test_rejects_an_unsupported_statement_without_creating_an_account(
-    client: TestClient, session: Session
-) -> None:
-    content = csv_bytes([["Date", "Description", "Amount"], ["03/09/2026", "SYNTHETIC", "1.00"]])
-
-    response = upload(client, content)
-
-    assert response.json() == {
-        "errors": [
-            {
-                "row_number": None,
-                "message": (
-                    "No header row matches a supported Amex, NatWest, or Nationwide statement"
-                ),
-            }
-        ]
-    }
-    assert count(session, Account) == 0
-
-
-def test_an_invalid_first_statement_does_not_create_its_account(
-    client: TestClient, session: Session
-) -> None:
-    content = natwest_csv(natwest_row(value="not money"))
-
-    response = upload(client, content)
-
-    assert response.status_code == 400
-    assert count(session, Account) == 0
+    assert [count(session, model) for model in (Account, ImportFile, MerchantKey)] == [0, 0, 0]

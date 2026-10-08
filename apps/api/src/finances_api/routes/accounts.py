@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from finances_api.database import get_session
-from finances_api.models import AccountType, Institution
+from finances_api.models import AccountPresetId, AccountType, Institution
 from finances_api.services import accounts
 
 
@@ -16,6 +16,7 @@ class AccountResponse(BaseModel):
     name: str
     institution: Institution
     account_type: AccountType
+    preset: AccountPresetId
 
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])

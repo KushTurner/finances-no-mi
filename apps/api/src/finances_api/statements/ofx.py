@@ -1,5 +1,6 @@
 import io
 import logging
+import warnings
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -66,8 +67,11 @@ class InvalidTransaction(Exception):
 def parse_ofx(content: bytes) -> ParseResult:
     tree = OFXTree()
     try:
-        root = tree.parse(io.BytesIO(content))
-        ofx: Any = tree.convert()
+        with warnings.catch_warnings():
+            # ofxtools warnings quote field values, such as transaction names over 32 characters.
+            warnings.simplefilter("ignore")
+            root = tree.parse(io.BytesIO(content))
+            ofx: Any = tree.convert()
     except (SyntaxError, ValueError, InvalidOperation):
         return _file_error("File is not a readable OFX statement")
 

@@ -11,7 +11,13 @@ from finances_api.models import Account, Category, MerchantKey, Transaction
 
 
 def add_account(session: Session, name: str = "NatWest") -> int:
-    account = Account(name=name, institution="natwest", account_type="current_account")
+    account = Account(
+        name=name,
+        institution="natwest",
+        account_type="current_account",
+        preset="natwest_select",
+        acctid=uuid4().hex,
+    )
     session.add(account)
     session.commit()
     return account.id
@@ -40,7 +46,7 @@ def add_transaction(
         transaction_date=date.fromisoformat(on),
         amount_minor=amount_pence,
         raw_description=description,
-        source_key=uuid4().hex,
+        fitid=uuid4().hex,
         merchant_key_id=merchant_key.id,
         category_id=category_id,
         category_decision_source="human" if category else None,

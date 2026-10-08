@@ -1,10 +1,11 @@
 from datetime import date
 
 import pytest
+from ofx_helpers import bank_statement_ofx, ofx_transaction
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
-from test_imports import natwest_csv, natwest_row, upload
+from test_imports import upload
 
 from finances_api.models import Category, ImportFile, ImportFileTransaction, Transaction
 
@@ -13,13 +14,14 @@ from finances_api.models import Category, ImportFile, ImportFileTransaction, Tra
 def imported(client: TestClient) -> list[int]:
     upload(
         client,
-        natwest_csv(
-            natwest_row(description="SYNTHETIC CAFE", value="-4.50"),
-            natwest_row(description="SYNTHETIC CAFE", value="2.00"),
-            natwest_row(description="SYNTHETIC SALARY", value="2000.00"),
-            natwest_row(description="SYNTHETIC OWN ACCOUNT", value="-500.00"),
-            natwest_row(description="SYNTHETIC PERSONAL PAYMENT", value="25.00"),
+        bank_statement_ofx(
+            ofx_transaction(fitid="1", name="SYNTHETIC CAFE", trnamt="-4.50"),
+            ofx_transaction(fitid="2", name="SYNTHETIC CAFE", trnamt="2.00"),
+            ofx_transaction(fitid="3", name="SYNTHETIC SALARY", trnamt="2000.00"),
+            ofx_transaction(fitid="4", name="SYNTHETIC OWN ACCOUNT", trnamt="-500.00"),
+            ofx_transaction(fitid="5", name="SYNTHETIC PERSONAL PAYMENT", trnamt="25.00"),
         ),
+        preset="natwest_select",
     )
     return [row["id"] for row in client.get("/transactions").json()]
 
@@ -48,13 +50,20 @@ def test_lists_the_nine_defined_categories(client: TestClient) -> None:
 
 
 def test_lists_original_details_newest_first(client: TestClient) -> None:
-    upload(client, natwest_csv(natwest_row(date="02 Sep 2026"), natwest_row(date="03 Sep 2026")))
+    upload(
+        client,
+        bank_statement_ofx(
+            ofx_transaction(fitid="1", dtposted="20260902", trntype="POS", name="SYNTHETIC CAFE"),
+            ofx_transaction(fitid="2", dtposted="20260903", trntype="POS", name="SYNTHETIC CAFE"),
+        ),
+        preset="natwest_select",
+    )
 
     response = client.get("/transactions")
 
     assert response.json()[0] == {
         "id": 2,
-        "account_name": "NatWest",
+        "account_name": "NatWest Select",
         "transaction_date": "2026-09-03",
         "amount_pence": -450,
         "raw_description": "SYNTHETIC CAFE",
@@ -170,12 +179,13 @@ def test_uncategorized_filter_includes_cleared_transactions(
 def test_categorization_preserves_source_evidence_and_overlapping_import_identity(
     client: TestClient, session: Session
 ) -> None:
-    original = natwest_csv(natwest_row())
-    upload(client, original)
+    shared = ofx_transaction(fitid="1", trntype="POS", name="SYNTHETIC CAFE")
+    original = bank_statement_ofx(shared)
+    upload(client, original, preset="natwest_select")
     category = category_id(client, "Food")
 
     client.patch("/transactions/category", json={"transaction_ids": [1], "category_id": category})
-    response = upload(client, natwest_csv(natwest_row(), natwest_row(date="04 Sep 2026")))
+    response = upload(client, bank_statement_ofx(shared, ofx_transaction(fitid="2")))
 
     rows = session.scalars(select(Transaction).order_by(Transaction.id)).all()
     assert response.json()["existing_transaction_count"] == 1
@@ -186,10 +196,9 @@ def test_categorization_preserves_source_evidence_and_overlapping_import_identit
     assert (
         rows[0].transaction_date,
         rows[0].amount_minor,
-        rows[0].balance_after_minor,
         rows[0].source_type,
         rows[0].raw_description,
-    ) == (date(2026, 9, 3), -450, 99550, "POS", "SYNTHETIC CAFE")
+    ) == (date(2026, 9, 3), -450, "POS", "SYNTHETIC CAFE")
     assert session.scalars(select(ImportFile.content).order_by(ImportFile.id)).first() == original
     assert len(session.scalars(select(ImportFileTransaction)).all()) == 3
 

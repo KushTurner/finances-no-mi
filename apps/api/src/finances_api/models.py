@@ -19,6 +19,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 Institution = Literal["amex", "natwest", "nationwide"]
 AccountType = Literal["current_account", "credit_card", "savings"]
+AccountPresetId = Literal["amex_gold", "nationwide_flexone", "natwest_select"]
 
 
 class Base(DeclarativeBase):
@@ -27,11 +28,17 @@ class Base(DeclarativeBase):
 
 class Account(Base):
     __tablename__ = "accounts"
+    __table_args__ = (Index("ix_accounts_acctid", "acctid"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String, unique=True)
+    name: Mapped[str] = mapped_column(String)
     institution: Mapped[Institution] = mapped_column(String)
     account_type: Mapped[AccountType] = mapped_column(String)
+    preset: Mapped[AccountPresetId] = mapped_column(String)
+    acctid: Mapped[str] = mapped_column(String)
+    bankid: Mapped[str | None] = mapped_column(String)
+    org: Mapped[str | None] = mapped_column(String)
+    fid: Mapped[str | None] = mapped_column(String)
 
 
 class ImportFile(Base):
@@ -74,7 +81,7 @@ class MerchantKey(Base):
 class Transaction(Base):
     __tablename__ = "transactions"
     __table_args__ = (
-        UniqueConstraint("account_id", "source_key", name="uq_transactions_source_key"),
+        UniqueConstraint("account_id", "fitid", name="uq_transactions_fitid"),
         Index("ix_transactions_account_date", "account_id", "transaction_date"),
         Index("ix_transactions_merchant_key_id", "merchant_key_id"),
         Index("ix_transactions_category_id", "category_id"),
@@ -91,11 +98,10 @@ class Transaction(Base):
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="RESTRICT"))
     transaction_date: Mapped[date] = mapped_column(Date)
     amount_minor: Mapped[int] = mapped_column(Integer)
-    balance_after_minor: Mapped[int | None] = mapped_column(Integer)
     source_type: Mapped[str | None] = mapped_column(String)
     raw_description: Mapped[str] = mapped_column(Text)
-    source_reference: Mapped[str | None] = mapped_column(String)
-    source_key: Mapped[str] = mapped_column(String)
+    memo: Mapped[str | None] = mapped_column(Text)
+    fitid: Mapped[str] = mapped_column(String)
     merchant_key_id: Mapped[int] = mapped_column(
         ForeignKey("merchant_keys.id", ondelete="RESTRICT")
     )
@@ -116,7 +122,7 @@ class ImportFileTransaction(Base):
             "transaction_id",
             name="uq_import_file_transactions_transaction",
         ),
-        CheckConstraint("row_number > 0", name="ck_import_file_transactions_row_number"),
+        CheckConstraint("position > 0", name="ck_import_file_transactions_position"),
         Index("ix_import_file_transactions_transaction_id", "transaction_id"),
     )
 
@@ -124,7 +130,7 @@ class ImportFileTransaction(Base):
         ForeignKey("import_files.id", ondelete="RESTRICT"), primary_key=True
     )
     transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id", ondelete="RESTRICT"))
-    row_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    position: Mapped[int] = mapped_column(Integer, primary_key=True)
 
 
 class MerchantSuggestion(Base):
