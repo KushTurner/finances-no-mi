@@ -71,8 +71,8 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - The 32 committed synthetic examples cover all nine categories and ambiguous inputs, with
   the user-selected category as the sole reference. Scoring reports accuracy, coverage,
   abstention and failures separately; automated tests stub external calls.
-- Try the synthetic workflow, then define and test sanitization and permitted hosted storage
-  before preparing a privately labelled representative sample.
+- Use the synthetic workflow to check setup, then compare models on privately labelled
+  real transactions in LangSmith. Keep transaction files and credentials out of Git.
 - Compare model accuracy, suggestion coverage, failures, latency, and cost on a held-out set
   before choosing the first production model.
 

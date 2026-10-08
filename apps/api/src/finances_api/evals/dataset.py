@@ -8,10 +8,10 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from finances_api.evals.categorization import ReferenceDecision, TransactionContext
 
-STARTER_DATASET_NAME = "finances-no-mi-synthetic-v2"
+STARTER_DATASET_NAME = "finances-no-mi-synthetic-v3"
 
 
-class StarterExample(BaseModel):
+class LabelledExample(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     case_id: str
@@ -19,19 +19,24 @@ class StarterExample(BaseModel):
     outputs: ReferenceDecision
 
 
-def starter_examples() -> list[StarterExample]:
-    content = Path(__file__).with_name("synthetic-v2.json").read_bytes()
-    return TypeAdapter(list[StarterExample]).validate_json(content)
+def load_examples(path: Path) -> list[LabelledExample]:
+    cases = TypeAdapter(list[LabelledExample]).validate_json(path.read_bytes())
+    if not cases or len({case.case_id for case in cases}) != len(cases):
+        raise ValueError("Examples must be nonempty and have unique case IDs")
+    return cases
 
 
-def seed_dataset(client: Client) -> Dataset:
-    cases = starter_examples()
+def starter_examples() -> list[LabelledExample]:
+    return load_examples(Path(__file__).with_name("synthetic-v3.json"))
+
+
+def seed_dataset(client: Client, dataset_name: str, cases: list[LabelledExample]) -> Dataset:
     try:
-        dataset = client.read_dataset(dataset_name=STARTER_DATASET_NAME)
+        dataset = client.read_dataset(dataset_name=dataset_name)
     except LangSmithNotFoundError:
         dataset = client.create_dataset(  # pyright: ignore[reportUnknownMemberType]
-            dataset_name=STARTER_DATASET_NAME,
-            description="Synthetic categorization starter examples. No real financial data.",
+            dataset_name=dataset_name,
+            description="Labelled transaction categorization examples.",
             inputs_schema=TransactionContext.model_json_schema(),
             outputs_schema=ReferenceDecision.model_json_schema(),
         )
@@ -42,7 +47,7 @@ def seed_dataset(client: Client) -> Dataset:
             id=uuid5(dataset.id, case.case_id),
             inputs=case.inputs.model_dump(),
             outputs=case.outputs.model_dump(),
-            metadata={"case_id": case.case_id, "synthetic": True},
+            metadata={"case_id": case.case_id},
         )
         for case in cases
         if uuid5(dataset.id, case.case_id) not in existing_ids

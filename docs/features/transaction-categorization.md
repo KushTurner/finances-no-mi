@@ -69,11 +69,10 @@ A failed, refused, or invalid response leaves the transaction available for manu
 ## LLM boundary
 
 - Use an ordinary structured request; LangGraph is not needed.
-- Permit only a sanitized description, institution, incoming/outgoing direction, available transaction type, and the allowed category definitions in the initial suggestion input.
-- Preserve useful purpose text in the description, rather than reducing it to an assumed merchant name. Remove identifiable account/payment references and minimize personal identifiers before an external request. Define and test the sanitization policy with synthetic examples before implementing the provider integration; if useful context cannot be sent within that policy, use manual review.
-- Keep the original description local and unchanged. Do not send statement files, filenames, account identifiers, balances, source-reference fields, or unrelated transactions.
-- Previously reviewed examples are a later slice. Define their permitted contents and sanitization before sending any historical examples externally.
-- Never log financial descriptions, request payloads, raw responses containing transaction data, or credentials. Keep provider credentials in the local environment.
+- Send the original transaction description, institution, incoming/outgoing direction, available transaction type, and allowed category definitions.
+- Keep reference labels and reviewer explanations out of model input. Previously reviewed examples are a later slice.
+- Model providers receive transaction inputs; LangSmith stores evaluation examples and model traces for review. Keep real transaction files and credentials out of Git.
+- Keep provider credentials in the local environment and financial contents out of application console logs.
 - Stub all external LLM calls in automated tests. Use synthetic data in fixtures, evaluations committed to Git, screenshots, and documentation.
 
 ## Evidence for future automation
@@ -104,7 +103,7 @@ Before enabling automatic categorization, evaluate candidate thresholds while al
 - Approval or correction assigns the chosen category and retains the original prediction and human outcome atomically.
 - No confidence value bypasses review in the initial workflow.
 - Same-sender payments with different purposes can receive different categories, and bulk approval never creates an implicit future rule.
-- Outbound input tests prove that prohibited fields are excluded and meaningful synthetic purpose text is preserved.
+- Input tests prove that reference labels and reviewer explanations are excluded and transaction descriptions are preserved.
 
 ## Deferred
 
@@ -116,5 +115,5 @@ Before enabling automatic categorization, evaluate candidate thresholds while al
 
 ## Decisions for later slices
 
-- Choose the LLM provider/model, structured output contract, and tested sanitization policy when implementing suggestions.
+- Choose the LLM provider/model and structured output contract when implementing suggestions.
 - Define reviewed-example selection and an accuracy target before evaluating automation. Do not pick an automatic-approval threshold before collecting evidence.

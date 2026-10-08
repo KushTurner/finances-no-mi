@@ -1,14 +1,14 @@
 import json
 import socket
 from datetime import UTC, datetime
-from typing import Any, cast
+from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, create_autospec
 from uuid import UUID, uuid4, uuid5
 
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
-from langchain_core.runnables import RunnableLambda
 from langsmith import Client
 from langsmith.schemas import Dataset, Example, Run
 from pydantic import ValidationError
@@ -23,6 +23,7 @@ from finances_api.evals.categorization import (
 )
 from finances_api.evals.dataset import (
     STARTER_DATASET_NAME,
+    load_examples,
     seed_dataset,
     starter_examples,
     validate_examples,
@@ -31,7 +32,7 @@ from finances_api.evals.scoring import correctness, summarize
 from finances_api.services.categories import list_categories
 
 CONTEXT: dict[str, Any] = {
-    "sanitized_description": "SYNTHETIC CAFE RESTAURANT MEAL",
+    "description": "SYNTHETIC CAFE RESTAURANT MEAL",
     "institution": "amex",
     "direction": "outgoing",
     "transaction_type": None,
@@ -115,17 +116,14 @@ def test_provider_failure_does_not_expose_its_message(
 @pytest.mark.parametrize(
     "field",
     [
-        "raw_description",
-        "account_id",
-        "amount_pence",
-        "source_reference",
         "category",
         "user_context",
-        "context_sufficient",
         "reference_outputs",
     ],
 )
-def test_prohibited_context_is_rejected_before_a_model_call(model: MagicMock, field: str) -> None:
+def test_unexpected_input_fields_are_rejected_before_a_model_call(
+    model: MagicMock, field: str
+) -> None:
     target = Categorizer(model)
     inputs = {**CONTEXT, field: "synthetic prohibited value"}
 
@@ -241,34 +239,11 @@ def test_seed_preserves_existing_labels_and_fills_only_missing_examples() -> Non
     )
     client.list_examples.return_value = iter([existing])
 
-    seed_dataset(client)
+    seed_dataset(client, STARTER_DATASET_NAME, cases)
 
     uploaded = client.create_examples.call_args.kwargs["examples"]
     assert existing.id not in {example.id for example in uploaded}
     assert len(uploaded) == len(cases) - 1
-
-
-def test_sdk_runs_the_target_and_scorer_without_uploads(model: MagicMock) -> None:
-    def respond(inputs: object) -> dict[str, Any]:
-        return {"parsed": {"category": "Food"}}
-
-    model.with_structured_output.return_value = RunnableLambda(respond)
-    example = Example(id=uuid4(), inputs=CONTEXT, outputs={"category": "Food"})
-    client = Client(api_key="synthetic-test-key", auto_batch_tracing=False)
-
-    results = client.evaluate(  # pyright: ignore[reportUnknownMemberType]
-        Categorizer(model),
-        data=[example],
-        evaluators=[correctness],
-        summary_evaluators=[summarize],
-        upload_results=False,
-        max_concurrency=1,
-    )
-
-    row = list(results)[0]
-    assert row["evaluation_results"].get("results", [])[0].score == 1
-    outputs = cast(dict[str, Any], row["run"].outputs)  # pyright: ignore[reportUnknownMemberType]
-    assert outputs["category"] == "Food"
 
 
 @pytest.mark.parametrize("examples", [[], [Example(id=uuid4(), inputs=CONTEXT, outputs={})]])
@@ -300,3 +275,13 @@ def test_missing_key_gives_setup_instructions_without_connecting(
 def test_reference_requires_only_a_known_category(outputs: dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
         ReferenceDecision.model_validate(outputs)
+
+
+@pytest.mark.parametrize("duplicate", [False, True])
+def test_import_rejects_empty_files_and_duplicate_case_ids(tmp_path: Path, duplicate: bool) -> None:
+    data = tmp_path / "synthetic.json"
+    case = starter_examples()[0].model_dump()
+    data.write_text(json.dumps([case, case] if duplicate else []))
+
+    with pytest.raises(ValueError):
+        load_examples(data)

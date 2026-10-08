@@ -2,7 +2,7 @@
   {
     "case_id": "rent",
     "inputs": {
-      "sanitized_description": "SYNTHETIC LETTINGS MONTHLY RENT",
+      "description": "SYNTHETIC LETTINGS MONTHLY RENT",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": "D/D"
@@ -14,7 +14,7 @@
   {
     "case_id": "broadband",
     "inputs": {
-      "sanitized_description": "SYNTHETIC BROADBAND MONTHLY BILL",
+      "description": "SYNTHETIC BROADBAND MONTHLY BILL",
       "institution": "nationwide",
       "direction": "outgoing",
       "transaction_type": "Direct debit"
@@ -26,7 +26,7 @@
   {
     "case_id": "groceries",
     "inputs": {
-      "sanitized_description": "SYNTHETIC MARKET GROCERIES",
+      "description": "SYNTHETIC MARKET GROCERIES",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
@@ -38,7 +38,7 @@
   {
     "case_id": "grocery-refund",
     "inputs": {
-      "sanitized_description": "SYNTHETIC MARKET REFUND FOR GROCERIES",
+      "description": "SYNTHETIC MARKET REFUND FOR GROCERIES",
       "institution": "natwest",
       "direction": "incoming",
       "transaction_type": "POS"
@@ -50,7 +50,7 @@
   {
     "case_id": "restaurant",
     "inputs": {
-      "sanitized_description": "SYNTHETIC CAFE RESTAURANT MEAL",
+      "description": "SYNTHETIC CAFE RESTAURANT MEAL",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
@@ -62,7 +62,7 @@
   {
     "case_id": "dinner-repayment",
     "inputs": {
-      "sanitized_description": "PERSON DINNER SHARE REPAYMENT",
+      "description": "PERSON DINNER SHARE REPAYMENT",
       "institution": "natwest",
       "direction": "incoming",
       "transaction_type": "FPI"
@@ -74,7 +74,7 @@
   {
     "case_id": "bus",
     "inputs": {
-      "sanitized_description": "SYNTHETIC LOCAL BUS FARE",
+      "description": "SYNTHETIC LOCAL BUS FARE",
       "institution": "nationwide",
       "direction": "outgoing",
       "transaction_type": "Visa purchase"
@@ -86,7 +86,7 @@
   {
     "case_id": "fuel",
     "inputs": {
-      "sanitized_description": "SYNTHETIC FUEL STATION CAR FUEL",
+      "description": "SYNTHETIC FUEL STATION CAR FUEL",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
@@ -98,7 +98,7 @@
   {
     "case_id": "holiday-hotel",
     "inputs": {
-      "sanitized_description": "SYNTHETIC HOTEL HOLIDAY ACCOMMODATION",
+      "description": "SYNTHETIC HOTEL HOLIDAY ACCOMMODATION",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
@@ -110,7 +110,7 @@
   {
     "case_id": "trip-repayment",
     "inputs": {
-      "sanitized_description": "PERSON COASTAL HOLIDAY SHARE REPAYMENT",
+      "description": "PERSON COASTAL HOLIDAY SHARE REPAYMENT",
       "institution": "nationwide",
       "direction": "incoming",
       "transaction_type": "Bank credit"
@@ -122,7 +122,7 @@
   {
     "case_id": "hobby",
     "inputs": {
-      "sanitized_description": "SYNTHETIC BOOKSHOP HOBBY BOOKS",
+      "description": "SYNTHETIC BOOKSHOP HOBBY BOOKS",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
@@ -134,7 +134,7 @@
   {
     "case_id": "streaming",
     "inputs": {
-      "sanitized_description": "SYNTHETIC MOVIE STREAMING SUBSCRIPTION",
+      "description": "SYNTHETIC MOVIE STREAMING SUBSCRIPTION",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": "D/D"
@@ -146,7 +146,7 @@
   {
     "case_id": "dentist",
     "inputs": {
-      "sanitized_description": "SYNTHETIC DENTIST DENTAL CHECKUP",
+      "description": "SYNTHETIC DENTIST DENTAL CHECKUP",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
@@ -158,7 +158,7 @@
   {
     "case_id": "gym",
     "inputs": {
-      "sanitized_description": "SYNTHETIC GYM FITNESS MEMBERSHIP",
+      "description": "SYNTHETIC GYM FITNESS MEMBERSHIP",
       "institution": "nationwide",
       "direction": "outgoing",
       "transaction_type": "Direct debit"
@@ -170,7 +170,7 @@
   {
     "case_id": "gift-sent",
     "inputs": {
-      "sanitized_description": "PERSON BIRTHDAY GIFT SENT",
+      "description": "PERSON BIRTHDAY GIFT SENT",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": "FPO"
@@ -182,7 +182,7 @@
   {
     "case_id": "bank-fee",
     "inputs": {
-      "sanitized_description": "SYNTHETIC UNRELATED BANK ADMINISTRATION FEE",
+      "description": "SYNTHETIC UNRELATED BANK ADMINISTRATION FEE",
       "institution": "nationwide",
       "direction": "outgoing",
       "transaction_type": "Charge"
@@ -194,7 +194,7 @@
   {
     "case_id": "salary",
     "inputs": {
-      "sanitized_description": "SYNTHETIC EMPLOYER MONTHLY SALARY",
+      "description": "SYNTHETIC EMPLOYER MONTHLY SALARY",
       "institution": "natwest",
       "direction": "incoming",
       "transaction_type": "BAC"
@@ -206,7 +206,7 @@
   {
     "case_id": "gift-received",
     "inputs": {
-      "sanitized_description": "PERSON BIRTHDAY GIFT RECEIVED",
+      "description": "PERSON BIRTHDAY GIFT RECEIVED",
       "institution": "nationwide",
       "direction": "incoming",
       "transaction_type": "Bank credit"
@@ -218,7 +218,7 @@
   {
     "case_id": "own-savings",
     "inputs": {
-      "sanitized_description": "TRANSFER TO MY OWN SAVINGS ACCOUNT",
+      "description": "TRANSFER TO MY OWN SAVINGS ACCOUNT",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": "TFR"
@@ -230,7 +230,7 @@
   {
     "case_id": "card-balance",
     "inputs": {
-      "sanitized_description": "PAYMENT OF MY OWN CREDIT CARD BALANCE",
+      "description": "PAYMENT OF MY OWN CREDIT CARD BALANCE",
       "institution": "amex",
       "direction": "incoming",
       "transaction_type": null
@@ -242,7 +242,7 @@
   {
     "case_id": "vague-trip-repayment",
     "inputs": {
-      "sanitized_description": "PERSON THANKS",
+      "description": "PERSON THANKS",
       "institution": "natwest",
       "direction": "incoming",
       "transaction_type": "FPI"
@@ -254,7 +254,7 @@
   {
     "case_id": "vague-transfer",
     "inputs": {
-      "sanitized_description": "PERSON TRANSFER",
+      "description": "PERSON TRANSFER",
       "institution": "nationwide",
       "direction": "outgoing",
       "transaction_type": "Transfer"
@@ -266,7 +266,7 @@
   {
     "case_id": "unclear-supermarket",
     "inputs": {
-      "sanitized_description": "SYNTHETIC SUPERMARKET",
+      "description": "SYNTHETIC SUPERMARKET",
       "institution": "amex",
       "direction": "outgoing",
       "transaction_type": null
@@ -278,7 +278,7 @@
   {
     "case_id": "unclear-recurring",
     "inputs": {
-      "sanitized_description": "SYNTHETIC ONLINE SERVICE RECURRING PAYMENT",
+      "description": "SYNTHETIC ONLINE SERVICE RECURRING PAYMENT",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": "D/D"
@@ -290,7 +290,7 @@
   {
     "case_id": "car-finance",
     "inputs": {
-      "sanitized_description": "SYNTHETIC MOTOR FINANCE REPAYMENT",
+      "description": "SYNTHETIC MOTOR FINANCE REPAYMENT",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": null
@@ -302,7 +302,7 @@
   {
     "case_id": "family-loan",
     "inputs": {
-      "sanitized_description": "SYNTHETIC FAMILY LOAN REPAYMENT",
+      "description": "SYNTHETIC FAMILY LOAN REPAYMENT",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": null
@@ -314,7 +314,7 @@
   {
     "case_id": "alcoholic-drinks",
     "inputs": {
-      "sanitized_description": "SYNTHETIC TAVERN ALCOHOLIC DRINKS",
+      "description": "SYNTHETIC TAVERN ALCOHOLIC DRINKS",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": null
@@ -326,7 +326,7 @@
   {
     "case_id": "drinks-refund",
     "inputs": {
-      "sanitized_description": "SYNTHETIC TAVERN DRINKS REFUND",
+      "description": "SYNTHETIC TAVERN DRINKS REFUND",
       "institution": "natwest",
       "direction": "incoming",
       "transaction_type": null
@@ -338,7 +338,7 @@
   {
     "case_id": "investment-contribution",
     "inputs": {
-      "sanitized_description": "TRANSFER TO MY OWN INVESTMENT ACCOUNT",
+      "description": "TRANSFER TO MY OWN INVESTMENT ACCOUNT",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": null
@@ -350,7 +350,7 @@
   {
     "case_id": "investment-withdrawal",
     "inputs": {
-      "sanitized_description": "WITHDRAWAL FROM MY OWN INVESTMENT ACCOUNT",
+      "description": "WITHDRAWAL FROM MY OWN INVESTMENT ACCOUNT",
       "institution": "natwest",
       "direction": "incoming",
       "transaction_type": null
@@ -362,7 +362,7 @@
   {
     "case_id": "retail-refund",
     "inputs": {
-      "sanitized_description": "SYNTHETIC ELECTRONICS SHOP PURCHASE REFUND",
+      "description": "SYNTHETIC ELECTRONICS SHOP PURCHASE REFUND",
       "institution": "natwest",
       "direction": "incoming",
       "transaction_type": null
@@ -374,7 +374,7 @@
   {
     "case_id": "own-current-transfer",
     "inputs": {
-      "sanitized_description": "TRANSFER TO MY OWN CURRENT ACCOUNT",
+      "description": "TRANSFER TO MY OWN CURRENT ACCOUNT",
       "institution": "natwest",
       "direction": "outgoing",
       "transaction_type": null
