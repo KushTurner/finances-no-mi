@@ -207,6 +207,46 @@ test('imports other statements for the new account once it is added', async () =
   ).toHaveTextContent('Imported into NatWest Select');
 });
 
+test('asks for one new account at a time', async () => {
+  stubApi({
+    'natwest.ofx': needsAccountUntilPresetChosen('NatWest Select'),
+    'amex.ofx': (form) =>
+      form.has('preset')
+        ? completedImport('American Express Gold')(form)
+        : Response.json(
+            {
+              detail: 'Add an account for this statement',
+              card_type: 'credit',
+            },
+            { status: 422 },
+          ),
+  });
+  renderPage();
+  dropStatements('natwest.ofx', 'amex.ofx');
+  fireEvent.click(screen.getByRole('button', { name: 'Import 2 statements' }));
+  fireEvent.click(
+    await statementRow('natwest.ofx').findByRole('radio', {
+      name: 'NatWest Select',
+    }),
+  );
+  expect(statementRow('amex.ofx').queryByRole('radio')).toBeNull();
+
+  fireEvent.click(
+    statementRow('natwest.ofx').getByRole('button', {
+      name: 'Add account and import',
+    }),
+  );
+
+  expect(
+    await statementRow('amex.ofx').findByRole('radio', {
+      name: 'American Express Gold',
+    }),
+  ).toBeVisible();
+  expect(statementRow('natwest.ofx').getByRole('status')).toHaveTextContent(
+    'Imported into NatWest Select',
+  );
+});
+
 test('removes a statement added by mistake before importing', () => {
   renderPage();
   dropStatements('natwest.ofx', 'notes.ofx');

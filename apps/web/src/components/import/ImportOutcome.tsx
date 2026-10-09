@@ -6,7 +6,7 @@ import { StatementErrors } from './StatementErrors';
 type ImportOutcomeProps = {
   result: ImportResult;
   disabled: boolean;
-  onAddAccount: (newAccount: NewAccount) => void;
+  onAddAccount?: (newAccount: NewAccount) => void;
 };
 
 export function ImportOutcome({
@@ -24,12 +24,17 @@ export function ImportOutcome({
         </p>
       );
     case 'needsAccount':
-      return (
+      return onAddAccount ? (
         <AccountSetupForm
           cardType={result.cardType}
           disabled={disabled}
           onAddAccount={onAddAccount}
         />
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">
+          This {result.cardType} card statement is for an account you have not
+          added yet. Add the account for the statement above first.
+        </p>
       );
     case 'rejected':
       return (

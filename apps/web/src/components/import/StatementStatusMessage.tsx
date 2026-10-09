@@ -6,7 +6,7 @@ import type { StatementStatus } from './statementQueue';
 type StatementStatusMessageProps = {
   status: StatementStatus;
   disabled: boolean;
-  onAddAccount: (newAccount: NewAccount) => void;
+  onAddAccount?: (newAccount: NewAccount) => void;
 };
 
 export function StatementStatusMessage({

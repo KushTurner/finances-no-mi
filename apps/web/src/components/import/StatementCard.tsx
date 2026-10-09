@@ -10,7 +10,7 @@ type StatementCardProps = {
   removable: boolean;
   disabled: boolean;
   onRemove: () => void;
-  onAddAccount: (newAccount: NewAccount) => void;
+  onAddAccount?: (newAccount: NewAccount) => void;
 };
 
 export function StatementCard({

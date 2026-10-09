@@ -8,6 +8,13 @@ import { Button } from '@/components/ui/button';
 import { useImportStatementMutation } from '@/hooks';
 import { formatCount } from '@/lib';
 
+function needsAccount(statement: QueuedStatement) {
+  return (
+    statement.status.kind === 'imported' &&
+    statement.status.result.kind === 'needsAccount'
+  );
+}
+
 export function ImportPage() {
   const [statements, setStatements] = useState<QueuedStatement[]>([]);
   const [isImporting, setIsImporting] = useState(false);
@@ -17,12 +24,8 @@ export function ImportPage() {
     (statement) =>
       statement.status.kind === 'waiting' || statement.status.kind === 'failed',
   );
-  const removable = statements.filter(
-    (statement) =>
-      pending.includes(statement) ||
-      (statement.status.kind === 'imported' &&
-        statement.status.result.kind === 'needsAccount'),
-  );
+  const needingAccount = statements.filter(needsAccount);
+  const removable = [...pending, ...needingAccount];
 
   function updateStatus(key: number, status: StatementStatus) {
     setStatements((current) =>
@@ -80,11 +83,8 @@ export function ImportPage() {
     statement: QueuedStatement,
     newAccount: NewAccount,
   ) {
-    const othersNeedingAccount = statements.filter(
-      (other) =>
-        other.key !== statement.key &&
-        other.status.kind === 'imported' &&
-        other.status.result.kind === 'needsAccount',
+    const othersNeedingAccount = needingAccount.filter(
+      (other) => other !== statement,
     );
     setIsImporting(true);
     const result = await importStatement(statement, newAccount);
@@ -114,8 +114,11 @@ export function ImportPage() {
                   removable={!isImporting && removable.includes(statement)}
                   disabled={isImporting}
                   onRemove={() => removeStatement(statement.key)}
-                  onAddAccount={(newAccount) =>
-                    void addAccountAndImport(statement, newAccount)
+                  onAddAccount={
+                    statement === needingAccount[0]
+                      ? (newAccount) =>
+                          void addAccountAndImport(statement, newAccount)
+                      : undefined
                   }
                 />
               </li>

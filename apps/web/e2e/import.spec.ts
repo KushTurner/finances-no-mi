@@ -177,6 +177,9 @@ for (const viewport of [
     await expect(
       september.getByRole('radio', { name: 'NatWest Select' }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('listitem', { name: 'october.ofx' }),
+    ).toContainText('Add the account for the statement above first.');
     await attachScreenshot(page, testInfo, `account-setup-${viewport.name}`);
     await september.getByRole('radio', { name: 'NatWest Select' }).check();
     await september.getByLabel('Name (optional)').fill('Bills');

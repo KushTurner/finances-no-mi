@@ -13,7 +13,7 @@ One shared parser and one shared account matcher handle every supported account.
 3. A statement that matches one saved account imports directly into it.
 4. An unmatched statement shows **Add account**. It states whether the statement is for a credit or debit card, lists the presets of that card type with none chosen, and takes an optional name that defaults to the chosen preset's name.
 5. The backend saves the account with the statement's OFX identifiers and imports the statement in the same database transaction.
-6. Other statements in the same upload that were waiting for an account are retried and import into it when they match.
+6. When several statements need an account, the form appears on one at a time; the others wait. After an account is added, the waiting statements are retried: those that match it import, and the next unmatched one shows the form.
 
 Each file has its own outcome: imported with new and existing transaction counts, already imported, needs an account, or invalid. Pending account setup creates nothing.
 
