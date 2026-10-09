@@ -34,16 +34,7 @@ def test_reads_bank_account_identifiers_as_supplied() -> None:
         bankid="600000",
         org=None,
         fid=None,
-        account_type="current_account",
     )
-
-
-def test_reads_savings_account_type() -> None:
-    content = bank_statement_ofx(accttype="SAVINGS")
-
-    account = parsed(parse_ofx(content)).account
-
-    assert account.account_type == "savings"
 
 
 def test_reads_credit_card_account_and_institution_identifiers() -> None:
@@ -56,7 +47,6 @@ def test_reads_credit_card_account_and_institution_identifiers() -> None:
         bankid=None,
         org="SYNTH",
         fid="1234",
-        account_type="credit_card",
     )
 
 

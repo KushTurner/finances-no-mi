@@ -9,15 +9,8 @@ from typing import Any
 from ofxtools.models import CCSTMTRS, STMTRS, STMTTRN
 from ofxtools.Parser import OFXTree
 
-from finances_api.models import AccountType
-
 # ofxtools logs element text, including statement contents, at DEBUG level.
 logging.getLogger("ofxtools").setLevel(logging.WARNING)
-
-ACCOUNT_TYPES_BY_OFX_ACCTTYPE: dict[str, AccountType] = {
-    "CHECKING": "current_account",
-    "SAVINGS": "savings",
-}
 
 
 @dataclass(frozen=True)
@@ -26,7 +19,6 @@ class StatementAccount:
     bankid: str | None
     org: str | None
     fid: str | None
-    account_type: AccountType | None
 
 
 @dataclass(frozen=True)
@@ -104,18 +96,11 @@ def _read_account(ofx: Any, statement: STMTRS | CCSTMTRS) -> StatementAccount | 
         return None
 
     fi = ofx.signonmsgsrsv1.sonrs.fi
-    if isinstance(statement, CCSTMTRS):
-        bankid = None
-        account_type: AccountType | None = "credit_card"
-    else:
-        bankid = acctfrom.bankid
-        account_type = ACCOUNT_TYPES_BY_OFX_ACCTTYPE.get(acctfrom.accttype)
     return StatementAccount(
         acctid=acctid,
-        bankid=bankid,
+        bankid=None if isinstance(statement, CCSTMTRS) else acctfrom.bankid,
         org=fi.org if fi is not None else None,
         fid=fi.fid if fi is not None else None,
-        account_type=account_type,
     )
 
 

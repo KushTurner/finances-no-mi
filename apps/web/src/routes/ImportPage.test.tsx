@@ -1,8 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { ImportPage } from './ImportPage';
+
+beforeEach(() => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -57,22 +68,17 @@ function completedImport(accountName: string): ImportResponder {
     );
 }
 
-function needsAccount(accountType: string | null): ImportResponder {
-  return () =>
-    Response.json(
-      {
-        detail: 'Add an account for this statement',
-        account_type: accountType,
-      },
-      { status: 422 },
-    );
-}
+const needsAccount: ImportResponder = () =>
+  Response.json(
+    { detail: 'Add an account for this statement' },
+    { status: 422 },
+  );
 
 function needsAccountUntilPresetChosen(accountName: string): ImportResponder {
   return (form) =>
     form.has('preset')
       ? completedImport(accountName)(form)
-      : needsAccount('current_account')(form);
+      : needsAccount(form);
 }
 
 function renderPage() {
@@ -114,21 +120,22 @@ test('imports each dropped statement into its matching account', async () => {
   );
 });
 
-test('offers only the presets for the statement account type', async () => {
-  stubApi({ 'natwest.ofx': needsAccount('current_account') });
+test('offers every preset without choosing one', async () => {
+  stubApi({ 'natwest.ofx': needsAccount });
   renderPage();
   dropStatements('natwest.ofx');
 
   fireEvent.click(screen.getByRole('button', { name: 'Import 1 statement' }));
 
-  await statementRow('natwest.ofx').findByRole('radio', {
-    name: 'NatWest Select',
-  });
+  const radios = await statementRow('natwest.ofx').findAllByRole('radio');
   expect(
-    statementRow('natwest.ofx')
-      .getAllByRole('radio')
-      .map((radio) => radio.closest('label')?.textContent),
-  ).toEqual(['Nationwide FlexOne', 'NatWest Select']);
+    radios.map((radio) => (radio as HTMLButtonElement).labels[0].textContent),
+  ).toEqual(['American Express Gold', 'Nationwide FlexOne', 'NatWest Select']);
+  expect(radios.map((radio) => radio.getAttribute('aria-checked'))).toEqual([
+    'false',
+    'false',
+    'false',
+  ]);
 });
 
 test('adds the chosen account with its nickname and imports the statement', async () => {
@@ -176,7 +183,7 @@ test('imports other statements for the new account once it is added', async () =
     'october.ofx': (form) =>
       accountAdded
         ? completedImport('NatWest Select')(form)
-        : needsAccount('current_account')(form),
+        : needsAccount(form),
   });
   renderPage();
   dropStatements('september.ofx', 'october.ofx');

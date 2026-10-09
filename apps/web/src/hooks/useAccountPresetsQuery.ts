@@ -6,6 +6,5 @@ export function useAccountPresetsQuery() {
   return useQuery({
     queryKey: ['account-presets'],
     queryFn: listAccountPresets,
-    staleTime: Infinity,
   });
 }

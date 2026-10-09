@@ -25,11 +25,7 @@ export function ImportOutcome({
       );
     case 'needsAccount':
       return (
-        <AccountSetupForm
-          accountType={result.accountType}
-          disabled={disabled}
-          onAddAccount={onAddAccount}
-        />
+        <AccountSetupForm disabled={disabled} onAddAccount={onAddAccount} />
       );
     case 'rejected':
       return (

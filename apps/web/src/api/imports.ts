@@ -1,4 +1,3 @@
-import type { AccountType } from './accounts';
 import { send, unexpectedStatus } from './client';
 import type { RejectionResponse } from './client';
 
@@ -23,13 +22,9 @@ type StatementErrorsResponse = {
   errors: StatementError[];
 };
 
-type AccountSetupRequiredResponse = {
-  account_type: AccountType | null;
-};
-
 export type ImportResult =
   | { kind: 'completed'; imported: ImportResponse }
-  | { kind: 'needsAccount'; accountType: AccountType | null }
+  | { kind: 'needsAccount' }
   | { kind: 'invalid'; errors: StatementError[] }
   | { kind: 'rejected'; message: string };
 
@@ -59,10 +54,8 @@ export async function importStatement(
       const rejection = (await response.json()) as RejectionResponse;
       return { kind: 'rejected', message: rejection.detail };
     }
-    case 422: {
-      const setup = (await response.json()) as AccountSetupRequiredResponse;
-      return { kind: 'needsAccount', accountType: setup.account_type };
-    }
+    case 422:
+      return { kind: 'needsAccount' };
     default:
       throw unexpectedStatus(response);
   }

@@ -12,7 +12,6 @@ from finances_api.merchant_keys import normalize_merchant_key
 from finances_api.models import (
     Account,
     AccountPresetId,
-    AccountType,
     ImportFile,
     ImportFileTransaction,
     MerchantKey,
@@ -49,7 +48,7 @@ class DuplicateImport:
 
 @dataclass(frozen=True)
 class AccountSetupRequired:
-    account_type: AccountType | None
+    pass
 
 
 ImportResult = ImportCompleted | DuplicateImport | AccountSetupRequired | InvalidStatement
@@ -67,23 +66,15 @@ def import_statement(
             pass
         case []:
             if new_account is None:
-                return AccountSetupRequired(statement.account.account_type)
+                return AccountSetupRequired()
             account = _add_account(session, statement, new_account)
-            if isinstance(account, InvalidStatement):
-                return account
         case _:
             return _statement_error("This statement matches more than one saved account")
     return _import_into_account(session, account, filename, content, statement.transactions)
 
 
-def _add_account(
-    session: Session, statement: ParsedStatement, new_account: NewAccount
-) -> Account | InvalidStatement:
+def _add_account(session: Session, statement: ParsedStatement, new_account: NewAccount) -> Account:
     preset = PRESETS_BY_ID[new_account.preset]
-    statement_type = statement.account.account_type
-    if statement_type is not None and statement_type != preset.account_type:
-        return _statement_error(f"{preset.name} does not match this statement's account type")
-
     account = Account(
         name=(new_account.name or "").strip() or preset.name,
         institution=preset.institution,

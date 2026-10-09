@@ -36,9 +36,7 @@ def statement_account(
     org: str | None = None,
     fid: str | None = None,
 ) -> StatementAccount:
-    return StatementAccount(
-        acctid=acctid, bankid=bankid, org=org, fid=fid, account_type="current_account"
-    )
+    return StatementAccount(acctid=acctid, bankid=bankid, org=org, fid=fid)
 
 
 def test_matches_the_account_with_the_same_identifiers(session: Session) -> None:

@@ -42,12 +42,9 @@ function completed(accountName: string): MockResponse {
   };
 }
 
-const needsCurrentAccount: MockResponse = {
+const needsAccount: MockResponse = {
   status: 422,
-  json: {
-    detail: 'Add an account for this statement',
-    account_type: 'current_account',
-  },
+  json: { detail: 'Add an account for this statement' },
 };
 
 function syntheticStatement(name: string) {
@@ -163,10 +160,9 @@ for (const viewport of [
     await mockApi(page, {
       'september.ofx': (form) => {
         accountAdded = form.includes('name="preset"');
-        return accountAdded ? completed('Bills') : needsCurrentAccount;
+        return accountAdded ? completed('Bills') : needsAccount;
       },
-      'october.ofx': () =>
-        accountAdded ? completed('Bills') : needsCurrentAccount,
+      'october.ofx': () => (accountAdded ? completed('Bills') : needsAccount),
     });
     await page.setViewportSize(viewport);
     await page.goto('/import');

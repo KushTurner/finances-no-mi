@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from finances_api.database import get_session
-from finances_api.models import AccountPresetId, AccountType
+from finances_api.models import AccountPresetId
 from finances_api.services.imports import (
     AccountSetupRequired,
     DuplicateImport,
@@ -33,11 +33,6 @@ class StatementErrorsResponse(BaseModel):
     errors: list[StatementError]
 
 
-class AccountSetupRequiredResponse(BaseModel):
-    detail: str
-    account_type: AccountType | None
-
-
 router = APIRouter(prefix="/imports", tags=["imports"])
 
 
@@ -45,10 +40,7 @@ router = APIRouter(prefix="/imports", tags=["imports"])
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=ImportResponse,
-    responses={
-        status.HTTP_400_BAD_REQUEST: {"model": StatementErrorsResponse},
-        status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": AccountSetupRequiredResponse},
-    },
+    responses={status.HTTP_400_BAD_REQUEST: {"model": StatementErrorsResponse}},
 )
 def create_import(
     file: UploadFile,
@@ -65,16 +57,11 @@ def create_import(
         case DuplicateImport():
             raise HTTPException(status.HTTP_409_CONFLICT, "This file has already been imported")
         case AccountSetupRequired():
-            return _account_setup_required_response(result)
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT, "Add an account for this statement"
+            )
         case InvalidStatement():
             return _statement_errors_response(result)
-
-
-def _account_setup_required_response(result: AccountSetupRequired) -> JSONResponse:
-    body = AccountSetupRequiredResponse(
-        detail="Add an account for this statement", account_type=result.account_type
-    )
-    return JSONResponse(body.model_dump(), status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 def _statement_errors_response(statement: InvalidStatement) -> JSONResponse:

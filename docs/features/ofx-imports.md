@@ -11,7 +11,7 @@ One shared parser and one shared account matcher handle every supported account.
 1. The user drops or chooses one or more OFX files.
 2. The backend parses and validates each complete statement, including its account metadata.
 3. A statement that matches one saved account imports directly into it.
-4. An unmatched statement shows **Add account**. The user chooses a predefined account preset, narrowed by the statement's account type, and can enter an optional name that defaults to the preset's name.
+4. An unmatched statement shows **Add account**. The user chooses one of the predefined account presets, and can enter an optional name that defaults to the preset's name. Nothing is chosen in advance.
 5. The backend saves the account with the statement's OFX identifiers and imports the statement in the same database transaction.
 6. Other statements in the same upload that were waiting for an account are retried and import into it when they match.
 
@@ -25,15 +25,13 @@ Each file has its own outcome: imported with new and existing transaction counts
 | `nationwide_flexone` | Nationwide FlexOne | `nationwide` | `current_account` |
 | `natwest_select` | NatWest Select | `natwest` | `current_account` |
 
-A preset supplies the account's name, institution, and type. Card themes belong to the frontend, keyed by preset id. Adding a preset extends the catalogue; it does not add a parser or matching rule. Two accounts from the same preset are separate records matched by their OFX identifiers, and account names need not be unique.
+A preset supplies the account's name, institution, and type. The account type comes only from the chosen preset, never from the OFX file. Account cards stay plain; any later card themes belong to the frontend, keyed by preset id. Adding a preset extends the catalogue; it does not add a parser or matching rule. Two accounts from the same preset are separate records matched by their OFX identifiers, and account names need not be unique.
 
 ## Account identity
 
-The parser reads the statement's `ACCTID`, `BANKID`, `ORG`, and `FID`, and the account type: credit card statements are `credit_card`, and bank statements map `CHECKING` to `current_account` and `SAVINGS` to `savings`. Identifiers are stored as supplied, including leading zeroes and masking characters.
+The parser reads the statement's `ACCTID`, `BANKID`, `ORG`, and `FID`. Identifiers are stored as supplied, including leading zeroes and masking characters. The file's own account type is not read.
 
 A saved account matches a statement when `ACCTID` is equal and every other identifier present on both sides is equal. Missing identifiers and placeholders consisting only of zeroes are ignored. A statement matching more than one saved account is rejected rather than imported; resolving accounts that export indistinguishable identifiers is out of scope.
-
-If a chosen preset's account type contradicts the statement's account type, the account is not created.
 
 ## Transactions
 
@@ -67,8 +65,8 @@ Stable `FITID`s across overlapping exports have not been confirmed for these exp
 - `POST /imports` accepts a multipart `file` and optional `preset` and `name` fields:
   - `201` with the import id, account name, and new and existing transaction counts;
   - `409` with `detail` when the exact file was already imported;
-  - `422` with `detail` and the statement's `account_type` when no saved account matches and no preset was sent;
-  - `400` with `errors`, each with a `position` (`null` for file-level errors) and `message`, for an invalid file, an ambiguous account match, or a preset that contradicts the statement.
+  - `422` with `detail` when no saved account matches and no preset was sent;
+  - `400` with `errors`, each with a `position` (`null` for file-level errors) and `message`, for an invalid file or an ambiguous account match.
 
 A preset sent with a statement that already matches an account is ignored.
 

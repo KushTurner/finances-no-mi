@@ -37,7 +37,6 @@ def bank_statement_ofx(
     *transactions: str,
     acctid: str = "12345678",
     bankid: str = "600000",
-    accttype: str = "CHECKING",
     curdef: str = "GBP",
 ) -> bytes:
     if not transactions:
@@ -45,7 +44,7 @@ def bank_statement_ofx(
     body = (
         "<BANKMSGSRSV1><STMTTRNRS><TRNUID>1<STATUS><CODE>0<SEVERITY>INFO</STATUS>"
         f"<STMTRS><CURDEF>{curdef}"
-        f"<BANKACCTFROM><BANKID>{bankid}<ACCTID>{acctid}<ACCTTYPE>{accttype}</BANKACCTFROM>"
+        f"<BANKACCTFROM><BANKID>{bankid}<ACCTID>{acctid}<ACCTTYPE>CHECKING</BANKACCTFROM>"
         f"<BANKTRANLIST><DTSTART>20260901<DTEND>20260910{''.join(transactions)}</BANKTRANLIST>"
         "<LEDGERBAL><BALAMT>100.00<DTASOF>20260910</LEDGERBAL>"
         "</STMTRS></STMTTRNRS></BANKMSGSRSV1>"
