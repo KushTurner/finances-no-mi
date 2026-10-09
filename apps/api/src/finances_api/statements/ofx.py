@@ -9,6 +9,8 @@ from typing import Any
 from ofxtools.models import CCSTMTRS, STMTRS, STMTTRN
 from ofxtools.Parser import OFXTree
 
+from finances_api.models import CardType
+
 # ofxtools logs element text, including statement contents, at DEBUG level.
 logging.getLogger("ofxtools").setLevel(logging.WARNING)
 
@@ -19,6 +21,7 @@ class StatementAccount:
     bankid: str | None
     org: str | None
     fid: str | None
+    card_type: CardType
 
 
 @dataclass(frozen=True)
@@ -101,6 +104,7 @@ def _read_account(ofx: Any, statement: STMTRS | CCSTMTRS) -> StatementAccount | 
         bankid=None if isinstance(statement, CCSTMTRS) else acctfrom.bankid,
         org=fi.org if fi is not None else None,
         fid=fi.fid if fi is not None else None,
+        card_type="credit" if isinstance(statement, CCSTMTRS) else "debit",
     )
 
 

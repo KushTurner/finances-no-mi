@@ -20,6 +20,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 Institution = Literal["amex", "natwest", "nationwide"]
 AccountType = Literal["current_account", "credit_card", "savings"]
 AccountPresetId = Literal["amex_gold", "nationwide_flexone", "natwest_select"]
+CardType = Literal["credit", "debit"]
 
 
 class Base(DeclarativeBase):

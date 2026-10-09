@@ -25,18 +25,21 @@ const presets = [
     name: 'American Express Gold',
     institution: 'amex',
     account_type: 'credit_card',
+    card_type: 'credit',
   },
   {
     id: 'nationwide_flexone',
     name: 'Nationwide FlexOne',
     institution: 'nationwide',
     account_type: 'current_account',
+    card_type: 'debit',
   },
   {
     id: 'natwest_select',
     name: 'NatWest Select',
     institution: 'natwest',
     account_type: 'current_account',
+    card_type: 'debit',
   },
 ];
 
@@ -70,7 +73,7 @@ function completedImport(accountName: string): ImportResponder {
 
 const needsAccount: ImportResponder = () =>
   Response.json(
-    { detail: 'Add an account for this statement' },
+    { detail: 'Add an account for this statement', card_type: 'debit' },
     { status: 422 },
   );
 
@@ -120,7 +123,7 @@ test('imports each dropped statement into its matching account', async () => {
   );
 });
 
-test('offers every preset without choosing one', async () => {
+test('offers only cards of the statement type without choosing one', async () => {
   stubApi({ 'natwest.ofx': needsAccount });
   renderPage();
   dropStatements('natwest.ofx');
@@ -130,9 +133,8 @@ test('offers every preset without choosing one', async () => {
   const radios = await statementRow('natwest.ofx').findAllByRole('radio');
   expect(
     radios.map((radio) => (radio as HTMLButtonElement).labels[0].textContent),
-  ).toEqual(['American Express Gold', 'Nationwide FlexOne', 'NatWest Select']);
+  ).toEqual(['Nationwide FlexOne', 'NatWest Select']);
   expect(radios.map((radio) => radio.getAttribute('aria-checked'))).toEqual([
-    'false',
     'false',
     'false',
   ]);

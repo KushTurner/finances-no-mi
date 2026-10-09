@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from finances_api.models import AccountPresetId, AccountType, Institution
+from finances_api.models import AccountPresetId, AccountType, CardType, Institution
 
 
 @dataclass(frozen=True)
@@ -9,6 +9,10 @@ class AccountPreset:
     name: str
     institution: Institution
     account_type: AccountType
+
+    @property
+    def card_type(self) -> CardType:
+        return "credit" if self.account_type == "credit_card" else "debit"
 
 
 ACCOUNT_PRESETS = (

@@ -39,17 +39,20 @@ def test_lists_the_account_presets(client: TestClient) -> None:
             "name": "American Express Gold",
             "institution": "amex",
             "account_type": "credit_card",
+            "card_type": "credit",
         },
         {
             "id": "nationwide_flexone",
             "name": "Nationwide FlexOne",
             "institution": "nationwide",
             "account_type": "current_account",
+            "card_type": "debit",
         },
         {
             "id": "natwest_select",
             "name": "NatWest Select",
             "institution": "natwest",
             "account_type": "current_account",
+            "card_type": "debit",
         },
     ]

@@ -1,3 +1,4 @@
+import type { CardType } from './accounts';
 import { send, unexpectedStatus } from './client';
 import type { RejectionResponse } from './client';
 
@@ -22,9 +23,13 @@ type StatementErrorsResponse = {
   errors: StatementError[];
 };
 
+type AccountSetupRequiredResponse = {
+  card_type: CardType;
+};
+
 export type ImportResult =
   | { kind: 'completed'; imported: ImportResponse }
-  | { kind: 'needsAccount' }
+  | { kind: 'needsAccount'; cardType: CardType }
   | { kind: 'invalid'; errors: StatementError[] }
   | { kind: 'rejected'; message: string };
 
@@ -54,8 +59,10 @@ export async function importStatement(
       const rejection = (await response.json()) as RejectionResponse;
       return { kind: 'rejected', message: rejection.detail };
     }
-    case 422:
-      return { kind: 'needsAccount' };
+    case 422: {
+      const setup = (await response.json()) as AccountSetupRequiredResponse;
+      return { kind: 'needsAccount', cardType: setup.card_type };
+    }
     default:
       throw unexpectedStatus(response);
   }

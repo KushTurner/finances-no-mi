@@ -15,18 +15,21 @@ const presets = [
     name: 'American Express Gold',
     institution: 'amex',
     account_type: 'credit_card',
+    card_type: 'credit',
   },
   {
     id: 'nationwide_flexone',
     name: 'Nationwide FlexOne',
     institution: 'nationwide',
     account_type: 'current_account',
+    card_type: 'debit',
   },
   {
     id: 'natwest_select',
     name: 'NatWest Select',
     institution: 'natwest',
     account_type: 'current_account',
+    card_type: 'debit',
   },
 ];
 
@@ -44,7 +47,7 @@ function completed(accountName: string): MockResponse {
 
 const needsAccount: MockResponse = {
   status: 422,
-  json: { detail: 'Add an account for this statement' },
+  json: { detail: 'Add an account for this statement', card_type: 'debit' },
 };
 
 function syntheticStatement(name: string) {
@@ -199,3 +202,30 @@ for (const viewport of [
     );
   });
 }
+
+test('offers only credit cards for a credit card statement', async ({
+  page,
+}, testInfo) => {
+  await mockApi(page, {
+    'amex.ofx': () => ({
+      status: 422,
+      json: {
+        detail: 'Add an account for this statement',
+        card_type: 'credit',
+      },
+    }),
+  });
+  await page.goto('/import');
+  await page
+    .getByLabel(/Drop OFX statements/)
+    .setInputFiles([syntheticStatement('amex.ofx')]);
+
+  await page.getByRole('button', { name: 'Import 1 statement' }).click();
+
+  const statement = page.getByRole('listitem', { name: 'amex.ofx' });
+  await expect(statement.getByRole('radio')).toHaveCount(1);
+  await expect(
+    statement.getByRole('radio', { name: 'American Express Gold' }),
+  ).not.toBeChecked();
+  await attachScreenshot(page, testInfo, 'account-setup-credit');
+});

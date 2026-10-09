@@ -11,7 +11,7 @@ One shared parser and one shared account matcher handle every supported account.
 1. The user drops or chooses one or more OFX files.
 2. The backend parses and validates each complete statement, including its account metadata.
 3. A statement that matches one saved account imports directly into it.
-4. An unmatched statement shows **Add account**. The user chooses one of the predefined account presets, and can enter an optional name that defaults to the preset's name. Nothing is chosen in advance.
+4. An unmatched statement shows **Add account**. It states whether the statement is for a credit or debit card, lists the presets of that card type with none chosen, and takes an optional name that defaults to the chosen preset's name.
 5. The backend saves the account with the statement's OFX identifiers and imports the statement in the same database transaction.
 6. Other statements in the same upload that were waiting for an account are retried and import into it when they match.
 
@@ -25,11 +25,13 @@ Each file has its own outcome: imported with new and existing transaction counts
 | `nationwide_flexone` | Nationwide FlexOne | `nationwide` | `current_account` |
 | `natwest_select` | NatWest Select | `natwest` | `current_account` |
 
-A preset supplies the account's name, institution, and type. The account type comes only from the chosen preset, never from the OFX file. Account cards stay plain; any later card themes belong to the frontend, keyed by preset id. Adding a preset extends the catalogue; it does not add a parser or matching rule. Two accounts from the same preset are separate records matched by their OFX identifiers, and account names need not be unique.
+A preset supplies the account's name, institution, account type, and card type: `credit_card` presets are credit cards and every other account type is a debit card. The user always chooses the preset; the statement only narrows the choice to its card type. Account cards stay plain; any later card themes belong to the frontend, keyed by preset id. Adding a preset extends the catalogue; it does not add a parser or matching rule. Two accounts from the same preset are separate records matched by their OFX identifiers, and account names need not be unique.
 
 ## Account identity
 
-The parser reads the statement's `ACCTID`, `BANKID`, `ORG`, and `FID`. Identifiers are stored as supplied, including leading zeroes and masking characters. The file's own account type is not read.
+The parser reads the statement's `ACCTID`, `BANKID`, `ORG`, and `FID`. Identifiers are stored as supplied, including leading zeroes and masking characters.
+
+The card type comes from the standard OFX statement structure, the same for every institution: a credit card statement (`CCSTMTRS`) is `credit`, and a bank statement (`STMTRS`) is `debit`. `ACCTTYPE` is not read. A preset of the other card type is rejected and no account is created.
 
 A saved account matches a statement when `ACCTID` is equal and every other identifier present on both sides is equal. Missing identifiers and placeholders consisting only of zeroes are ignored. A statement matching more than one saved account is rejected rather than imported; resolving accounts that export indistinguishable identifiers is out of scope.
 
@@ -60,13 +62,13 @@ Stable `FITID`s across overlapping exports have not been confirmed for these exp
 
 ## API
 
-- `GET /account-presets` lists `id`, `name`, `institution`, and `account_type`.
+- `GET /account-presets` lists `id`, `name`, `institution`, `account_type`, and `card_type`.
 - `GET /accounts` includes each account's `preset`.
 - `POST /imports` accepts a multipart `file` and optional `preset` and `name` fields:
   - `201` with the import id, account name, and new and existing transaction counts;
   - `409` with `detail` when the exact file was already imported;
-  - `422` with `detail` when no saved account matches and no preset was sent;
-  - `400` with `errors`, each with a `position` (`null` for file-level errors) and `message`, for an invalid file or an ambiguous account match.
+  - `422` with `detail` and the statement's `card_type` when no saved account matches and no preset was sent;
+  - `400` with `errors`, each with a `position` (`null` for file-level errors) and `message`, for an invalid file, an ambiguous account match, or a preset of the other card type.
 
 A preset sent with a statement that already matches an account is ignored.
 

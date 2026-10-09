@@ -1,6 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
 
-import type { NewAccount } from '@/api';
+import type { CardType, NewAccount } from '@/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,16 +8,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAccountPresetsQuery } from '@/hooks';
 
 type AccountSetupFormProps = {
+  cardType: CardType;
   disabled: boolean;
   onAddAccount: (newAccount: NewAccount) => void;
 };
 
 export function AccountSetupForm({
+  cardType,
   disabled,
   onAddAccount,
 }: AccountSetupFormProps) {
   const presetsQuery = useAccountPresetsQuery();
-  const presets = presetsQuery.data ?? [];
+  const presets = (presetsQuery.data ?? []).filter(
+    (preset) => preset.card_type === cardType,
+  );
   const [chosenPreset, setChosenPreset] = useState('');
   const [name, setName] = useState('');
   const formId = useId();
@@ -39,11 +43,11 @@ export function AccountSetupForm({
   return (
     <form className="mt-2 grid gap-4" onSubmit={handleSubmit}>
       <p className="text-sm text-muted-foreground">
-        This statement is for an account you have not added yet.
+        This {cardType} card statement is for an account you have not added yet.
       </p>
       <div className="grid gap-3">
         <p id={`${formId}-account`} className="text-sm text-muted-foreground">
-          Account
+          Card
         </p>
         <RadioGroup
           aria-labelledby={`${formId}-account`}

@@ -34,6 +34,7 @@ def test_reads_bank_account_identifiers_as_supplied() -> None:
         bankid="600000",
         org=None,
         fid=None,
+        card_type="debit",
     )
 
 
@@ -47,6 +48,7 @@ def test_reads_credit_card_account_and_institution_identifiers() -> None:
         bankid=None,
         org="SYNTH",
         fid="1234",
+        card_type="credit",
     )
 
 

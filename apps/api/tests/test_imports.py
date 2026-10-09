@@ -41,7 +41,7 @@ def test_an_unmatched_statement_needs_account_setup_and_stores_nothing(
     response = upload(client, bank_statement_ofx())
 
     assert response.status_code == 422
-    assert response.json() == {"detail": "Add an account for this statement"}
+    assert response.json() == {"detail": "Add an account for this statement", "card_type": "debit"}
     assert [count(session, model) for model in (Account, ImportFile, Transaction)] == [0, 0, 0]
 
 
@@ -125,12 +125,26 @@ def test_accounts_from_the_same_preset_remain_separate(
     assert session.scalars(select(Account.name)).all() == ["NatWest Select", "NatWest Select"]
 
 
-def test_the_chosen_preset_decides_the_account_type(client: TestClient) -> None:
-    upload(client, bank_statement_ofx(), preset="amex_gold")
+def test_a_credit_card_statement_needs_a_credit_card_account(client: TestClient) -> None:
+    response = upload(client, credit_card_statement_ofx())
 
-    account = client.get("/accounts").json()[0]
+    assert response.json()["card_type"] == "credit"
 
-    assert (account["preset"], account["account_type"]) == ("amex_gold", "credit_card")
+
+def test_rejects_a_preset_for_the_other_card_type(client: TestClient, session: Session) -> None:
+    response = upload(client, bank_statement_ofx(), preset="amex_gold")
+
+    assert response.json() == {
+        "errors": [
+            {
+                "position": None,
+                "message": (
+                    "American Express Gold is a credit card, but this is a debit card statement"
+                ),
+            }
+        ]
+    }
+    assert count(session, Account) == 0
 
 
 def test_rejects_a_statement_that_matches_more_than_one_account(
