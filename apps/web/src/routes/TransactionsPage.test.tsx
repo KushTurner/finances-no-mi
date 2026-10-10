@@ -59,3 +59,39 @@ test('recovers from a failed load with an explicit retry', async () => {
     ),
   ).toBeVisible();
 });
+
+test('select all picks only the transactions matching the search', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string) =>
+      Promise.resolve(
+        Response.json(
+          url.endsWith('/api/categories')
+            ? []
+            : [
+                'SYNTHETIC GROCER 1',
+                'SYNTHETIC CAFE',
+                'Synthetic Grocer 2',
+              ].map((raw_description, index) => ({
+                id: index + 1,
+                account_name: 'Synthetic Bank',
+                transaction_date: '2026-09-01',
+                amount_pence: -100,
+                raw_description,
+                source_type: null,
+                category_id: null,
+              })),
+        ),
+      ),
+    ),
+  );
+  renderPage();
+  fireEvent.change(await screen.findByLabelText('Search descriptions'), {
+    target: { value: 'grocer' },
+  });
+
+  fireEvent.click(screen.getByLabelText('Select all shown transactions'));
+
+  expect(screen.getByText('2 selected')).toBeVisible();
+  expect(screen.getByText('2 of 3 transactions')).toBeVisible();
+});

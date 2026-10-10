@@ -112,3 +112,8 @@ export function formatShownRange(
 export function formatChartMonth(month: string, complete: boolean) {
   return `${formatMonthWithYear(month)}${complete ? '' : ' (incomplete)'}`;
 }
+
+export function formatShownCount(shown: number, total: number) {
+  const totalCount = formatCount(total, 'transaction');
+  return shown === total ? totalCount : `${shown} of ${totalCount}`;
+}

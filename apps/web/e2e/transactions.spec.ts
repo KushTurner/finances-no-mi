@@ -182,6 +182,33 @@ test('browses, categorizes selected transactions, corrects and clears an assignm
   await attachScreenshot(page, testInfo, 'transactions-reviewed');
 });
 
+test('searches descriptions, selects every match and categorizes them together', async ({
+  page,
+}, testInfo) => {
+  const decisions = await mockTransactions(page);
+  await page.goto('/transactions');
+  await choose(page, 'Filter by category', 'Uncategorized');
+  await page.getByLabel('Search descriptions').fill('payment');
+  await expect(page.getByText('2 of 3 transactions')).toBeVisible();
+  const selectAll = page.getByLabel('Select all shown transactions');
+  await page.getByLabel('Select transaction 2:', { exact: false }).check();
+  await expect(selectAll).toHaveAttribute('data-state', 'indeterminate');
+  await attachScreenshot(page, testInfo, 'transactions-search-partly-selected');
+  await selectAll.click();
+  await expect(page.getByText('2 selected', { exact: true })).toBeVisible();
+  await choose(page, 'Category for selection', 'Shopping');
+  await attachScreenshot(page, testInfo, 'transactions-search-all-selected');
+
+  await page.getByRole('button', { name: 'Apply to selected' }).click();
+
+  await expect(page.getByRole('status')).toHaveText('Updated 2 transactions.');
+  expect(decisions).toEqual([{ transaction_ids: [2, 5], category_id: 8 }]);
+  await expect(
+    page.getByText('No transactions match “payment”.'),
+  ).toBeVisible();
+  await attachScreenshot(page, testInfo, 'transactions-search-done');
+});
+
 test('keeps a failed decision selected for retry and clears selection when filtering', async ({
   page,
 }, testInfo) => {
