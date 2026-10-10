@@ -4,7 +4,13 @@ import type { CardType, NewAccount } from '@/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAccountPresetsQuery } from '@/hooks';
 
 type AccountSetupFormProps = {
@@ -45,31 +51,29 @@ export function AccountSetupForm({
       <p className="text-sm text-muted-foreground">
         This {cardType} card statement is for an account you have not added yet.
       </p>
-      <div className="grid gap-3">
-        <p id={`${formId}-account`} className="text-sm text-muted-foreground">
+      <div className="grid max-w-sm gap-2">
+        <Label
+          htmlFor={`${formId}-card`}
+          className="font-normal text-muted-foreground"
+        >
           Card
-        </p>
-        <RadioGroup
-          aria-labelledby={`${formId}-account`}
+        </Label>
+        <Select
           value={chosenPreset}
           disabled={disabled}
           onValueChange={setChosenPreset}
         >
-          {presets.map((candidate) => (
-            <div key={candidate.id} className="flex items-center gap-2">
-              <RadioGroupItem
-                id={`${formId}-${candidate.id}`}
-                value={candidate.id}
-              />
-              <Label
-                htmlFor={`${formId}-${candidate.id}`}
-                className="font-normal"
-              >
+          <SelectTrigger id={`${formId}-card`} className="w-full">
+            <SelectValue placeholder="Choose a card" />
+          </SelectTrigger>
+          <SelectContent>
+            {presets.map((candidate) => (
+              <SelectItem key={candidate.id} value={candidate.id}>
                 {candidate.name}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid max-w-sm gap-2">
         <Label

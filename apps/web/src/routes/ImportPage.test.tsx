@@ -13,6 +13,11 @@ beforeEach(() => {
       disconnect() {}
     },
   );
+  Object.assign(Element.prototype, {
+    hasPointerCapture: () => false,
+    releasePointerCapture: () => {},
+    scrollIntoView: () => {},
+  });
 });
 
 afterEach(() => {
@@ -103,6 +108,19 @@ function statementRow(name: string) {
   return within(screen.getByRole('listitem', { name }));
 }
 
+async function openCardChoices(statement: string) {
+  fireEvent.pointerDown(
+    await statementRow(statement).findByRole('combobox', { name: 'Card' }),
+    { button: 0, pointerType: 'mouse' },
+  );
+  return screen.findAllByRole('option');
+}
+
+async function chooseCard(statement: string, card: string) {
+  const options = await openCardChoices(statement);
+  fireEvent.click(options.find((option) => option.textContent === card)!);
+}
+
 test('imports each dropped statement into its matching account', async () => {
   stubApi({
     'natwest.ofx': completedImport('NatWest Select'),
@@ -130,13 +148,13 @@ test('offers only cards of the statement type without choosing one', async () =>
 
   fireEvent.click(screen.getByRole('button', { name: 'Import 1 statement' }));
 
-  const radios = await statementRow('natwest.ofx').findAllByRole('radio');
   expect(
-    radios.map((radio) => (radio as HTMLButtonElement).labels[0].textContent),
-  ).toEqual(['Nationwide FlexOne', 'NatWest Select']);
-  expect(radios.map((radio) => radio.getAttribute('aria-checked'))).toEqual([
-    'false',
-    'false',
+    await statementRow('natwest.ofx').findByRole('combobox', { name: 'Card' }),
+  ).toHaveTextContent('Choose a card');
+  const options = await openCardChoices('natwest.ofx');
+  expect(options.map((option) => option.textContent)).toEqual([
+    'Nationwide FlexOne',
+    'NatWest Select',
   ]);
 });
 
@@ -147,11 +165,7 @@ test('adds the chosen account with its nickname and imports the statement', asyn
   renderPage();
   dropStatements('natwest.ofx');
   fireEvent.click(screen.getByRole('button', { name: 'Import 1 statement' }));
-  fireEvent.click(
-    await statementRow('natwest.ofx').findByRole('radio', {
-      name: 'NatWest Select',
-    }),
-  );
+  await chooseCard('natwest.ofx', 'NatWest Select');
   fireEvent.change(
     statementRow('natwest.ofx').getByLabelText('Name (optional)'),
     {
@@ -190,11 +204,7 @@ test('imports other statements for the new account once it is added', async () =
   renderPage();
   dropStatements('september.ofx', 'october.ofx');
   fireEvent.click(screen.getByRole('button', { name: 'Import 2 statements' }));
-  fireEvent.click(
-    await statementRow('september.ofx').findByRole('radio', {
-      name: 'NatWest Select',
-    }),
-  );
+  await chooseCard('september.ofx', 'NatWest Select');
 
   fireEvent.click(
     statementRow('september.ofx').getByRole('button', {
@@ -224,12 +234,8 @@ test('asks for one new account at a time', async () => {
   renderPage();
   dropStatements('natwest.ofx', 'amex.ofx');
   fireEvent.click(screen.getByRole('button', { name: 'Import 2 statements' }));
-  fireEvent.click(
-    await statementRow('natwest.ofx').findByRole('radio', {
-      name: 'NatWest Select',
-    }),
-  );
-  expect(statementRow('amex.ofx').queryByRole('radio')).toBeNull();
+  await chooseCard('natwest.ofx', 'NatWest Select');
+  expect(statementRow('amex.ofx').queryByRole('combobox')).toBeNull();
 
   fireEvent.click(
     statementRow('natwest.ofx').getByRole('button', {
@@ -238,13 +244,11 @@ test('asks for one new account at a time', async () => {
   );
 
   expect(
-    await statementRow('amex.ofx').findByRole('radio', {
-      name: 'American Express Gold',
-    }),
-  ).toBeVisible();
-  expect(statementRow('natwest.ofx').getByRole('status')).toHaveTextContent(
-    'Imported into NatWest Select',
-  );
+    await statementRow('natwest.ofx').findByRole('status'),
+  ).toHaveTextContent('Imported into NatWest Select');
+  expect(
+    (await openCardChoices('amex.ofx')).map((option) => option.textContent),
+  ).toEqual(['American Express Gold']);
 });
 
 test('removes a statement added by mistake before importing', () => {

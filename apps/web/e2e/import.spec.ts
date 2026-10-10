@@ -174,14 +174,26 @@ for (const viewport of [
       .setInputFiles(['september.ofx', 'october.ofx'].map(syntheticStatement));
     await page.getByRole('button', { name: 'Import 2 statements' }).click();
     const september = page.getByRole('listitem', { name: 'september.ofx' });
-    await expect(
-      september.getByRole('radio', { name: 'NatWest Select' }),
-    ).toBeVisible();
+    await expect(september.getByRole('combobox', { name: 'Card' })).toHaveText(
+      'Choose a card',
+    );
     await expect(
       page.getByRole('listitem', { name: 'october.ofx' }),
     ).toContainText('Add the account for the statement above first.');
     await attachScreenshot(page, testInfo, `account-setup-${viewport.name}`);
-    await september.getByRole('radio', { name: 'NatWest Select' }).check();
+    await september.getByRole('combobox', { name: 'Card' }).click();
+    await expect(page.getByRole('option')).toHaveText([
+      'Nationwide FlexOne',
+      'NatWest Select',
+    ]);
+    // A full-page screenshot resizes the viewport, which closes the dropdown.
+    await attachScreenshot(
+      page,
+      testInfo,
+      `account-setup-choices-${viewport.name}`,
+      { fullPage: false },
+    );
+    await page.getByRole('option', { name: 'NatWest Select' }).click();
     await september.getByLabel('Name (optional)').fill('Bills');
     await attachScreenshot(
       page,
@@ -226,9 +238,9 @@ test('offers only credit cards for a credit card statement', async ({
   await page.getByRole('button', { name: 'Import 1 statement' }).click();
 
   const statement = page.getByRole('listitem', { name: 'amex.ofx' });
-  await expect(statement.getByRole('radio')).toHaveCount(1);
-  await expect(
-    statement.getByRole('radio', { name: 'American Express Gold' }),
-  ).not.toBeChecked();
-  await attachScreenshot(page, testInfo, 'account-setup-credit');
+  await statement.getByRole('combobox', { name: 'Card' }).click();
+  await expect(page.getByRole('option')).toHaveText(['American Express Gold']);
+  await attachScreenshot(page, testInfo, 'account-setup-credit', {
+    fullPage: false,
+  });
 });
