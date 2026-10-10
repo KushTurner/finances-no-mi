@@ -29,7 +29,16 @@ uv run alembic upgrade head
 
 ## Development
 
-Run the API from `apps/api`:
+Start the API and frontend together against the local database:
+
+```bash
+pnpm dev
+```
+
+This runs migrations, starts the API on port 8000, and starts the frontend at
+`http://localhost:5173`. The default database is `.data/finances.db`.
+
+To run the API and frontend separately, start the API from `apps/api`:
 
 ```bash
 uv run uvicorn finances_api.main:app --reload
