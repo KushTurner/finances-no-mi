@@ -19,5 +19,5 @@ def test_seeds_every_synthetic_transaction_with_a_mix_of_categorized_and_uncateg
         demo for demo in [*NATWEST, *NATIONWIDE, *AMEX] if demo.category is None
     ]
     assert len(transactions) == len(NATWEST) + len(NATIONWIDE) + len(AMEX)
-    assert account_names == ["Amex", "NatWest", "Nationwide"]
+    assert account_names == ["American Express Gold", "NatWest Select", "Nationwide FlexOne"]
     assert len(uncategorized) == len(expected_uncategorized)

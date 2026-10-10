@@ -1,5 +1,3 @@
-import csv
-import io
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -8,8 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from finances_api.database import create_database_engine
-from finances_api.models import Category, Transaction
-from finances_api.services.imports import ImportCompleted, import_statement
+from finances_api.models import AccountPresetId, Category, Transaction
+from finances_api.services.imports import ImportCompleted, NewAccount, import_statement
 from finances_api.services.transactions import assign_category
 
 
@@ -65,97 +63,78 @@ AMEX = [
 
 
 def seed_demo_data(session: Session, today: date) -> None:
-    statements = {
-        "natwest-demo.csv": natwest_csv(NATWEST, today),
-        "nationwide-demo.csv": nationwide_csv(NATIONWIDE, today),
-        "amex-demo.csv": amex_csv(AMEX, today),
-    }
-    for filename, content in statements.items():
-        result = import_statement(session, filename, content)
+    statements: list[tuple[str, AccountPresetId, bytes]] = [
+        ("natwest-demo.ofx", "natwest_select", natwest_ofx(NATWEST, today)),
+        ("nationwide-demo.ofx", "nationwide_flexone", nationwide_ofx(NATIONWIDE, today)),
+        ("amex-demo.ofx", "amex_gold", amex_ofx(AMEX, today)),
+    ]
+    for filename, preset, content in statements:
+        result = import_statement(session, filename, content, NewAccount(preset))
         if not isinstance(result, ImportCompleted):
             raise RuntimeError(f"Could not import {filename}: {result}")
     _assign_demo_categories(session)
 
 
-def natwest_csv(transactions: list[DemoTransaction], today: date) -> bytes:
-    rows: list[list[str]] = [["Date", "Type", "Description", "Value", "Balance"]]
-    balance = 250000
-    for transaction in transactions:
-        balance += transaction.amount_pence
-        rows.append(
-            [
-                _day(today, transaction).strftime("%d %b %Y"),
-                "BAC" if transaction.amount_pence > 0 else "POS",
-                transaction.description,
-                _pounds(transaction.amount_pence),
-                _pounds(balance),
-            ]
-        )
-    return _csv(rows)
+def natwest_ofx(transactions: list[DemoTransaction], today: date) -> bytes:
+    account = "<BANKACCTFROM><BANKID>600000<ACCTID>00000001<ACCTTYPE>CHECKING</BANKACCTFROM>"
+    return _bank_statement_ofx(account, transactions, today, "NW")
 
 
-def nationwide_csv(transactions: list[DemoTransaction], today: date) -> bytes:
-    rows: list[list[str]] = [
-        ["Account Name:", "Synthetic ****00000"],
-        ["Account Balance:", "£1000.00"],
-        ["Available Balance: ", "£1000.00"],
-        [],
-        ["Date", "Transaction type", "Description", "Paid out", "Paid in", "Balance"],
-    ]
-    balance = 100000
-    for transaction in transactions:
-        balance += transaction.amount_pence
-        amount = f"£{_pounds(abs(transaction.amount_pence))}"
-        rows.append(
-            [
-                _day(today, transaction).strftime("%d %b %Y"),
-                "Payment" if transaction.amount_pence < 0 else "Credit",
-                transaction.description,
-                amount if transaction.amount_pence < 0 else "",
-                amount if transaction.amount_pence > 0 else "",
-                f"£{_pounds(balance)}",
-            ]
-        )
-    return _csv(rows, line_terminator="\r\n", encoding="utf-8-sig")
+def nationwide_ofx(transactions: list[DemoTransaction], today: date) -> bytes:
+    account = "<BANKACCTFROM><BANKID>000000<ACCTID>****0001<ACCTTYPE>CHECKING</BANKACCTFROM>"
+    return _bank_statement_ofx(account, transactions, today, "NAT")
 
 
-def amex_csv(transactions: list[DemoTransaction], today: date) -> bytes:
-    rows: list[list[str]] = [
-        [
-            "Date",
-            "Description",
-            "Card Member",
-            "Account #",
-            "Amount",
-            "Extended Details",
-            "Appears On Your Statement As",
-            "Address",
-            "Town/City",
-            "Postcode",
-            "Country",
-            "Reference",
-            "Category",
-        ]
-    ]
-    for index, transaction in enumerate(transactions, start=1):
-        rows.append(
-            [
-                _day(today, transaction).strftime("%d/%m/%Y"),
-                transaction.description,
-                "A N OTHER",
-                "-00000",
-                _pounds(-transaction.amount_pence),
-                "",
-                transaction.description,
-                "1 EXAMPLE STREET",
-                "EXAMPLETON",
-                "AB1 2CD",
-                "UNITED KINGDOM",
-                f"'AT{index:021d}'",
-                "",
-            ]
-        )
-    return _csv(rows)
+def amex_ofx(transactions: list[DemoTransaction], today: date) -> bytes:
+    body = (
+        "<CREDITCARDMSGSRSV1><CCSTMTTRNRS><TRNUID>1<STATUS><CODE>0<SEVERITY>INFO</STATUS>"
+        "<CCSTMTRS><CURDEF>GBP<CCACCTFROM><ACCTID>XXXX-XXXXXX-00001</CCACCTFROM>"
+        f"{_transaction_list(transactions, today, 'AT')}"
+        "<LEDGERBAL><BALAMT>0.00<DTASOF>20260101</LEDGERBAL>"
+        "</CCSTMTRS></CCSTMTTRNRS></CREDITCARDMSGSRSV1>"
+    )
+    return _ofx(_signon("<FI><ORG>SYNTHETIC<FID>00000</FI>") + body)
+
+
+def _bank_statement_ofx(
+    account: str, transactions: list[DemoTransaction], today: date, fitid_prefix: str
+) -> bytes:
+    body = (
+        "<BANKMSGSRSV1><STMTTRNRS><TRNUID>1<STATUS><CODE>0<SEVERITY>INFO</STATUS>"
+        f"<STMTRS><CURDEF>GBP{account}{_transaction_list(transactions, today, fitid_prefix)}"
+        "<LEDGERBAL><BALAMT>0.00<DTASOF>20260101</LEDGERBAL>"
+        "</STMTRS></STMTTRNRS></BANKMSGSRSV1>"
+    )
+    return _ofx(_signon("") + body)
+
+
+def _transaction_list(transactions: list[DemoTransaction], today: date, fitid_prefix: str) -> str:
+    dates = [_day(today, transaction).strftime("%Y%m%d") for transaction in transactions]
+    statement_transactions = "".join(
+        f"<STMTTRN><TRNTYPE>{'CREDIT' if transaction.amount_pence > 0 else 'DEBIT'}"
+        f"<DTPOSTED>{posted}<TRNAMT>{_pounds(transaction.amount_pence)}"
+        f"<FITID>{fitid_prefix}{index:06d}<NAME>{transaction.description}</STMTTRN>"
+        for index, (transaction, posted) in enumerate(zip(transactions, dates, strict=True), 1)
+    )
+    return (
+        f"<BANKTRANLIST><DTSTART>{min(dates)}<DTEND>{max(dates)}"
+        f"{statement_transactions}</BANKTRANLIST>"
+    )
+
+
+def _signon(fi: str) -> str:
+    return (
+        "<SIGNONMSGSRSV1><SONRS><STATUS><CODE>0<SEVERITY>INFO</STATUS>"
+        f"<DTSERVER>20260101000000<LANGUAGE>ENG{fi}</SONRS></SIGNONMSGSRSV1>"
+    )
+
+
+def _ofx(messages: str) -> bytes:
+    header = (
+        "OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nSECURITY:NONE\nENCODING:USASCII\n"
+        "CHARSET:1252\nCOMPRESSION:NONE\nOLDFILEUID:NONE\nNEWFILEUID:NONE\n\n"
+    )
+    return f"{header}<OFX>{messages}</OFX>".encode("ascii")
 
 
 def _assign_demo_categories(session: Session) -> None:
@@ -186,12 +165,6 @@ def _day(today: date, transaction: DemoTransaction) -> date:
 
 def _pounds(pence: int) -> str:
     return f"{pence / 100:.2f}"
-
-
-def _csv(rows: list[list[str]], *, line_terminator: str = "\n", encoding: str = "utf-8") -> bytes:
-    buffer = io.StringIO()
-    csv.writer(buffer, lineterminator=line_terminator).writerows(rows)
-    return buffer.getvalue().encode(encoding)
 
 
 def main() -> None:

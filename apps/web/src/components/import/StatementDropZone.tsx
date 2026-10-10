@@ -33,7 +33,7 @@ export function StatementDropZone({ onFiles }: StatementDropZoneProps) {
       onDrop={handleDrop}
     >
       <span className="pointer-events-none font-medium">
-        Drop statement CSVs here
+        Drop OFX statements here
       </span>
       <span className="pointer-events-none mt-1 text-sm text-muted-foreground">
         or click to choose files
@@ -41,7 +41,7 @@ export function StatementDropZone({ onFiles }: StatementDropZoneProps) {
       <input
         className="sr-only"
         type="file"
-        accept=".csv,text/csv"
+        accept=".ofx"
         multiple
         onChange={(event) => {
           onFiles(Array.from(event.target.files ?? []));

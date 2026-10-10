@@ -11,9 +11,9 @@ export function StatementErrors({ errors }: StatementErrorsProps) {
       <ul className="mt-1 list-disc space-y-1 pl-5">
         {errors.map((error, index) => (
           <li key={index}>
-            {error.row_number === null
+            {error.position === null
               ? error.message
-              : `Row ${error.row_number}: ${error.message}`}
+              : `Transaction ${error.position}: ${error.message}`}
           </li>
         ))}
       </ul>

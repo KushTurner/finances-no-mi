@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from alembic import command
 from finances_api.categories import CATEGORY_DEFINITIONS
 from finances_api.database import create_database_engine
-from finances_api.models import Category, ImportFileTransaction, Transaction
+from finances_api.models import Category
 
 
 def test_upgrade_preserves_existing_imports_without_inheriting_merchant_categories(
@@ -51,18 +51,21 @@ def test_upgrade_preserves_existing_imports_without_inheriting_merchant_categori
 
     command.upgrade(config, "20260927_0002")
 
-    with Session(engine) as session:
-        transaction = session.scalars(select(Transaction)).one()
-        assert {key: getattr(transaction, key) for key in source_before} == dict(source_before)
-        assert (
-            transaction.category_id,
-            transaction.category_decision_source,
-            transaction.category_decided_at,
-        ) == (None, None, None)
-        assert session.scalars(select(ImportFileTransaction.transaction_id)).all() == [1]
-        assert len(session.scalars(select(Category)).all()) == 10
-        assert session.scalar(select(Category.definition).where(Category.id == 1))
     with engine.connect() as connection:
+        metadata = MetaData()
+        metadata.reflect(connection)
+        categories = metadata.tables["categories"]
+        observations = metadata.tables["import_file_transactions"]
+        transaction = connection.execute(select(metadata.tables["transactions"])).mappings().one()
+        assert {key: transaction[key] for key in source_before} == dict(source_before)
+        assert (
+            transaction["category_id"],
+            transaction["category_decision_source"],
+            transaction["category_decided_at"],
+        ) == (None, None, None)
+        assert connection.scalars(select(observations.c.transaction_id)).all() == [1]
+        assert len(connection.execute(select(categories)).all()) == 10
+        assert connection.scalar(select(categories.c.definition).where(categories.c.id == 1))
         assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
     engine.dispose()
 

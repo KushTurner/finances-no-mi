@@ -4,7 +4,34 @@ import type { Page } from '@playwright/test';
 
 import { attachScreenshot, expect, test } from './fixtures';
 
+test.use({ deviceScaleFactor: 2 });
+
 type MockResponse = { status: number; json: unknown };
+type ImportResponder = (form: string) => MockResponse;
+
+const presets = [
+  {
+    id: 'amex_gold',
+    name: 'American Express Gold',
+    institution: 'amex',
+    account_type: 'credit_card',
+    card_type: 'credit',
+  },
+  {
+    id: 'nationwide_flexone',
+    name: 'Nationwide FlexOne',
+    institution: 'nationwide',
+    account_type: 'current_account',
+    card_type: 'debit',
+  },
+  {
+    id: 'natwest_select',
+    name: 'NatWest Select',
+    institution: 'natwest',
+    account_type: 'current_account',
+    card_type: 'debit',
+  },
+];
 
 function completed(accountName: string): MockResponse {
   return {
@@ -18,55 +45,64 @@ function completed(accountName: string): MockResponse {
   };
 }
 
+const needsAccount: MockResponse = {
+  status: 422,
+  json: { detail: 'Add an account for this statement', card_type: 'debit' },
+};
+
 function syntheticStatement(name: string) {
   return {
     name,
-    mimeType: 'text/csv',
-    buffer: Buffer.from('Date,Description\n01 Jan 2026,SYNTHETIC COFFEE\n'),
+    mimeType: 'application/x-ofx',
+    buffer: Buffer.from('<OFX></OFX>'),
   };
 }
 
-async function mockImports(
+async function mockApi(
   page: Page,
-  responsesByFilename: Record<string, MockResponse>,
+  respondersByFilename: Record<string, ImportResponder>,
 ) {
+  await page.route('**/api/account-presets', (route) =>
+    route.fulfill({ json: presets }),
+  );
   await page.route('**/api/imports', (route) => {
-    const filename = /filename="([^"]+)"/.exec(
-      route.request().postData() ?? '',
-    )?.[1];
-    return route.fulfill(responsesByFilename[filename ?? '']);
+    const form = route.request().postData() ?? '';
+    const filename = /filename="([^"]+)"/.exec(form)?.[1] ?? '';
+    return route.fulfill(respondersByFilename[filename](form));
   });
 }
 
-test('imports dropped statements into the accounts for their banks', async ({
+test('imports dropped statements into their matching accounts', async ({
   page,
 }, testInfo) => {
-  await mockImports(page, {
-    'natwest.csv': completed('NatWest'),
-    'amex.csv': completed('Amex'),
+  await mockApi(page, {
+    'natwest.ofx': () => completed('NatWest Select'),
+    'amex.ofx': () => completed('American Express Gold'),
   });
   await page.goto('/import');
   await attachScreenshot(page, testInfo, 'import-empty');
   const dataTransfer = await page.evaluateHandle(() => {
     const transfer = new DataTransfer();
-    for (const name of ['natwest.csv', 'amex.csv']) {
-      transfer.items.add(new File(['Date\n'], name, { type: 'text/csv' }));
+    for (const name of ['natwest.ofx', 'amex.ofx']) {
+      transfer.items.add(new File(['<OFX>'], name));
     }
     return transfer;
   });
 
   await page
-    .getByText('Drop statement CSVs here')
+    .getByText('Drop OFX statements here')
     .dispatchEvent('drop', { dataTransfer });
   await expect(
-    page.getByRole('listitem', { name: 'natwest.csv' }),
+    page.getByRole('listitem', { name: 'natwest.ofx' }),
   ).toContainText('Ready to import');
   await attachScreenshot(page, testInfo, 'statements-queued');
   await page.getByRole('button', { name: 'Import 2 statements' }).click();
 
   await expect(
-    page.getByRole('listitem', { name: 'amex.csv' }).getByRole('status'),
-  ).toHaveText('Imported into Amex: 12 new transactions, 3 already imported.');
+    page.getByRole('listitem', { name: 'amex.ofx' }).getByRole('status'),
+  ).toHaveText(
+    'Imported into American Express Gold: 12 new transactions, 3 already imported.',
+  );
   await expect(page.getByRole('button', { name: /^Import/ })).toHaveCount(0);
   await attachScreenshot(page, testInfo, 'dropped-statements-imported');
 });
@@ -74,48 +110,137 @@ test('imports dropped statements into the accounts for their banks', async ({
 test('shows the outcome of each chosen statement', async ({
   page,
 }, testInfo) => {
-  await mockImports(page, {
-    'natwest.csv': completed('NatWest'),
-    'amex.csv': {
+  await mockApi(page, {
+    'natwest.ofx': () => completed('NatWest Select'),
+    'amex.ofx': () => ({
       status: 409,
       json: { detail: 'This file has already been imported' },
-    },
-    'nationwide.csv': {
+    }),
+    'nationwide.ofx': () => ({
       status: 400,
-      json: { errors: [{ row_number: 4, message: 'Invalid amount' }] },
-    },
-    'notes.csv': {
+      json: { errors: [{ position: 4, message: 'FITID is required' }] },
+    }),
+    'notes.ofx': () => ({
       status: 400,
       json: {
         errors: [
-          {
-            row_number: null,
-            message:
-              'No header row matches a supported Amex, NatWest, or Nationwide statement',
-          },
+          { position: null, message: 'File is not a readable OFX statement' },
         ],
       },
-    },
+    }),
   });
   await page.goto('/import');
 
   await page
-    .getByLabel(/Drop statement CSVs/)
+    .getByLabel(/Drop OFX statements/)
     .setInputFiles(
-      ['natwest.csv', 'amex.csv', 'nationwide.csv', 'notes.csv'].map(
+      ['natwest.ofx', 'amex.ofx', 'nationwide.ofx', 'notes.ofx'].map(
         syntheticStatement,
       ),
     );
   await page.getByRole('button', { name: 'Import 4 statements' }).click();
 
-  await expect(page.getByRole('listitem', { name: 'notes.csv' })).toContainText(
-    'No header row matches a supported Amex, NatWest, or Nationwide statement',
+  await expect(page.getByRole('listitem', { name: 'notes.ofx' })).toContainText(
+    'File is not a readable OFX statement',
   );
   await expect(
-    page.getByRole('listitem', { name: 'nationwide.csv' }),
-  ).toContainText('Row 4: Invalid amount');
-  await expect(page.getByRole('listitem', { name: 'amex.csv' })).toContainText(
+    page.getByRole('listitem', { name: 'nationwide.ofx' }),
+  ).toContainText('Transaction 4: FITID is required');
+  await expect(page.getByRole('listitem', { name: 'amex.ofx' })).toContainText(
     'This file has already been imported.',
   );
   await attachScreenshot(page, testInfo, 'statement-outcomes');
+});
+
+for (const viewport of [
+  { name: 'desktop', width: 1280, height: 720 },
+  { name: 'mobile', width: 390, height: 844 },
+]) {
+  test(`adds an account for an unmatched statement on ${viewport.name}`, async ({
+    page,
+  }, testInfo) => {
+    let accountAdded = false;
+    await mockApi(page, {
+      'september.ofx': (form) => {
+        accountAdded = form.includes('name="preset"');
+        return accountAdded ? completed('Bills') : needsAccount;
+      },
+      'october.ofx': () => (accountAdded ? completed('Bills') : needsAccount),
+    });
+    await page.setViewportSize(viewport);
+    await page.goto('/import');
+    await page
+      .getByLabel(/Drop OFX statements/)
+      .setInputFiles(['september.ofx', 'october.ofx'].map(syntheticStatement));
+    await page.getByRole('button', { name: 'Import 2 statements' }).click();
+    const september = page.getByRole('listitem', { name: 'september.ofx' });
+    await expect(september.getByRole('combobox', { name: 'Card' })).toHaveText(
+      'Choose a card',
+    );
+    await expect(
+      page.getByRole('listitem', { name: 'october.ofx' }),
+    ).toContainText('Add the account for the statement above first.');
+    await attachScreenshot(page, testInfo, `account-setup-${viewport.name}`);
+    await september.getByRole('combobox', { name: 'Card' }).click();
+    await expect(page.getByRole('option')).toHaveText([
+      'Nationwide FlexOne',
+      'NatWest Select',
+    ]);
+    // A full-page screenshot resizes the viewport, which closes the dropdown.
+    await attachScreenshot(
+      page,
+      testInfo,
+      `account-setup-choices-${viewport.name}`,
+      { fullPage: false },
+    );
+    await page.getByRole('option', { name: 'NatWest Select' }).click();
+    await september.getByLabel('Name (optional)').fill('Bills');
+    await attachScreenshot(
+      page,
+      testInfo,
+      `account-setup-filled-${viewport.name}`,
+    );
+
+    await september
+      .getByRole('button', { name: 'Add account and import' })
+      .click();
+
+    await expect(
+      page.getByRole('listitem', { name: 'october.ofx' }).getByRole('status'),
+    ).toHaveText(
+      'Imported into Bills: 12 new transactions, 3 already imported.',
+    );
+    await attachScreenshot(
+      page,
+      testInfo,
+      `account-setup-imported-${viewport.name}`,
+    );
+  });
+}
+
+test('offers only credit cards for a credit card statement', async ({
+  page,
+}, testInfo) => {
+  await mockApi(page, {
+    'amex.ofx': () => ({
+      status: 422,
+      json: {
+        detail: 'Add an account for this statement',
+        card_type: 'credit',
+      },
+    }),
+  });
+  await page.goto('/import');
+  await page
+    .getByLabel(/Drop OFX statements/)
+    .setInputFiles([syntheticStatement('amex.ofx')]);
+
+  await page.getByRole('button', { name: 'Import 1 statement' }).click();
+
+  const statement = page.getByRole('listitem', { name: 'amex.ofx' });
+  await statement.getByRole('combobox', { name: 'Card' }).click();
+  await expect(page.getByRole('option')).toHaveText(['American Express Gold']);
+  await attachScreenshot(page, testInfo, 'account-setup-credit', {
+    fullPage: false,
+  });
 });

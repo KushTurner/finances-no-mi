@@ -15,7 +15,7 @@ test('marks transactions out of date after importing a statement', async () => {
         Response.json(
           {
             import_id: 1,
-            account_name: 'NatWest',
+            account_name: 'NatWest Select',
             new_transaction_count: 12,
             existing_transaction_count: 0,
           },
@@ -32,7 +32,9 @@ test('marks transactions out of date after importing a statement', async () => {
     ),
   });
 
-  await result.current.mutateAsync(new File(['Date\n'], 'natwest.csv'));
+  await result.current.mutateAsync({
+    file: new File(['<OFX>'], 'natwest.ofx'),
+  });
 
   expect(client.getQueryState(['transactions', 'all'])?.isInvalidated).toBe(
     true,

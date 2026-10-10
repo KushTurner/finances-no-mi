@@ -1,5 +1,5 @@
 import hashlib
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -7,24 +7,31 @@ from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from finances_api.account_presets import PRESETS_BY_ID
 from finances_api.merchant_keys import normalize_merchant_key
 from finances_api.models import (
     Account,
-    AccountType,
+    AccountPresetId,
+    CardType,
     ImportFile,
     ImportFileTransaction,
-    Institution,
     MerchantKey,
     Transaction,
 )
-from finances_api.statements.contract import InvalidStatement, TransactionCandidate
-from finances_api.statements.parsers import PARSERS_BY_INSTITUTION, detect_institution
+from finances_api.services.accounts import find_matching_accounts
+from finances_api.statements.ofx import (
+    InvalidStatement,
+    ParsedStatement,
+    StatementError,
+    StatementTransaction,
+    parse_ofx,
+)
 
-DEFAULT_ACCOUNTS_BY_INSTITUTION: Mapping[Institution, tuple[str, AccountType]] = {
-    "amex": ("Amex", "credit_card"),
-    "natwest": ("NatWest", "current_account"),
-    "nationwide": ("Nationwide", "current_account"),
-}
+
+@dataclass(frozen=True)
+class NewAccount:
+    preset: AccountPresetId
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -40,38 +47,67 @@ class DuplicateImport:
     pass
 
 
-ImportResult = ImportCompleted | DuplicateImport | InvalidStatement
+@dataclass(frozen=True)
+class AccountSetupRequired:
+    card_type: CardType
 
 
-def import_statement(session: Session, filename: str, content: bytes) -> ImportResult:
-    institution = detect_institution(content)
-    if isinstance(institution, InvalidStatement):
-        return institution
-
-    account = session.scalars(
-        select(Account).where(Account.institution == institution)
-    ).one_or_none()
-    if account is None:
-        account = _add_default_account(session, institution)
-    return _import_into_account(session, account, filename, content)
+ImportResult = ImportCompleted | DuplicateImport | AccountSetupRequired | InvalidStatement
 
 
-def _add_default_account(session: Session, institution: Institution) -> Account:
-    name, account_type = DEFAULT_ACCOUNTS_BY_INSTITUTION[institution]
-    account = Account(name=name, institution=institution, account_type=account_type)
+def import_statement(
+    session: Session, filename: str, content: bytes, new_account: NewAccount | None = None
+) -> ImportResult:
+    statement = parse_ofx(content)
+    if isinstance(statement, InvalidStatement):
+        return statement
+
+    match find_matching_accounts(session, statement.account):
+        case [account]:
+            pass
+        case []:
+            if new_account is None:
+                return AccountSetupRequired(statement.account.card_type)
+            account = _add_account(session, statement, new_account)
+            if isinstance(account, InvalidStatement):
+                return account
+        case _:
+            return _statement_error("This statement matches more than one saved account")
+    return _import_into_account(session, account, filename, content, statement.transactions)
+
+
+def _add_account(
+    session: Session, statement: ParsedStatement, new_account: NewAccount
+) -> Account | InvalidStatement:
+    preset = PRESETS_BY_ID[new_account.preset]
+    if preset.card_type != statement.account.card_type:
+        return _statement_error(
+            f"{preset.name} is a {preset.card_type} card, "
+            f"but this is a {statement.account.card_type} card statement"
+        )
+
+    account = Account(
+        name=(new_account.name or "").strip() or preset.name,
+        institution=preset.institution,
+        account_type=preset.account_type,
+        preset=preset.id,
+        acctid=statement.account.acctid,
+        bankid=statement.account.bankid,
+        org=statement.account.org,
+        fid=statement.account.fid,
+    )
     session.add(account)
     session.flush()
     return account
 
 
 def _import_into_account(
-    session: Session, account: Account, filename: str, content: bytes
+    session: Session,
+    account: Account,
+    filename: str,
+    content: bytes,
+    statement_transactions: Sequence[StatementTransaction],
 ) -> ImportResult:
-    result = PARSERS_BY_INSTITUTION[account.institution](content)
-    if isinstance(result, InvalidStatement):
-        session.rollback()
-        return result
-
     import_file = ImportFile(
         account_id=account.id,
         original_filename=filename,
@@ -85,7 +121,7 @@ def _import_into_account(
         session.rollback()
         return DuplicateImport()
 
-    completed = _record_transactions(session, account, import_file, result.candidates)
+    completed = _record_transactions(session, account, import_file, statement_transactions)
     session.commit()
     return completed
 
@@ -94,18 +130,20 @@ def _record_transactions(
     session: Session,
     account: Account,
     import_file: ImportFile,
-    candidates: Sequence[TransactionCandidate],
+    statement_transactions: Sequence[StatementTransaction],
 ) -> ImportCompleted:
-    existing_transactions = _existing_transactions(session, import_file.account_id, candidates)
-    new_candidates = [
-        candidate for candidate in candidates if candidate.source_key not in existing_transactions
+    existing_transactions = _existing_transactions(session, account.id, statement_transactions)
+    new_statement_transactions = [
+        transaction
+        for transaction in statement_transactions
+        if transaction.fitid not in existing_transactions
     ]
-    merchant_key_ids = _merchant_key_ids_by_description(session, new_candidates)
+    merchant_key_ids = _merchant_key_ids_by_description(session, new_statement_transactions)
     new_transactions = {
-        candidate.source_key: _new_transaction(
-            import_file.account_id, candidate, merchant_key_ids[candidate.raw_description]
+        transaction.fitid: _new_transaction(
+            account.id, transaction, merchant_key_ids[transaction.raw_description]
         )
-        for candidate in new_candidates
+        for transaction in new_statement_transactions
     }
     session.add_all(new_transactions.values())
     session.flush()
@@ -114,10 +152,10 @@ def _record_transactions(
     session.add_all(
         ImportFileTransaction(
             import_file_id=import_file.id,
-            transaction_id=transactions[candidate.source_key].id,
-            row_number=candidate.row_number,
+            transaction_id=transactions[transaction.fitid].id,
+            position=transaction.position,
         )
-        for candidate in candidates
+        for transaction in statement_transactions
     )
     return ImportCompleted(
         import_id=import_file.id,
@@ -128,23 +166,23 @@ def _record_transactions(
 
 
 def _existing_transactions(
-    session: Session, account_id: int, candidates: Sequence[TransactionCandidate]
+    session: Session, account_id: int, statement_transactions: Sequence[StatementTransaction]
 ) -> dict[str, Transaction]:
-    source_keys = [candidate.source_key for candidate in candidates]
+    fitids = [transaction.fitid for transaction in statement_transactions]
     transactions = session.scalars(
         select(Transaction).where(
-            Transaction.account_id == account_id, Transaction.source_key.in_(source_keys)
+            Transaction.account_id == account_id, Transaction.fitid.in_(fitids)
         )
     )
-    return {transaction.source_key: transaction for transaction in transactions}
+    return {transaction.fitid: transaction for transaction in transactions}
 
 
 def _merchant_key_ids_by_description(
-    session: Session, candidates: Sequence[TransactionCandidate]
+    session: Session, statement_transactions: Sequence[StatementTransaction]
 ) -> dict[str, int]:
     values_by_description = {
-        candidate.raw_description: normalize_merchant_key(candidate.raw_description)
-        for candidate in candidates
+        transaction.raw_description: normalize_merchant_key(transaction.raw_description)
+        for transaction in statement_transactions
     }
     if not values_by_description:
         return {}
@@ -164,16 +202,19 @@ def _merchant_key_ids_by_description(
 
 
 def _new_transaction(
-    account_id: int, candidate: TransactionCandidate, merchant_key_id: int
+    account_id: int, statement_transaction: StatementTransaction, merchant_key_id: int
 ) -> Transaction:
     return Transaction(
         account_id=account_id,
-        transaction_date=candidate.transaction_date,
-        amount_minor=candidate.amount_minor,
-        balance_after_minor=candidate.balance_after_minor,
-        source_type=candidate.source_type,
-        raw_description=candidate.raw_description,
-        source_reference=candidate.source_reference,
-        source_key=candidate.source_key,
+        transaction_date=statement_transaction.transaction_date,
+        amount_minor=statement_transaction.amount_minor,
+        source_type=statement_transaction.source_type,
+        raw_description=statement_transaction.raw_description,
+        memo=statement_transaction.memo,
+        fitid=statement_transaction.fitid,
         merchant_key_id=merchant_key_id,
     )
+
+
+def _statement_error(message: str) -> InvalidStatement:
+    return InvalidStatement((StatementError(None, message),))

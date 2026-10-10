@@ -33,9 +33,10 @@ export async function attachScreenshot(
   page: Page,
   testInfo: TestInfo,
   name: string,
+  { fullPage = true } = {},
 ) {
   await testInfo.attach(name, {
-    body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
+    body: await page.screenshot({ fullPage, animations: 'disabled' }),
     contentType: 'image/png',
   });
 }

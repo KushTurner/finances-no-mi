@@ -1,8 +1,9 @@
+import type { CardType } from './accounts';
 import { send, unexpectedStatus } from './client';
 import type { RejectionResponse } from './client';
 
 export type StatementError = {
-  row_number: number | null;
+  position: number | null;
   message: string;
 };
 
@@ -13,18 +14,35 @@ export type ImportResponse = {
   existing_transaction_count: number;
 };
 
+export type NewAccount = {
+  preset: string;
+  name: string;
+};
+
 type StatementErrorsResponse = {
   errors: StatementError[];
 };
 
+type AccountSetupRequiredResponse = {
+  card_type: CardType;
+};
+
 export type ImportResult =
   | { kind: 'completed'; imported: ImportResponse }
+  | { kind: 'needsAccount'; cardType: CardType }
   | { kind: 'invalid'; errors: StatementError[] }
   | { kind: 'rejected'; message: string };
 
-export async function importStatement(file: File): Promise<ImportResult> {
+export async function importStatement(
+  file: File,
+  newAccount?: NewAccount,
+): Promise<ImportResult> {
   const body = new FormData();
   body.append('file', file);
+  if (newAccount) {
+    body.append('preset', newAccount.preset);
+    body.append('name', newAccount.name);
+  }
 
   const response = await send('/api/imports', { method: 'POST', body });
 
@@ -40,6 +58,10 @@ export async function importStatement(file: File): Promise<ImportResult> {
     case 409: {
       const rejection = (await response.json()) as RejectionResponse;
       return { kind: 'rejected', message: rejection.detail };
+    }
+    case 422: {
+      const setup = (await response.json()) as AccountSetupRequiredResponse;
+      return { kind: 'needsAccount', cardType: setup.card_type };
     }
     default:
       throw unexpectedStatus(response);
