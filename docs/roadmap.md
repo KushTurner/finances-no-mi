@@ -81,6 +81,11 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Individual payments can be marked separately, and the user's own mark always wins over the payer's rule.
 - Repayments reduce Spent; own-account transfers are left out of every total and of largest payments.
 
+### Track savings and mark any transaction
+
+- Added a Savings & investments mark for money in and out, left out of Spent and Income and shown as its own overview total.
+- Brought back selection on the Transactions page to mark any transactions, including outgoing ones, with a Counts as column showing how each transaction counts.
+
 ## Planned
 
 The category slices below are paused until noise removal is in place.

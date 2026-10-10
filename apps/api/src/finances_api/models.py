@@ -20,10 +20,10 @@ Institution = Literal["amex", "natwest", "nationwide"]
 AccountType = Literal["current_account", "credit_card", "savings"]
 AccountPresetId = Literal["amex_gold", "nationwide_flexone", "natwest_select"]
 CardType = Literal["credit", "debit"]
-CountsAs = Literal["income", "repayment", "own_account"]
+CountsAs = Literal["income", "repayment", "own_account", "savings"]
 CountsAsSource = Literal["payer", "human"]
 
-COUNTS_AS_VALUES = "('income', 'repayment', 'own_account')"
+COUNTS_AS_VALUES = "('income', 'repayment', 'own_account', 'savings')"
 
 
 class Base(DeclarativeBase):

@@ -167,3 +167,27 @@ def test_a_rule_for_someone_who_never_sent_money_is_rejected(
     response = client.patch(f"/payers/{cafe}", json={"counts_as": "income"})
 
     assert response.status_code == 404
+
+
+def test_savings_are_left_out_of_spending_and_income_and_totalled_separately(
+    client: TestClient, imported: None
+) -> None:
+    client.patch(
+        "/transactions/counts-as", json={"transaction_ids": [6, 7], "counts_as": "savings"}
+    )
+
+    summary = client.get("/summary?from=2026-09-01&to=2026-09-30").json()
+
+    assert (summary["spent_pence"], summary["income_pence"], summary["savings_pence"]) == (
+        6000 + 500,
+        3000 + 200000,
+        50000 - 30000,
+    )
+    assert all(payment["description"] != OWN_SAVINGS for payment in summary["largest_payments"])
+
+
+def test_a_savings_rule_marks_money_in_and_out(client: TestClient, imported: None) -> None:
+    response = set_rule(client, OWN_SAVINGS, "savings")
+
+    assert response.json() == {"updated_count": 2}
+    assert [marks(client)[id] for id in (6, 7)] == [("savings", "payer"), ("savings", "payer")]

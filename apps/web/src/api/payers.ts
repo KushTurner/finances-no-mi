@@ -1,6 +1,6 @@
 import { requestJson } from './client';
 
-export type CountsAs = 'income' | 'repayment' | 'own_account';
+export type CountsAs = 'income' | 'repayment' | 'own_account' | 'savings';
 
 export type Payer = {
   id: number;

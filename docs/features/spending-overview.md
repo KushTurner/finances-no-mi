@@ -13,7 +13,8 @@ All arithmetic happens in application code using integer pence.
 - **Spent** is the sum of outgoing amounts, as a positive number, less incoming amounts marked as repayments.
 - **Income** is the sum of incoming amounts not marked as repayments.
 - **Net** is Income minus Spent. Net is not an account balance.
-- Transactions marked as own account are left out of every total. See [Money in](money-in.md) for how transactions are marked.
+- **Savings & investments** is money marked as savings going out, less money marked as savings coming in. It can be negative.
+- Transactions marked as own account or savings are left out of Spent and Income. See [Money in](money-in.md) for how transactions are marked.
 
 ## Overview page
 
@@ -42,8 +43,8 @@ Exports do not state the date range they cover, so an account is only known to b
 
 ### Totals
 
-- Spent, Income, and Net for the selected period and accounts.
-- For periods with a comparison, each total shows its change from the comparison period. Spent and Income show a percentage. Net shows the difference in pounds, because a percentage change of a value that can be negative is misleading.
+- Spent, Income, Savings & investments, and Net for the selected period and accounts.
+- For periods with a comparison, each total shows its change from the comparison period. Spent and Income show a percentage. Savings & investments and Net show the difference in pounds, because a percentage change of a value that can be negative is misleading.
 - Increases in Spent and decreases in Income or Net are marked as unfavourable using an arrow and text, never color alone.
 
 ### Charts
@@ -53,7 +54,7 @@ Exports do not state the date range they cover, so an account is only known to b
 | Spending pace | Running total of Spent by day for the latest month in the period, compared with the month before. States how far ahead or behind the previous month the current month is at the same day. |
 | Monthly spending | Spent per calendar month for the 12 months ending with the month the period ends in, with months in the selected period highlighted and the average of complete months marked. |
 | Income and spending | Income and Spent side by side per month for the last 12 months, with the amount kept over complete months. |
-| Largest payments | The eight largest outgoing transactions in the period, excluding own-account transfers, with date, raw description, account, and amount. Transactions are not grouped, because descriptions include institution-specific references and suffixes that would need per-institution cleanup. |
+| Largest payments | The eight largest outgoing transactions in the period, excluding own-account transfers and savings, with date, raw description, account, and amount. Transactions are not grouped, because descriptions include institution-specific references and suffixes that would need per-institution cleanup. |
 
 A month is complete when the selected accounts' data covers all of it: the month has fully gone by (its last day is on or before the latest transaction) and the data started on or before its first day. Exports usually start part-way through a month, so the first month of data is not complete. Averages and the amount kept use complete months only.
 
@@ -79,7 +80,7 @@ A toggle replaces every monetary amount on the page with the same fixed mask, in
 
 The API is three read-only endpoints. Each accepts optional repeated `account_id` parameters; without them it covers every account. A range that ends before it starts, or an unknown account, is rejected with a 400 response. Amounts are integer pence in fields ending `_pence`; every amount is GBP. Spent and Income are magnitudes; transaction amounts keep their sign, and Net can be negative.
 
-- `GET /summary?from=YYYY-MM-DD&to=YYYY-MM-DD` returns the resolved `start` and `end` (see [Data freshness](#data-freshness)), the transaction count, Spent, Income, and Net, every account with its Spent and earliest and latest transaction dates (unaffected by the account filter, so every card can still be shown), and the eight largest payments.
+- `GET /summary?from=YYYY-MM-DD&to=YYYY-MM-DD` returns the resolved `start` and `end` (see [Data freshness](#data-freshness)), the transaction count, Spent, Income, Savings & investments (`savings_pence`), and Net, every account with its Spent and earliest and latest transaction dates (unaffected by the account filter, so every card can still be shown), and the eight largest payments.
 - `GET /summary/months?from=YYYY-MM&to=YYYY-MM` returns Spent, Income, and whether the month is complete for every month in the range, with the average Spent and the amount kept (Income minus Spent) over complete months.
 - `GET /summary/days?from=YYYY-MM-DD&to=YYYY-MM-DD` returns Spent and the running total of Spent for every day in the range.
 
@@ -87,7 +88,7 @@ The routes stay thin; a service owns the aggregation rules defined above. The fr
 
 ## Acceptance criteria
 
-- Spent counts outgoing transactions less repayments, Income counts other incoming transactions, and own-account transactions count in neither.
+- Spent counts outgoing transactions less repayments, Income counts other incoming transactions, and own-account and savings transactions count in neither.
 - Totals for the comparison period use the same accounts and definitions as the selected period, and only complete periods are compared.
 - Selecting account cards changes every total and chart consistently; clearing the selection restores all accounts.
 - A range that ends after the latest transaction across the selected accounts ends on that transaction's date.

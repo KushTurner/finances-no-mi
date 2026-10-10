@@ -8,6 +8,7 @@ export type Summary = {
   transaction_count: number;
   spent_pence: number;
   income_pence: number;
+  savings_pence: number;
   net_pence: number;
   accounts: {
     id: number;

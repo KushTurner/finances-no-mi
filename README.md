@@ -50,7 +50,7 @@ Run the frontend from the repository root:
 pnpm --filter web dev
 ```
 
-After importing statements, open **Transactions** to browse them and search by description. Open **Money in** to choose how money from each payer counts: income, a repayment that reduces spending, or a transfer from your own account.
+After importing statements, open **Transactions** to search them and mark how selected ones count, for example contributions to an investment account as Savings & investments. Open **Money in** to choose how money from each payer counts: income, a repayment that reduces spending, or a transfer from your own account.
 
 The Vite dev server proxies `/api` requests to the API at `http://127.0.0.1:8000`. Import OFX statements from the **Import** page. The first statement for a new account asks which account it is; later statements for that account import directly.
 

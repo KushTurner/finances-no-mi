@@ -42,6 +42,7 @@ class Summary:
     transaction_count: int
     spent_pence: int
     income_pence: int
+    savings_pence: int
     net_pence: int
     accounts: list[AccountSpending]
     largest_payments: list[Payment]
@@ -80,8 +81,11 @@ class _Row:
     counts_as: CountsAs | None
 
 
+LEFT_OUT: frozenset[CountsAs] = frozenset({"own_account", "savings"})
+
+
 def spent_pence(amount_pence: int, counts_as: CountsAs | None) -> int:
-    if counts_as == "own_account":
+    if counts_as in LEFT_OUT:
         return 0
     if counts_as == "repayment":
         return -amount_pence
@@ -89,7 +93,7 @@ def spent_pence(amount_pence: int, counts_as: CountsAs | None) -> int:
 
 
 def income_pence(amount_pence: int, counts_as: CountsAs | None) -> int:
-    if counts_as in ("own_account", "repayment"):
+    if counts_as in LEFT_OUT or counts_as == "repayment":
         return 0
     return amount_pence if amount_pence > 0 else 0
 
@@ -115,6 +119,7 @@ def summarize(
         transaction_count=len(rows),
         spent_pence=spent,
         income_pence=income,
+        savings_pence=-sum(row.amount_pence for row in rows if row.counts_as == "savings"),
         net_pence=income - spent,
         accounts=_accounts(session, all_rows),
         largest_payments=_largest_payments(rows),
@@ -250,7 +255,7 @@ def _accounts(session: Session, rows: list[_Row]) -> list[AccountSpending]:
 
 
 def _largest_payments(rows: list[_Row]) -> list[Payment]:
-    payments = [row for row in rows if row.amount_pence < 0 and row.counts_as != "own_account"]
+    payments = [row for row in rows if row.amount_pence < 0 and row.counts_as not in LEFT_OUT]
     payments.sort(key=lambda row: (row.amount_pence, -row.date.toordinal(), -row.id))
     return [
         Payment(
