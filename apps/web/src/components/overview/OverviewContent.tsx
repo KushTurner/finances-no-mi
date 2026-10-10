@@ -92,9 +92,10 @@ export function OverviewContent({
           </div>
           <p className="max-w-[80ch] text-xs text-muted-foreground">
             Spending is money going out, less repayments. Income is the rest of
-            the money coming in. Transfers marked as your own account are left
-            out. Net is income minus spending. Choose how money counts in Money
-            in.
+            the money coming in. Own-account transfers and savings are left out
+            of both. Savings &amp; investments is money put in minus money taken
+            out. Net is income minus spending. Mark transactions on the
+            Transactions and Money in pages.
           </p>
         </>
       )}

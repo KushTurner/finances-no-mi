@@ -4,6 +4,7 @@ type SyntheticTransaction = {
   date: string;
   amount: number;
   description: string;
+  countsAs: 'own_account' | 'savings' | null;
 };
 
 export type SyntheticAccount = { id: number; name: string; latest: string };
@@ -40,6 +41,7 @@ function buildTransactions(accounts: SyntheticAccount[]) {
     date: string,
     amount: number,
     description: string,
+    countsAs: SyntheticTransaction['countsAs'] = null,
   ) => {
     const account = accounts.find((candidate) => candidate.id === accountId);
     if (!account || date > account.latest) return;
@@ -49,6 +51,7 @@ function buildTransactions(accounts: SyntheticAccount[]) {
       date,
       amount,
       description,
+      countsAs,
     });
   };
 
@@ -58,14 +61,20 @@ function buildTransactions(accounts: SyntheticAccount[]) {
     if (day === 1) add(1, date, -125000, 'SYNTHETIC LETTINGS RENT');
     if (day === 15)
       add(1, date, -8400 - Math.round(next() * 3000), 'SYNTHETIC ENERGY CO');
-    if (day === 26) add(1, date, -50000, 'SYNTHETIC TRANSFER TO NATIONWIDE');
-    if (day === 10) add(1, date, -50000, 'SYNTHETIC INVESTMENT CONTRIBUTION');
-    if (day === 12) add(1, date, 5000, 'SYNTHETIC SAVINGS WITHDRAWAL');
+    if (day === 26)
+      add(1, date, -50000, 'SYNTHETIC TRANSFER TO NATIONWIDE', 'own_account');
+    if (day === 10)
+      add(1, date, -50000, 'SYNTHETIC INVESTMENT CONTRIBUTION', 'savings');
+    if (day === 12)
+      add(1, date, 5000, 'SYNTHETIC SAVINGS WITHDRAWAL', 'savings');
     if (day === 18) add(3, date, -999, 'SYNTHETIC STREAMING MEMBERSHIP');
-    if (day === 3) add(1, date, -42000, 'SYNTHETIC CARD PAYMENT TO AMEX');
-    if (day === 27) add(2, date, 50000, 'SYNTHETIC TRANSFER FROM NATWEST');
+    if (day === 3)
+      add(1, date, -42000, 'SYNTHETIC CARD PAYMENT TO AMEX', 'own_account');
+    if (day === 27)
+      add(2, date, 50000, 'SYNTHETIC TRANSFER FROM NATWEST', 'own_account');
     if (date === lastDayOfMonth(date)) add(2, date, 412, 'SYNTHETIC INTEREST');
-    if (day === 3) add(3, date, 42000, 'SYNTHETIC PAYMENT RECEIVED');
+    if (day === 3)
+      add(3, date, 42000, 'SYNTHETIC PAYMENT RECEIVED', 'own_account');
     if (next() < 0.3)
       add(2, date, -Math.round(1500 + next() * 6000), 'SYNTHETIC SUPERMARKET');
     if (next() < 0.35)
@@ -96,11 +105,11 @@ function buildTransactions(accounts: SyntheticAccount[]) {
 }
 
 function spentOf(transaction: SyntheticTransaction) {
-  return Math.max(-transaction.amount, 0);
+  return transaction.countsAs ? 0 : Math.max(-transaction.amount, 0);
 }
 
 function incomeOf(transaction: SyntheticTransaction) {
-  return Math.max(transaction.amount, 0);
+  return transaction.countsAs ? 0 : Math.max(transaction.amount, 0);
 }
 
 export function syntheticApi(accounts = syntheticAccounts) {
@@ -131,6 +140,9 @@ export function syntheticApi(accounts = syntheticAccounts) {
       transaction_count: inRange.length,
       spent_pence: spent,
       income_pence: income,
+      savings_pence: -inRange
+        .filter((t) => t.countsAs === 'savings')
+        .reduce((sum, t) => sum + t.amount, 0),
       net_pence: income - spent,
       accounts: accounts.map((account) => {
         const own = between(
@@ -151,7 +163,7 @@ export function syntheticApi(accounts = syntheticAccounts) {
         };
       }),
       largest_payments: inRange
-        .filter((t) => t.amount < 0)
+        .filter((t) => t.amount < 0 && !t.countsAs)
         .sort(
           (a, b) =>
             a.amount - b.amount || b.date.localeCompare(a.date) || b.id - a.id,

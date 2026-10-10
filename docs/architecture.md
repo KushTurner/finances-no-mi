@@ -16,7 +16,7 @@ A statement is matched to its account by the account's OFX identifiers, and a tr
 
 ## Transaction classification
 
-Categorization is paused; see [Transaction categorization](features/transaction-categorization.md). A transaction can be marked as income, a repayment, or an own-account transfer, either by a payer rule or by the user; see [Money in](features/money-in.md).
+Categorization is paused; see [Transaction categorization](features/transaction-categorization.md). A transaction can be marked as income, a repayment, an own-account transfer, or savings and investments, either by a payer rule or by the user; see [Money in](features/money-in.md).
 
 The importer creates merchant keys using whitespace/casing normalization.
 
@@ -55,7 +55,7 @@ This section describes the implemented schema. Changes must be introduced throug
 - `fitid`: OFX transaction identifier
 - `merchant_key_id`: derived merchant key foreign key
 - `created_at`: creation timestamp
-- `counts_as`: `income`, `repayment`, `own_account`, or null to count by direction
+- `counts_as`: `income`, `repayment`, `own_account`, `savings`, or null to count by direction
 - `counts_as_source`: `payer` or `human`, present exactly when `counts_as` is
 - Check constraints allow `income` and `repayment` only on incoming amounts
 - Unique constraint on `account_id` and `fitid`
@@ -76,7 +76,7 @@ This section describes the implemented schema. Changes must be introduced throug
 ### payer_rules
 
 - `merchant_key_id`: primary key and merchant-key foreign key
-- `counts_as`: `income`, `repayment`, or `own_account`
+- `counts_as`: `income`, `repayment`, `own_account`, or `savings`
 
 ## Data handling
 
