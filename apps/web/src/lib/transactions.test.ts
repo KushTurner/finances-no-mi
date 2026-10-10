@@ -12,7 +12,6 @@ function transaction(id: number, raw_description: string): Transaction {
     amount_pence: -100,
     raw_description,
     source_type: null,
-    category_id: null,
   };
 }
 
@@ -34,16 +33,14 @@ test('a blank search keeps every transaction', () => {
   expect(matches).toBe(transactions);
 });
 
-test('the empty message explains whether the search or the category found nothing', () => {
+test('the empty message explains whether the search found nothing', () => {
   const messages = [
-    emptyTransactionsMessage('uncategorized', ' grocer '),
-    emptyTransactionsMessage('uncategorized', ''),
-    emptyTransactionsMessage('all', ''),
+    emptyTransactionsMessage(' grocer '),
+    emptyTransactionsMessage(''),
   ];
 
   expect(messages).toEqual([
     'No transactions match “grocer”.',
-    'No transactions match this category.',
     'No transactions yet. Import a statement to get started.',
   ]);
 });

@@ -1,36 +1,12 @@
 import { expect, test } from 'vitest';
 
-import type { MonthlySummary, Summary } from '@/api';
+import type { MonthlySummary } from '@/api';
 
 import {
-  categorySpendingRows,
   incomeAndSpendingChart,
   monthlySpendingChart,
   spendingPace,
-  uncategorizedLabel,
 } from './spending';
-
-function summary(overrides: Partial<Summary>): Summary {
-  return {
-    start: '2026-10-01',
-    end: '2026-10-06',
-    transaction_count: 3,
-    spent_pence: 0,
-    income_pence: 0,
-    savings_pence: 0,
-    net_pence: 0,
-    uncategorized: {
-      outgoing_count: 0,
-      outgoing_pence: 0,
-      incoming_count: 0,
-      incoming_pence: 0,
-    },
-    categories: [],
-    accounts: [],
-    largest_payments: [],
-    ...overrides,
-  };
-}
 
 function day(running: number) {
   return { date: '2026-10-01', spent_pence: 0, running_spent_pence: running };
@@ -55,37 +31,6 @@ const months: MonthlySummary = {
   average_spent_pence: 50000,
   kept_pence: 80000,
 };
-
-test('uncategorized spending comes last and bars scale to the largest category', () => {
-  const rows = categorySpendingRows(
-    summary({
-      categories: [
-        { id: 1, name: 'Food', spent_pence: 20000 },
-        { id: 2, name: 'Other', spent_pence: 5000 },
-      ],
-      uncategorized: {
-        outgoing_count: 1,
-        outgoing_pence: 10000,
-        incoming_count: 0,
-        incoming_pence: 0,
-      },
-    }),
-  );
-
-  expect(rows.map((row) => [row.name, row.barPercent, row.muted])).toEqual([
-    ['Food', 100, false],
-    ['Other', 25, false],
-    [uncategorizedLabel, 50, true],
-  ]);
-});
-
-test('a net refund in a category draws no bar', () => {
-  const rows = categorySpendingRows(
-    summary({ categories: [{ id: 1, name: 'Shopping', spent_pence: -500 }] }),
-  );
-
-  expect(rows[0].barPercent).toBe(0);
-});
 
 test('monthly spending highlights the months in the selected period', () => {
   const chart = monthlySpendingChart(months, {

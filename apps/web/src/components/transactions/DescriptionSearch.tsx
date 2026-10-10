@@ -2,15 +2,10 @@ import { Input } from '@/components/ui/input';
 
 type DescriptionSearchProps = {
   value: string;
-  disabled: boolean;
   onChange: (value: string) => void;
 };
 
-export function DescriptionSearch({
-  value,
-  disabled,
-  onChange,
-}: DescriptionSearchProps) {
+export function DescriptionSearch({ value, onChange }: DescriptionSearchProps) {
   return (
     <div className="grid gap-2">
       <label
@@ -26,7 +21,6 @@ export function DescriptionSearch({
         autoComplete="off"
         className="w-64"
         value={value}
-        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       />
     </div>

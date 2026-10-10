@@ -70,12 +70,6 @@ export function percentChange(current: number, previous: number) {
   return ((current - previous) / Math.abs(previous)) * 100;
 }
 
-export function share(part: number, total: number) {
-  if (total <= 0) return '0%';
-  const percent = Math.round((part / total) * 100);
-  return percent === 0 && part > 0 ? '<1%' : `${percent}%`;
-}
-
 export function axisTicks(largestPence: number) {
   const largest = Math.max(largestPence, 100);
   const roughStep = largest / 4;

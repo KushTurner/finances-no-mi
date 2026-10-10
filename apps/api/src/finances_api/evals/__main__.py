@@ -7,7 +7,7 @@ from typing import Any, cast
 from langsmith import Client
 from pydantic import ValidationError
 
-from finances_api.categories import CATEGORY_DEFINITIONS_VERSION
+from finances_api.evals.categories import CATEGORY_DEFINITIONS_VERSION
 from finances_api.evals.categorization import (
     PROMPT_VERSION,
     create_categorizer,

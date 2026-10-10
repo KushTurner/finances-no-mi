@@ -1,31 +1,7 @@
-import type { DailySpending, DateRange, MonthlySummary, Summary } from '@/api';
+import type { DailySpending, DateRange, MonthlySummary } from '@/api';
 
 import { axisTicks, formatShortMonth } from './format';
 import { monthOverlaps } from './periods';
-
-export const uncategorizedLabel = 'Not categorized yet';
-
-export function categorySpendingRows(summary: Summary) {
-  const rows = summary.categories.map((category) => ({
-    key: String(category.id),
-    name: category.name,
-    spent: category.spent_pence,
-    muted: false,
-  }));
-  if (summary.uncategorized.outgoing_pence > 0) {
-    rows.push({
-      key: 'uncategorized',
-      name: uncategorizedLabel,
-      spent: summary.uncategorized.outgoing_pence,
-      muted: true,
-    });
-  }
-  const largest = Math.max(1, ...rows.map((row) => row.spent));
-  return rows.map((row) => ({
-    ...row,
-    barPercent: (Math.max(row.spent, 0) / largest) * 100,
-  }));
-}
 
 export function monthlySpendingChart(
   summary: MonthlySummary,

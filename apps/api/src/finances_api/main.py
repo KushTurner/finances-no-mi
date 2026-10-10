@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from finances_api.routes import (
     account_presets,
     accounts,
-    categories,
     imports,
     summary,
     transactions,
@@ -19,7 +18,6 @@ app = FastAPI(title="Finances No MI")
 app.include_router(account_presets.router)
 app.include_router(accounts.router)
 app.include_router(imports.router)
-app.include_router(categories.router)
 app.include_router(transactions.router)
 app.include_router(summary.router)
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Finances No MI is a local-only application for bringing personal financial activity into one place. It imports transactions from multiple institutions, supports transaction-level categorization, and provides a foundation for understanding monthly spending.
+Finances No MI is a local-only application for bringing personal financial activity into one place. It imports transactions from multiple institutions and provides a foundation for understanding actual monthly spending.
 
 The application is for one user on one machine. It is not a hosted service.
 
@@ -19,17 +19,11 @@ American Express Gold, Nationwide FlexOne, and NatWest Select OFX exports are th
 
 ### Categorize transactions
 
-1. Browse imported transactions with their original descriptions and signed amounts.
-2. Choose a category from a fixed list of ten broad categories, for one transaction or a selected group.
-3. In the later suggestion slice, request LLM suggestions for uncategorized transactions using description context, direction, transaction type, and the allowed category definitions.
-4. Accept a suggestion or select a different allowed category. Insufficient information leaves the transaction uncategorized.
-5. Keep the suggestion and the user's decision separately so future evaluation can measure accuracy.
-
-Categories belong to individual transactions. Identifying a merchant or person is not required, and assigning a category does not create a rule for future transactions with the same description or sender. See [Transaction categorization](features/transaction-categorization.md) for the category list and treatment of repayments.
+Paused while the app focuses on removing noise from totals. See [Transaction categorization](features/transaction-categorization.md) for the plan when it returns.
 
 ### Review financial activity
 
-The user can inspect transactions across accounts by date, category, and description. The [spending overview](features/spending-overview.md) summarizes spending and income for a chosen period and accounts. Merchant search and a conversational interface are future capabilities.
+The user can inspect and search transactions across accounts by date and description. The [spending overview](features/spending-overview.md) summarizes spending and income for a chosen period and accounts. Merchant search and a conversational interface are future capabilities.
 
 A future question about spending at a merchant can combine a date filter with matching descriptions. Category is an optional additional filter, not a prerequisite for identifying that merchant's transactions. An LLM may interpret the question and help identify matches; application code calculates totals using integer pence and makes the matching transactions available for inspection.
 

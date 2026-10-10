@@ -8,15 +8,7 @@ export type Summary = {
   transaction_count: number;
   spent_pence: number;
   income_pence: number;
-  savings_pence: number;
   net_pence: number;
-  uncategorized: {
-    outgoing_count: number;
-    outgoing_pence: number;
-    incoming_count: number;
-    incoming_pence: number;
-  };
-  categories: { id: number; name: string; spent_pence: number }[];
   accounts: {
     id: number;
     name: string;

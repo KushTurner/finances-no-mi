@@ -12,7 +12,6 @@ from langchain_core.messages import AIMessage
 from langsmith import Client
 from langsmith.schemas import Dataset, Example, Run
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
 
 from finances_api.evals import __main__ as cli
 from finances_api.evals.categorization import (
@@ -29,7 +28,6 @@ from finances_api.evals.dataset import (
     validate_examples,
 )
 from finances_api.evals.scoring import correctness, summarize
-from finances_api.services.categories import list_categories
 
 CONTEXT: dict[str, Any] = {
     "description": "SYNTHETIC CAFE RESTAURANT MEAL",
@@ -220,11 +218,9 @@ def make_run(example_id: UUID, prediction: Prediction) -> Run:
     )
 
 
-def test_starter_definitions_match_the_app_and_cover_every_category(session: Session) -> None:
-    app_definitions = {category.name: category.definition for category in list_categories(session)}
+def test_starter_examples_cover_every_category() -> None:
     cases = starter_examples()
 
-    assert CATEGORY_DEFINITIONS == app_definitions
     assert {case.outputs.category for case in cases} == set(CATEGORY_DEFINITIONS)
 
 

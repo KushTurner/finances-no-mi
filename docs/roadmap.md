@@ -69,7 +69,15 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - Accounts store their OFX identifiers, several accounts can share an institution or preset, and transactions are identified by account-scoped `FITID`, with `MEMO` kept out of the description.
 - Synthetic OFX demo data, tests, and mocked browser screenshots.
 
+### Pause categorization
+
+- Removed categories, category assignment, and the category tables to focus on removing noise from totals first. The [categorization plan](features/transaction-categorization.md) and eval benchmark are kept for when it returns.
+- The overview counts all money out as Spent and all money in as Income, with Net as their difference. The spending-by-category chart, Savings & investments total, and uncategorized notice are removed.
+- The Transactions page is a read-only list with description search.
+
 ## Planned
+
+The category slices below are paused until noise removal is in place.
 
 ### 0. Benchmark category suggestions
 

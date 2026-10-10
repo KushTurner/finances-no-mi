@@ -7,32 +7,14 @@ from datetime import date, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from finances_api.categories import NON_SPENDING_CATEGORIES
-from finances_api.models import Account, Category, Transaction
+from finances_api.models import Account, Transaction
 
-INCOME = "Income"
-SAVINGS = "Savings & investments"
 LARGEST_PAYMENT_LIMIT = 8
 
 
 @dataclass(frozen=True)
 class InvalidSummaryRequest:
     message: str
-
-
-@dataclass(frozen=True)
-class UncategorizedTotals:
-    outgoing_count: int
-    outgoing_pence: int
-    incoming_count: int
-    incoming_pence: int
-
-
-@dataclass(frozen=True)
-class CategorySpending:
-    id: int
-    name: str
-    spent_pence: int
 
 
 @dataclass(frozen=True)
@@ -60,10 +42,7 @@ class Summary:
     transaction_count: int
     spent_pence: int
     income_pence: int
-    savings_pence: int
     net_pence: int
-    uncategorized: UncategorizedTotals
-    categories: list[CategorySpending]
     accounts: list[AccountSpending]
     largest_payments: list[Payment]
 
@@ -98,20 +77,14 @@ class _Row:
     date: date
     amount_pence: int
     description: str
-    category_id: int | None
-    category_name: str | None
 
 
-def spent_pence(amount_pence: int, category_name: str | None) -> int:
-    if category_name in NON_SPENDING_CATEGORIES:
-        return 0
-    if category_name is None:
-        return -amount_pence if amount_pence < 0 else 0
-    return -amount_pence
+def spent_pence(amount_pence: int) -> int:
+    return -amount_pence if amount_pence < 0 else 0
 
 
-def income_pence(amount_pence: int, category_name: str | None) -> int:
-    return amount_pence if category_name == INCOME else 0
+def income_pence(amount_pence: int) -> int:
+    return amount_pence if amount_pence > 0 else 0
 
 
 def summarize(
@@ -127,18 +100,15 @@ def summarize(
     all_rows = _rows(session, start, end, [])
     selected_ids = set(account_ids)
     rows = [row for row in all_rows if not selected_ids or row.account_id in selected_ids]
-    spent = sum(spent_pence(row.amount_pence, row.category_name) for row in rows)
-    income = sum(income_pence(row.amount_pence, row.category_name) for row in rows)
+    spent = sum(spent_pence(row.amount_pence) for row in rows)
+    income = sum(income_pence(row.amount_pence) for row in rows)
     return Summary(
         start=start,
         end=end,
         transaction_count=len(rows),
         spent_pence=spent,
         income_pence=income,
-        savings_pence=-sum(row.amount_pence for row in rows if row.category_name == SAVINGS),
         net_pence=income - spent,
-        uncategorized=_uncategorized(rows),
-        categories=_categories(rows),
         accounts=_accounts(session, all_rows),
         largest_payments=_largest_payments(rows),
     )
@@ -157,8 +127,8 @@ def summarize_months(
     income: dict[date, int] = defaultdict(int)
     for row in _rows(session, first_month, last_day, account_ids):
         month = row.date.replace(day=1)
-        spent[month] += spent_pence(row.amount_pence, row.category_name)
-        income[month] += income_pence(row.amount_pence, row.category_name)
+        spent[month] += spent_pence(row.amount_pence)
+        income[month] += income_pence(row.amount_pence)
 
     months = [
         MonthTotals(
@@ -189,7 +159,7 @@ def summarize_days(
         return invalid
     spent: dict[date, int] = defaultdict(int)
     for row in _rows(session, start, end, account_ids):
-        spent[row.date] += spent_pence(row.amount_pence, row.category_name)
+        spent[row.date] += spent_pence(row.amount_pence)
 
     days: list[DayTotals] = []
     running = 0
@@ -225,9 +195,8 @@ def _date_bounds(session: Session, account_ids: Sequence[int]) -> tuple[date | N
 
 def _rows(session: Session, start: date, end: date, account_ids: Sequence[int]) -> list[_Row]:
     statement = (
-        select(Transaction, Account.name, Category.name)
+        select(Transaction, Account.name)
         .join(Account)
-        .outerjoin(Category, Transaction.category_id == Category.id)
         .where(Transaction.transaction_date.between(start, end))
     )
     if account_ids:
@@ -240,47 +209,15 @@ def _rows(session: Session, start: date, end: date, account_ids: Sequence[int]) 
             date=transaction.transaction_date,
             amount_pence=transaction.amount_minor,
             description=transaction.raw_description,
-            category_id=transaction.category_id,
-            category_name=category_name,
         )
-        for transaction, account_name, category_name in session.execute(statement)
+        for transaction, account_name in session.execute(statement)
     ]
-
-
-def _uncategorized(rows: list[_Row]) -> UncategorizedTotals:
-    uncategorized = [row for row in rows if row.category_id is None]
-    outgoing = [row.amount_pence for row in uncategorized if row.amount_pence < 0]
-    incoming = [row.amount_pence for row in uncategorized if row.amount_pence > 0]
-    return UncategorizedTotals(
-        outgoing_count=len(outgoing),
-        outgoing_pence=-sum(outgoing),
-        incoming_count=len(incoming),
-        incoming_pence=sum(incoming),
-    )
-
-
-def _categories(rows: list[_Row]) -> list[CategorySpending]:
-    spent: dict[tuple[int, str], int] = defaultdict(int)
-    for row in rows:
-        if row.category_id is None or row.category_name is None:
-            continue
-        if row.category_name in NON_SPENDING_CATEGORIES:
-            continue
-        spent[(row.category_id, row.category_name)] += spent_pence(
-            row.amount_pence, row.category_name
-        )
-    categories = [
-        CategorySpending(id=category_id, name=name, spent_pence=amount)
-        for (category_id, name), amount in spent.items()
-        if amount != 0
-    ]
-    return sorted(categories, key=lambda category: (-category.spent_pence, category.name))
 
 
 def _accounts(session: Session, rows: list[_Row]) -> list[AccountSpending]:
     spent: dict[int, int] = defaultdict(int)
     for row in rows:
-        spent[row.account_id] += spent_pence(row.amount_pence, row.category_name)
+        spent[row.account_id] += spent_pence(row.amount_pence)
     statement = (
         select(
             Account.id,
@@ -305,11 +242,7 @@ def _accounts(session: Session, rows: list[_Row]) -> list[AccountSpending]:
 
 
 def _largest_payments(rows: list[_Row]) -> list[Payment]:
-    payments = [
-        row
-        for row in rows
-        if row.amount_pence < 0 and row.category_name not in NON_SPENDING_CATEGORIES
-    ]
+    payments = [row for row in rows if row.amount_pence < 0]
     payments.sort(key=lambda row: (row.amount_pence, -row.date.toordinal(), -row.id))
     return [
         Payment(
