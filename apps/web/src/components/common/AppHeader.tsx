@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 
 const navLink =
-  'rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground';
+  'rounded-full px-3 py-1.5 text-sm whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground';
 const activeNavLink = {
   className: 'bg-secondary font-medium text-foreground',
 };
@@ -34,6 +34,9 @@ export function AppHeader() {
           activeProps={activeNavLink}
         >
           Transactions
+        </Link>
+        <Link to="/money-in" className={navLink} activeProps={activeNavLink}>
+          Money in
         </Link>
         <Link to="/import" className={navLink} activeProps={activeNavLink}>
           Import

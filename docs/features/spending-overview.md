@@ -10,10 +10,10 @@ The page is deliberately simple. Anything that needs institution-specific rules,
 
 All arithmetic happens in application code using integer pence.
 
-- **Spent** is the sum of all outgoing amounts, as a positive number.
-- **Income** is the sum of all incoming amounts.
+- **Spent** is the sum of outgoing amounts, as a positive number, less incoming amounts marked as repayments.
+- **Income** is the sum of incoming amounts not marked as repayments.
 - **Net** is Income minus Spent. Net is not an account balance.
-- Every transaction counts, including transfers between the user's own accounts, savings movements, and repayments. Removing that noise is the next feature.
+- Transactions marked as own account are left out of every total. See [Money in](money-in.md) for how transactions are marked.
 
 ## Overview page
 
@@ -53,7 +53,7 @@ Exports do not state the date range they cover, so an account is only known to b
 | Spending pace | Running total of Spent by day for the latest month in the period, compared with the month before. States how far ahead or behind the previous month the current month is at the same day. |
 | Monthly spending | Spent per calendar month for the 12 months ending with the month the period ends in, with months in the selected period highlighted and the average of complete months marked. |
 | Income and spending | Income and Spent side by side per month for the last 12 months, with the amount kept over complete months. |
-| Largest payments | The eight largest outgoing transactions in the period, with date, raw description, account, and amount. Transactions are not grouped, because descriptions include institution-specific references and suffixes that would need per-institution cleanup. |
+| Largest payments | The eight largest outgoing transactions in the period, excluding own-account transfers, with date, raw description, account, and amount. Transactions are not grouped, because descriptions include institution-specific references and suffixes that would need per-institution cleanup. |
 
 A month is complete when the selected accounts' data covers all of it: the month has fully gone by (its last day is on or before the latest transaction) and the data started on or before its first day. Exports usually start part-way through a month, so the first month of data is not complete. Averages and the amount kept use complete months only.
 
@@ -87,7 +87,7 @@ The routes stay thin; a service owns the aggregation rules defined above. The fr
 
 ## Acceptance criteria
 
-- Spent counts every outgoing transaction and Income counts every incoming transaction.
+- Spent counts outgoing transactions less repayments, Income counts other incoming transactions, and own-account transactions count in neither.
 - Totals for the comparison period use the same accounts and definitions as the selected period, and only complete periods are compared.
 - Selecting account cards changes every total and chart consistently; clearing the selection restores all accounts.
 - A range that ends after the latest transaction across the selected accounts ends on that transaction's date.

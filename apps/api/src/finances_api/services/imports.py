@@ -8,17 +8,20 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from finances_api.account_presets import PRESETS_BY_ID
+from finances_api.counting import payer_mark
 from finances_api.merchant_keys import normalize_merchant_key
 from finances_api.models import (
     Account,
     AccountPresetId,
     CardType,
+    CountsAs,
     ImportFile,
     ImportFileTransaction,
     MerchantKey,
     Transaction,
 )
 from finances_api.services.accounts import find_matching_accounts
+from finances_api.services.payers import payer_rules
 from finances_api.statements.ofx import (
     InvalidStatement,
     ParsedStatement,
@@ -139,9 +142,13 @@ def _record_transactions(
         if transaction.fitid not in existing_transactions
     ]
     merchant_key_ids = _merchant_key_ids_by_description(session, new_statement_transactions)
+    rules = payer_rules(session, set(merchant_key_ids.values()))
     new_transactions = {
         transaction.fitid: _new_transaction(
-            account.id, transaction, merchant_key_ids[transaction.raw_description]
+            account.id,
+            transaction,
+            merchant_key_ids[transaction.raw_description],
+            rules.get(merchant_key_ids[transaction.raw_description]),
         )
         for transaction in new_statement_transactions
     }
@@ -202,8 +209,12 @@ def _merchant_key_ids_by_description(
 
 
 def _new_transaction(
-    account_id: int, statement_transaction: StatementTransaction, merchant_key_id: int
+    account_id: int,
+    statement_transaction: StatementTransaction,
+    merchant_key_id: int,
+    rule: CountsAs | None,
 ) -> Transaction:
+    mark = payer_mark(rule, statement_transaction.amount_minor)
     return Transaction(
         account_id=account_id,
         transaction_date=statement_transaction.transaction_date,
@@ -213,6 +224,8 @@ def _new_transaction(
         memo=statement_transaction.memo,
         fitid=statement_transaction.fitid,
         merchant_key_id=merchant_key_id,
+        counts_as=mark,
+        counts_as_source="payer" if mark else None,
     )
 
 

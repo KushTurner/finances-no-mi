@@ -20,6 +20,10 @@ Institution = Literal["amex", "natwest", "nationwide"]
 AccountType = Literal["current_account", "credit_card", "savings"]
 AccountPresetId = Literal["amex_gold", "nationwide_flexone", "natwest_select"]
 CardType = Literal["credit", "debit"]
+CountsAs = Literal["income", "repayment", "own_account"]
+CountsAsSource = Literal["payer", "human"]
+
+COUNTS_AS_VALUES = "('income', 'repayment', 'own_account')"
 
 
 class Base(DeclarativeBase):
@@ -65,6 +69,19 @@ class Transaction(Base):
         UniqueConstraint("account_id", "fitid", name="uq_transactions_fitid"),
         Index("ix_transactions_account_date", "account_id", "transaction_date"),
         Index("ix_transactions_merchant_key_id", "merchant_key_id"),
+        CheckConstraint(
+            f"counts_as IS NULL OR counts_as IN {COUNTS_AS_VALUES}",
+            name="ck_transactions_counts_as",
+        ),
+        CheckConstraint(
+            "counts_as NOT IN ('income', 'repayment') OR amount_minor > 0",
+            name="ck_transactions_counts_as_incoming",
+        ),
+        CheckConstraint(
+            "(counts_as IS NULL AND counts_as_source IS NULL) OR "
+            "(counts_as IS NOT NULL AND counts_as_source IN ('payer', 'human'))",
+            name="ck_transactions_counts_as_source",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -79,6 +96,20 @@ class Transaction(Base):
         ForeignKey("merchant_keys.id", ondelete="RESTRICT")
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+    counts_as: Mapped[CountsAs | None] = mapped_column(String)
+    counts_as_source: Mapped[CountsAsSource | None] = mapped_column(String)
+
+
+class PayerRule(Base):
+    __tablename__ = "payer_rules"
+    __table_args__ = (
+        CheckConstraint(f"counts_as IN {COUNTS_AS_VALUES}", name="ck_payer_rules_counts_as"),
+    )
+
+    merchant_key_id: Mapped[int] = mapped_column(
+        ForeignKey("merchant_keys.id", ondelete="RESTRICT"), primary_key=True
+    )
+    counts_as: Mapped[CountsAs] = mapped_column(String)
 
 
 class ImportFileTransaction(Base):

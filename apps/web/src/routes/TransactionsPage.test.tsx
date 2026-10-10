@@ -71,6 +71,8 @@ test('search narrows the list to matching descriptions', async () => {
               amount_pence: -100,
               raw_description,
               source_type: null,
+              counts_as: null,
+              counts_as_source: null,
             }),
           ),
         ),

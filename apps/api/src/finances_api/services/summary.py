@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from finances_api.models import Account, Transaction
+from finances_api.models import Account, CountsAs, Transaction
 
 LARGEST_PAYMENT_LIMIT = 8
 
@@ -77,13 +77,20 @@ class _Row:
     date: date
     amount_pence: int
     description: str
+    counts_as: CountsAs | None
 
 
-def spent_pence(amount_pence: int) -> int:
+def spent_pence(amount_pence: int, counts_as: CountsAs | None) -> int:
+    if counts_as == "own_account":
+        return 0
+    if counts_as == "repayment":
+        return -amount_pence
     return -amount_pence if amount_pence < 0 else 0
 
 
-def income_pence(amount_pence: int) -> int:
+def income_pence(amount_pence: int, counts_as: CountsAs | None) -> int:
+    if counts_as in ("own_account", "repayment"):
+        return 0
     return amount_pence if amount_pence > 0 else 0
 
 
@@ -100,8 +107,8 @@ def summarize(
     all_rows = _rows(session, start, end, [])
     selected_ids = set(account_ids)
     rows = [row for row in all_rows if not selected_ids or row.account_id in selected_ids]
-    spent = sum(spent_pence(row.amount_pence) for row in rows)
-    income = sum(income_pence(row.amount_pence) for row in rows)
+    spent = sum(spent_pence(row.amount_pence, row.counts_as) for row in rows)
+    income = sum(income_pence(row.amount_pence, row.counts_as) for row in rows)
     return Summary(
         start=start,
         end=end,
@@ -127,8 +134,8 @@ def summarize_months(
     income: dict[date, int] = defaultdict(int)
     for row in _rows(session, first_month, last_day, account_ids):
         month = row.date.replace(day=1)
-        spent[month] += spent_pence(row.amount_pence)
-        income[month] += income_pence(row.amount_pence)
+        spent[month] += spent_pence(row.amount_pence, row.counts_as)
+        income[month] += income_pence(row.amount_pence, row.counts_as)
 
     months = [
         MonthTotals(
@@ -159,7 +166,7 @@ def summarize_days(
         return invalid
     spent: dict[date, int] = defaultdict(int)
     for row in _rows(session, start, end, account_ids):
-        spent[row.date] += spent_pence(row.amount_pence)
+        spent[row.date] += spent_pence(row.amount_pence, row.counts_as)
 
     days: list[DayTotals] = []
     running = 0
@@ -209,6 +216,7 @@ def _rows(session: Session, start: date, end: date, account_ids: Sequence[int]) 
             date=transaction.transaction_date,
             amount_pence=transaction.amount_minor,
             description=transaction.raw_description,
+            counts_as=transaction.counts_as,
         )
         for transaction, account_name in session.execute(statement)
     ]
@@ -217,7 +225,7 @@ def _rows(session: Session, start: date, end: date, account_ids: Sequence[int]) 
 def _accounts(session: Session, rows: list[_Row]) -> list[AccountSpending]:
     spent: dict[int, int] = defaultdict(int)
     for row in rows:
-        spent[row.account_id] += spent_pence(row.amount_pence)
+        spent[row.account_id] += spent_pence(row.amount_pence, row.counts_as)
     statement = (
         select(
             Account.id,
@@ -242,7 +250,7 @@ def _accounts(session: Session, rows: list[_Row]) -> list[AccountSpending]:
 
 
 def _largest_payments(rows: list[_Row]) -> list[Payment]:
-    payments = [row for row in rows if row.amount_pence < 0]
+    payments = [row for row in rows if row.amount_pence < 0 and row.counts_as != "own_account"]
     payments.sort(key=lambda row: (row.amount_pence, -row.date.toordinal(), -row.id))
     return [
         Payment(

@@ -75,6 +75,12 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 - The overview counts all money out as Spent and all money in as Income, with Net as their difference. The spending-by-category chart, Savings & investments total, and uncategorized notice are removed.
 - The Transactions page is a read-only list with description search.
 
+### Mark money in by payer
+
+- Added the [Money in](features/money-in.md) page listing everyone who sent money, with one choice per payer: Income, Repayment, or Own account. Choices apply to past and future imports.
+- Individual payments can be marked separately, and the user's own mark always wins over the payer's rule.
+- Repayments reduce Spent; own-account transfers are left out of every total and of largest payments.
+
 ## Planned
 
 The category slices below are paused until noise removal is in place.

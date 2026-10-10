@@ -22,5 +22,7 @@ def test_lists_original_details_newest_first(client: TestClient) -> None:
         "amount_pence": -450,
         "raw_description": "SYNTHETIC CAFE",
         "source_type": "POS",
+        "counts_as": None,
+        "counts_as_source": None,
     }
     assert [row["id"] for row in response.json()] == [2, 1]
