@@ -12,6 +12,8 @@ function transaction(id: number, raw_description: string): Transaction {
     amount_pence: -100,
     raw_description,
     source_type: null,
+    counts_as: null,
+    counts_as_source: null,
   };
 }
 

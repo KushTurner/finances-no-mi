@@ -1,5 +1,6 @@
 export * from './accounts';
 export * from './comparison';
+export * from './countsAs';
 export * from './format';
 export * from './money';
 export * from './periods';
