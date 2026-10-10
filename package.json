@@ -5,6 +5,7 @@
   "scripts": {
     "build": "pnpm --filter web build",
     "demo": "bash scripts/demo.sh",
+    "dev": "bash scripts/dev.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "pnpm --filter web lint",
