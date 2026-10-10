@@ -8,7 +8,7 @@ import {
 } from '@/components/common';
 import {
   CategoryAssignment,
-  CategoryFilter,
+  TransactionFilters,
   TransactionsTable,
 } from '@/components/transactions';
 import {
@@ -16,7 +16,14 @@ import {
   useCategoriesQuery,
   useTransactionsQuery,
 } from '@/hooks';
-import { formatCount, toggleId } from '@/lib';
+import {
+  emptyTransactionsMessage,
+  filterByDescription,
+  formatCount,
+  formatShownCount,
+  toggleAll,
+  toggleId,
+} from '@/lib';
 
 type TransactionsPageProps = {
   initialFilter?: string;
@@ -26,6 +33,7 @@ export function TransactionsPage({
   initialFilter = 'all',
 }: TransactionsPageProps) {
   const [filter, setFilter] = useState(initialFilter);
+  const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<number[]>([]);
   const [choice, setChoice] = useState('');
   const [notice, setNotice] = useState('');
@@ -34,6 +42,7 @@ export function TransactionsPage({
   const assignment = useAssignCategoryMutation();
   const loadError = categories.error ?? transactions.error;
   const ready = categories.isSuccess && transactions.isSuccess;
+  const shown = filterByDescription(transactions.data ?? [], search);
 
   function assignSelected() {
     assignment.mutate(
@@ -52,17 +61,29 @@ export function TransactionsPage({
     );
   }
 
-  function toggleSelection(id: number) {
-    setSelected((current) => toggleId(current, id));
+  function changeSelection(ids: number[]) {
+    setSelected(ids);
     setNotice('');
     assignment.reset();
   }
 
+  function toggleSelection(id: number) {
+    changeSelection(toggleId(selected, id));
+  }
+
+  function toggleAllShown() {
+    const shownIds = shown.map((transaction) => transaction.id);
+    changeSelection(toggleAll(shownIds, selected));
+  }
+
   function changeFilter(value: string) {
     setFilter(value);
-    setSelected([]);
-    setNotice('');
-    assignment.reset();
+    changeSelection([]);
+  }
+
+  function changeSearch(value: string) {
+    setSearch(value);
+    changeSelection([]);
   }
 
   function changeChoice(value: string) {
@@ -78,19 +99,19 @@ export function TransactionsPage({
         description="Browse your imports and choose categories for selected transactions."
       />
 
-      <div className="mt-8 flex flex-wrap items-end gap-4">
-        <CategoryFilter
-          value={filter}
-          categories={categories.data}
-          disabled={assignment.isPending}
-          onChange={changeFilter}
-        />
-        {ready && (
-          <p className="pb-1.5 text-sm text-muted-foreground">
-            {formatCount(transactions.data.length, 'transaction')}
-          </p>
-        )}
-      </div>
+      <TransactionFilters
+        category={filter}
+        search={search}
+        categories={categories.data}
+        shownCount={
+          ready
+            ? formatShownCount(shown.length, transactions.data.length)
+            : null
+        }
+        disabled={assignment.isPending}
+        onCategoryChange={changeFilter}
+        onSearchChange={changeSearch}
+      />
 
       {loadError && (
         <LoadError
@@ -122,19 +143,18 @@ export function TransactionsPage({
             />
           )}
 
-          {transactions.data.length === 0 ? (
+          {shown.length === 0 ? (
             <EmptyState className="mt-6">
-              {filter === 'all'
-                ? 'No transactions yet. Import a statement to get started.'
-                : 'No transactions match this category.'}
+              {emptyTransactionsMessage(filter, search)}
             </EmptyState>
           ) : (
             <TransactionsTable
-              transactions={transactions.data}
+              transactions={shown}
               categories={categories.data}
               selectedIds={selected}
               disabled={assignment.isPending}
               onToggle={toggleSelection}
+              onToggleAll={toggleAllShown}
             />
           )}
         </>

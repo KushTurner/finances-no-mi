@@ -10,7 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { categoryName, formatDayWithYear, formatSignedPounds } from '@/lib';
+import {
+  categoryName,
+  formatDayWithYear,
+  formatSignedPounds,
+  selectAllState,
+} from '@/lib';
 import { cn } from '@/lib/utils';
 
 type TransactionsTableProps = {
@@ -19,6 +24,7 @@ type TransactionsTableProps = {
   selectedIds: number[];
   disabled: boolean;
   onToggle: (id: number) => void;
+  onToggleAll: () => void;
 };
 
 export function TransactionsTable({
@@ -27,7 +33,13 @@ export function TransactionsTable({
   selectedIds,
   disabled,
   onToggle,
+  onToggleAll,
 }: TransactionsTableProps) {
+  const allState = selectAllState(
+    transactions.map((transaction) => transaction.id),
+    selectedIds,
+  );
+
   return (
     <Card className="mt-2 py-0">
       <Table>
@@ -37,7 +49,13 @@ export function TransactionsTable({
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-10 pl-4">
-              <span className="sr-only">Select</span>
+              <Checkbox
+                aria-label="Select all shown transactions"
+                className="data-indeterminate:border-primary data-indeterminate:bg-primary dark:data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-indeterminate:before:h-0.5 data-indeterminate:before:w-2 data-indeterminate:before:rounded-full data-indeterminate:before:bg-current data-indeterminate:[&_svg]:hidden"
+                checked={allState}
+                disabled={disabled}
+                onCheckedChange={onToggleAll}
+              />
             </TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Description</TableHead>

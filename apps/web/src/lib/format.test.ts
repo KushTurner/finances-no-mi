@@ -5,6 +5,7 @@ import {
   formatChartMonth,
   formatCount,
   formatRange,
+  formatShownCount,
   formatShownRange,
   percentChange,
   share,
@@ -79,4 +80,10 @@ test('chart months say when they are incomplete', () => {
   ];
 
   expect(titles).toEqual(['September 2026', 'October 2026 (incomplete)']);
+});
+
+test('a narrowed list shows how many of the total remain', () => {
+  const counts = [formatShownCount(1, 5), formatShownCount(5, 5)];
+
+  expect(counts).toEqual(['1 of 5 transactions', '5 transactions']);
 });
