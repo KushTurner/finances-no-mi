@@ -133,6 +133,33 @@ uv run --env-file .env --with langchain-openai python -m finances_api.evals run 
 limits or thinking settings. Choose settings supported by the selected model.
 The runner always uses a 30-second timeout and disables automatic retries.
 
+## Current private OFX benchmark
+
+The reviewed OFX sample is kept locally under `.data/evals/`, which is
+Git-ignored. It contains 300 labelled examples: 100 from each of the Amex,
+Nationwide, and NatWest accounts. The CSV is the review file; the JSON companion
+contains only the normalized model inputs and reference categories.
+
+Seed or refresh the private LangSmith dataset with:
+
+```bash
+uv run --env-file .env python -m finances_api.evals seed \
+  --data ../../.data/evals/ofx-review-v1.json --dataset finances-no-mi-ofx-v1
+```
+
+The current baseline sends one transaction per model call and does not retrieve
+previous transactions. The first full comparison used the same dataset and prompt
+for both models:
+
+| Model | Estimated cost | Correctness | Suggestion accuracy | Coverage |
+| --- | ---: | ---: | ---: | ---: |
+| Claude Haiku 5.5 | $0.0445 | 33.0% | 77.3% | 42.7% |
+| GPT-4o-mini | $0.0235 | 37.0% | 37.5% | 98.7% |
+
+Claude is the current safer baseline because it makes fewer incorrect suggestions.
+The next experiment will retrieve up to five confirmed exact merchant-key matches
+for each transaction and compare that history-aware version against this baseline.
+
 ## Review and label examples
 
 Open the dataset's **Examples** tab. Edit an example or add a synthetic example
