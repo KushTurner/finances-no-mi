@@ -7,9 +7,10 @@ import { Panel } from './Panel';
 
 type LargestPaymentsProps = {
   payments: Summary['largest_payments'];
+  className?: string;
 };
 
-export function LargestPayments({ payments }: LargestPaymentsProps) {
+export function LargestPayments({ payments, className }: LargestPaymentsProps) {
   const { period } = useOverviewSearch();
   const periodLabel = periodLabels[period];
   const money = useMoney();
@@ -17,7 +18,8 @@ export function LargestPayments({ payments }: LargestPaymentsProps) {
   return (
     <Panel
       title="Largest payments"
-      description={`${periodLabel} · excluding transfers, savings and investments`}
+      description={periodLabel}
+      className={className}
     >
       {payments.length === 0 ? (
         <p className="text-sm text-muted-foreground">

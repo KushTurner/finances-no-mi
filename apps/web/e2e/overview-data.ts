@@ -4,7 +4,6 @@ type SyntheticTransaction = {
   date: string;
   amount: number;
   description: string;
-  category: string | null;
 };
 
 export type SyntheticAccount = { id: number; name: string; latest: string };
@@ -14,18 +13,6 @@ export const syntheticAccounts: SyntheticAccount[] = [
   { id: 2, name: 'Nationwide', latest: '2026-09-30' },
   { id: 3, name: 'Amex', latest: '2026-10-02' },
 ];
-
-const categoryIds: Record<string, number> = {
-  Bills: 1,
-  Food: 2,
-  Subscriptions: 11,
-  Transport: 4,
-  Shopping: 12,
-  'Savings & investments': 13,
-  Other: 8,
-  Income: 9,
-  Transfers: 10,
-};
 
 const DAY_MS = 86_400_000;
 const firstDay = '2025-09-12';
@@ -53,141 +40,67 @@ function buildTransactions(accounts: SyntheticAccount[]) {
     date: string,
     amount: number,
     description: string,
-    category: string | null,
   ) => {
     const account = accounts.find((candidate) => candidate.id === accountId);
     if (!account || date > account.latest) return;
-    const recent = date >= '2026-09-20';
-    const uncategorized =
-      category !== 'Income' &&
-      category !== 'Transfers' &&
-      category !== 'Savings & investments' &&
-      recent &&
-      next() < 0.35;
     transactions.push({
       id: transactions.length + 1,
       accountId,
       date,
       amount,
       description,
-      category: uncategorized ? null : category,
     });
   };
 
   for (let date = firstDay; date <= '2026-10-06'; date = addDays(date, 1)) {
     const day = Number(date.slice(8, 10));
-    if (day === 25) add(1, date, 320000, 'SYNTHETIC EMPLOYER SALARY', 'Income');
-    if (day === 1) add(1, date, -125000, 'SYNTHETIC LETTINGS RENT', 'Bills');
+    if (day === 25) add(1, date, 320000, 'SYNTHETIC EMPLOYER SALARY');
+    if (day === 1) add(1, date, -125000, 'SYNTHETIC LETTINGS RENT');
     if (day === 15)
-      add(
-        1,
-        date,
-        -8400 - Math.round(next() * 3000),
-        'SYNTHETIC ENERGY CO',
-        'Bills',
-      );
-    if (day === 26)
-      add(1, date, -50000, 'SYNTHETIC TRANSFER TO NATIONWIDE', 'Transfers');
-    if (day === 10)
-      add(
-        1,
-        date,
-        -50000,
-        'SYNTHETIC INVESTMENT CONTRIBUTION',
-        'Savings & investments',
-      );
-    if (day === 12)
-      add(
-        1,
-        date,
-        5000,
-        'SYNTHETIC SAVINGS WITHDRAWAL',
-        'Savings & investments',
-      );
-    if (day === 18)
-      add(3, date, -999, 'SYNTHETIC STREAMING MEMBERSHIP', 'Subscriptions');
-    if (day === 3)
-      add(1, date, -42000, 'SYNTHETIC CARD PAYMENT TO AMEX', 'Transfers');
-    if (day === 27)
-      add(2, date, 50000, 'SYNTHETIC TRANSFER FROM NATWEST', 'Transfers');
-    if (date === lastDayOfMonth(date))
-      add(2, date, 412, 'SYNTHETIC INTEREST', 'Income');
-    if (day === 3)
-      add(3, date, 42000, 'SYNTHETIC PAYMENT RECEIVED', 'Transfers');
+      add(1, date, -8400 - Math.round(next() * 3000), 'SYNTHETIC ENERGY CO');
+    if (day === 26) add(1, date, -50000, 'SYNTHETIC TRANSFER TO NATIONWIDE');
+    if (day === 10) add(1, date, -50000, 'SYNTHETIC INVESTMENT CONTRIBUTION');
+    if (day === 12) add(1, date, 5000, 'SYNTHETIC SAVINGS WITHDRAWAL');
+    if (day === 18) add(3, date, -999, 'SYNTHETIC STREAMING MEMBERSHIP');
+    if (day === 3) add(1, date, -42000, 'SYNTHETIC CARD PAYMENT TO AMEX');
+    if (day === 27) add(2, date, 50000, 'SYNTHETIC TRANSFER FROM NATWEST');
+    if (date === lastDayOfMonth(date)) add(2, date, 412, 'SYNTHETIC INTEREST');
+    if (day === 3) add(3, date, 42000, 'SYNTHETIC PAYMENT RECEIVED');
     if (next() < 0.3)
-      add(
-        2,
-        date,
-        -Math.round(1500 + next() * 6000),
-        'SYNTHETIC SUPERMARKET',
-        'Food',
-      );
+      add(2, date, -Math.round(1500 + next() * 6000), 'SYNTHETIC SUPERMARKET');
     if (next() < 0.35)
-      add(
-        3,
-        date,
-        -Math.round(400 + next() * 3500),
-        'SYNTHETIC COFFEE HOUSE',
-        'Food',
-      );
+      add(3, date, -Math.round(400 + next() * 3500), 'SYNTHETIC COFFEE HOUSE');
     if (next() < 0.25)
-      add(
-        3,
-        date,
-        -Math.round(250 + next() * 2200),
-        'SYNTHETIC CITY RIDES',
-        'Transport',
-      );
+      add(3, date, -Math.round(250 + next() * 2200), 'SYNTHETIC CITY RIDES');
     if (next() < 0.1)
-      add(
-        3,
-        date,
-        -Math.round(900 + next() * 9000),
-        'SYNTHETIC BOOKSHOP',
-        'Shopping',
-      );
+      add(3, date, -Math.round(900 + next() * 9000), 'SYNTHETIC BOOKSHOP');
     if (next() < 0.04)
-      add(
-        2,
-        date,
-        -Math.round(800 + next() * 4000),
-        'SYNTHETIC PHARMACY',
-        'Other',
-      );
+      add(2, date, -Math.round(800 + next() * 4000), 'SYNTHETIC PHARMACY');
     if (next() < 0.015)
       add(
         3,
         date,
         Math.round(1200 + next() * 3000),
         'SYNTHETIC BOOKSHOP REFUND',
-        'Shopping',
       );
-    if (date === '2026-08-14')
-      add(3, date, -64000, 'SYNTHETIC HARBOUR HOTEL', 'Other');
+    if (date === '2026-08-14') add(3, date, -64000, 'SYNTHETIC HARBOUR HOTEL');
     if (date === '2026-09-29')
-      add(1, date, -2500, 'SYNTHETIC PAYMENT TO A FRIEND', null);
-    if (date === '2026-09-30')
-      add(1, date, 1200, 'SYNTHETIC LUNCH REPAYMENT', null);
+      add(1, date, -2500, 'SYNTHETIC PAYMENT TO A FRIEND');
+    if (date === '2026-09-30') add(1, date, 1200, 'SYNTHETIC LUNCH REPAYMENT');
     if (date === '2026-10-01')
-      add(1, date, 1500, 'SYNTHETIC PAYMENT FROM A FRIEND', null);
-    if (date === '2026-10-02')
-      add(3, date, -1850, 'SYNTHETIC CORNER SHOP', null);
-    if (date === '2026-10-03')
-      add(1, date, -38500, 'SYNTHETIC CARD PAYMENT', null);
+      add(1, date, 1500, 'SYNTHETIC PAYMENT FROM A FRIEND');
+    if (date === '2026-10-02') add(3, date, -1850, 'SYNTHETIC CORNER SHOP');
+    if (date === '2026-10-03') add(1, date, -38500, 'SYNTHETIC CARD PAYMENT');
   }
   return transactions;
 }
 
 function spentOf(transaction: SyntheticTransaction) {
-  if (transaction.category === 'Income') return 0;
-  if (transaction.category === 'Transfers') return 0;
-  if (transaction.category === 'Savings & investments') return 0;
-  if (transaction.category === null) return Math.max(-transaction.amount, 0);
-  return -transaction.amount;
+  return Math.max(-transaction.amount, 0);
 }
 
 function incomeOf(transaction: SyntheticTransaction) {
-  return transaction.category === 'Income' ? transaction.amount : 0;
+  return Math.max(transaction.amount, 0);
 }
 
 export function syntheticApi(accounts = syntheticAccounts) {
@@ -212,47 +125,13 @@ export function syntheticApi(accounts = syntheticAccounts) {
     const inRange = between(selected, from, end);
     const spent = inRange.reduce((sum, t) => sum + spentOf(t), 0);
     const income = inRange.reduce((sum, t) => sum + incomeOf(t), 0);
-    const uncategorized = inRange.filter((t) => t.category === null);
-    const outgoing = uncategorized.filter((t) => t.amount < 0);
-    const incoming = uncategorized.filter((t) => t.amount > 0);
-    const byCategory = new Map<string, number>();
-    for (const t of inRange) {
-      if (
-        !t.category ||
-        t.category === 'Income' ||
-        t.category === 'Transfers' ||
-        t.category === 'Savings & investments'
-      )
-        continue;
-      byCategory.set(
-        t.category,
-        (byCategory.get(t.category) ?? 0) + spentOf(t),
-      );
-    }
     return {
       start: from,
       end,
       transaction_count: inRange.length,
       spent_pence: spent,
       income_pence: income,
-      savings_pence: -inRange
-        .filter((t) => t.category === 'Savings & investments')
-        .reduce((sum, t) => sum + t.amount, 0),
       net_pence: income - spent,
-      uncategorized: {
-        outgoing_count: outgoing.length,
-        outgoing_pence: outgoing.reduce((sum, t) => sum - t.amount, 0),
-        incoming_count: incoming.length,
-        incoming_pence: incoming.reduce((sum, t) => sum + t.amount, 0),
-      },
-      categories: [...byCategory.entries()]
-        .filter(([, value]) => value !== 0)
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([name, value]) => ({
-          id: categoryIds[name],
-          name,
-          spent_pence: value,
-        })),
       accounts: accounts.map((account) => {
         const own = between(
           transactions.filter((t) => t.accountId === account.id),
@@ -272,13 +151,7 @@ export function syntheticApi(accounts = syntheticAccounts) {
         };
       }),
       largest_payments: inRange
-        .filter(
-          (t) =>
-            t.amount < 0 &&
-            t.category !== 'Income' &&
-            t.category !== 'Transfers' &&
-            t.category !== 'Savings & investments',
-        )
+        .filter((t) => t.amount < 0)
         .sort(
           (a, b) =>
             a.amount - b.amount || b.date.localeCompare(a.date) || b.id - a.id,

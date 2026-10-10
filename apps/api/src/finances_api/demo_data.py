@@ -1,4 +1,3 @@
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -6,9 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from finances_api.database import create_database_engine
-from finances_api.models import AccountPresetId, Category, Transaction
+from finances_api.models import AccountPresetId, Transaction
 from finances_api.services.imports import ImportCompleted, NewAccount, import_statement
-from finances_api.services.transactions import assign_category
 
 
 @dataclass(frozen=True)
@@ -16,49 +14,48 @@ class DemoTransaction:
     days_ago: int
     description: str
     amount_pence: int
-    category: str | None
 
 
 NATWEST = [
-    DemoTransaction(58, "SYNTHETIC EMPLOYER SALARY", 320000, "Income"),
-    DemoTransaction(57, "SYNTHETIC LETTINGS RENT", -125000, "Bills"),
-    DemoTransaction(52, "SYNTHETIC ENERGY CO", -8400, "Bills"),
-    DemoTransaction(45, "SYNTHETIC CORNER SHOP", -1265, "Food"),
-    DemoTransaction(41, "SYNTHETIC CARD PAYMENT TO AMEX", -42000, "Transfers"),
-    DemoTransaction(33, "SYNTHETIC LUNCH REPAYMENT FROM A FRIEND", 1200, None),
-    DemoTransaction(28, "SYNTHETIC EMPLOYER SALARY", 320000, "Income"),
-    DemoTransaction(27, "SYNTHETIC LETTINGS RENT", -125000, "Bills"),
-    DemoTransaction(22, "SYNTHETIC ENERGY CO", -9100, "Bills"),
-    DemoTransaction(15, "SYNTHETIC TRANSFER TO NATIONWIDE", -50000, "Transfers"),
-    DemoTransaction(13, "SYNTHETIC INVESTMENT CONTRIBUTION", -40000, "Savings & investments"),
-    DemoTransaction(12, "SYNTHETIC SAVINGS WITHDRAWAL", 5000, "Savings & investments"),
-    DemoTransaction(10, "SYNTHETIC STREAMING MEMBERSHIP", -999, "Subscriptions"),
-    DemoTransaction(11, "SYNTHETIC CARD PAYMENT TO AMEX", -38500, None),
-    DemoTransaction(4, "SYNTHETIC PAYMENT TO A FRIEND", -2500, None),
+    DemoTransaction(58, "SYNTHETIC EMPLOYER SALARY", 320000),
+    DemoTransaction(57, "SYNTHETIC LETTINGS RENT", -125000),
+    DemoTransaction(52, "SYNTHETIC ENERGY CO", -8400),
+    DemoTransaction(45, "SYNTHETIC CORNER SHOP", -1265),
+    DemoTransaction(41, "SYNTHETIC CARD PAYMENT TO AMEX", -42000),
+    DemoTransaction(33, "SYNTHETIC LUNCH REPAYMENT FROM A FRIEND", 1200),
+    DemoTransaction(28, "SYNTHETIC EMPLOYER SALARY", 320000),
+    DemoTransaction(27, "SYNTHETIC LETTINGS RENT", -125000),
+    DemoTransaction(22, "SYNTHETIC ENERGY CO", -9100),
+    DemoTransaction(15, "SYNTHETIC TRANSFER TO NATIONWIDE", -50000),
+    DemoTransaction(13, "SYNTHETIC INVESTMENT CONTRIBUTION", -40000),
+    DemoTransaction(12, "SYNTHETIC SAVINGS WITHDRAWAL", 5000),
+    DemoTransaction(10, "SYNTHETIC STREAMING MEMBERSHIP", -999),
+    DemoTransaction(11, "SYNTHETIC CARD PAYMENT TO AMEX", -38500),
+    DemoTransaction(4, "SYNTHETIC PAYMENT TO A FRIEND", -2500),
 ]
 
 NATIONWIDE = [
-    DemoTransaction(54, "SYNTHETIC SUPERMARKET", -6420, "Food"),
-    DemoTransaction(47, "SYNTHETIC PHARMACY", -1150, "Other"),
-    DemoTransaction(39, "SYNTHETIC SUPERMARKET", -5873, "Food"),
-    DemoTransaction(31, "SYNTHETIC INTEREST", 412, "Income"),
-    DemoTransaction(15, "SYNTHETIC TRANSFER FROM NATWEST", 50000, "Transfers"),
-    DemoTransaction(9, "SYNTHETIC SUPERMARKET", -7105, None),
-    DemoTransaction(2, "SYNTHETIC GYM MEMBERSHIP", -3800, None),
+    DemoTransaction(54, "SYNTHETIC SUPERMARKET", -6420),
+    DemoTransaction(47, "SYNTHETIC PHARMACY", -1150),
+    DemoTransaction(39, "SYNTHETIC SUPERMARKET", -5873),
+    DemoTransaction(31, "SYNTHETIC INTEREST", 412),
+    DemoTransaction(15, "SYNTHETIC TRANSFER FROM NATWEST", 50000),
+    DemoTransaction(9, "SYNTHETIC SUPERMARKET", -7105),
+    DemoTransaction(2, "SYNTHETIC GYM MEMBERSHIP", -3800),
 ]
 
 AMEX = [
-    DemoTransaction(56, "SYNTHETIC COFFEE HOUSE", -450, "Food"),
-    DemoTransaction(50, "SYNTHETIC RAIL TICKETS", -2860, "Transport"),
-    DemoTransaction(46, "SYNTHETIC BOOKSHOP", -1899, "Shopping"),
-    DemoTransaction(41, "SYNTHETIC PAYMENT RECEIVED THANK YOU", 42000, "Transfers"),
-    DemoTransaction(36, "SYNTHETIC HOTEL BOOKING", -31200, "Other"),
-    DemoTransaction(30, "SYNTHETIC NOODLE BAR", -2340, "Food"),
-    DemoTransaction(24, "SYNTHETIC BOOKSHOP REFUND", 1899, "Shopping"),
-    DemoTransaction(18, "SYNTHETIC ONLINE SHOP WITH A LONGER DESCRIPTION REF 000000", -12999, None),
-    DemoTransaction(11, "SYNTHETIC PAYMENT RECEIVED THANK YOU", 38500, None),
-    DemoTransaction(6, "SYNTHETIC COFFEE HOUSE", -520, None),
-    DemoTransaction(3, "SYNTHETIC TAXI", -1475, None),
+    DemoTransaction(56, "SYNTHETIC COFFEE HOUSE", -450),
+    DemoTransaction(50, "SYNTHETIC RAIL TICKETS", -2860),
+    DemoTransaction(46, "SYNTHETIC BOOKSHOP", -1899),
+    DemoTransaction(41, "SYNTHETIC PAYMENT RECEIVED THANK YOU", 42000),
+    DemoTransaction(36, "SYNTHETIC HOTEL BOOKING", -31200),
+    DemoTransaction(30, "SYNTHETIC NOODLE BAR", -2340),
+    DemoTransaction(24, "SYNTHETIC BOOKSHOP REFUND", 1899),
+    DemoTransaction(18, "SYNTHETIC ONLINE SHOP WITH A LONGER DESCRIPTION REF 000000", -12999),
+    DemoTransaction(11, "SYNTHETIC PAYMENT RECEIVED THANK YOU", 38500),
+    DemoTransaction(6, "SYNTHETIC COFFEE HOUSE", -520),
+    DemoTransaction(3, "SYNTHETIC TAXI", -1475),
 ]
 
 
@@ -72,7 +69,6 @@ def seed_demo_data(session: Session, today: date) -> None:
         result = import_statement(session, filename, content, NewAccount(preset))
         if not isinstance(result, ImportCompleted):
             raise RuntimeError(f"Could not import {filename}: {result}")
-    _assign_demo_categories(session)
 
 
 def natwest_ofx(transactions: list[DemoTransaction], today: date) -> bytes:
@@ -135,28 +131,6 @@ def _ofx(messages: str) -> bytes:
         "CHARSET:1252\nCOMPRESSION:NONE\nOLDFILEUID:NONE\nNEWFILEUID:NONE\n\n"
     )
     return f"{header}<OFX>{messages}</OFX>".encode("ascii")
-
-
-def _assign_demo_categories(session: Session) -> None:
-    category_ids = {category.name: category.id for category in session.scalars(select(Category))}
-    transaction_ids: dict[str, list[int]] = defaultdict(list)
-    for transaction in session.scalars(select(Transaction)):
-        category = _demo_category(transaction)
-        if category is not None:
-            transaction_ids[category].append(transaction.id)
-    session.commit()
-    for category, ids in transaction_ids.items():
-        assign_category(session, ids, category_ids[category])
-
-
-def _demo_category(transaction: Transaction) -> str | None:
-    for demo in [*NATWEST, *NATIONWIDE, *AMEX]:
-        if (
-            demo.description == transaction.raw_description
-            and demo.amount_pence == transaction.amount_minor
-        ):
-            return demo.category
-    return None
 
 
 def _day(today: date, transaction: DemoTransaction) -> date:

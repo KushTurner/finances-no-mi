@@ -75,7 +75,6 @@ test('shows every chart as a table with the same values', async ({
 
   for (const name of [
     'October so far',
-    'Spending by category',
     'Monthly spending',
     'Income and spending',
   ]) {
@@ -84,11 +83,6 @@ test('shows every chart as a table with the same values', async ({
 
   await expect(monthly.getByRole('row')).toHaveCount(13);
   await expect(panel(page, 'October so far').getByRole('row')).toHaveCount(31);
-  await expect(
-    panel(page, 'Spending by category').getByRole('columnheader', {
-      name: 'Share',
-    }),
-  ).toBeVisible();
   await expect(monthly).toContainText('October 2026 (incomplete)');
   await attachScreenshot(page, testInfo, 'overview-tables');
 });
@@ -142,7 +136,7 @@ test('hides every amount but keeps percentages, and remembers the choice', async
 
   const main = page.getByRole('main');
   await expect(main).not.toContainText(/£\d/);
-  await expect(panel(page, 'Spending by category')).toContainText('%');
+  await expect(panel(page, 'Totals')).toContainText('%');
   await page.reload();
   await expect(
     page.getByRole('button', { name: 'Hide amounts' }),
@@ -154,26 +148,6 @@ test('hides every amount but keeps percentages, and remembers the choice', async
     .click();
   await expect(main).not.toContainText(/£\d/);
   await attachScreenshot(page, testInfo, 'overview-amounts-hidden');
-});
-
-test('links uncategorized transactions to the filtered transactions page', async ({
-  page,
-}) => {
-  await mockOverview(page);
-  await page.route('**/api/categories', (route) => route.fulfill({ json: [] }));
-  await page.route('**/api/transactions?*', (route) =>
-    route.fulfill({ json: [] }),
-  );
-  await page.goto('/');
-  const notice = page.getByRole('note');
-  await expect(notice).toContainText('categorized yet');
-
-  await notice.getByRole('link', { name: 'Review in Transactions' }).click();
-
-  await expect(page).toHaveURL(/\/transactions\?category=uncategorized/);
-  await expect(page.getByLabel('Filter by category')).toHaveText(
-    'Uncategorized',
-  );
 });
 
 test('prompts an import when there are no accounts and explains an empty period', async ({

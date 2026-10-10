@@ -16,20 +16,13 @@ A statement is matched to its account by the account's OFX identifiers, and a tr
 
 ## Transaction classification
 
-```text
-transaction -> assigned category
-transaction -> suggestion -> human review
-```
+Categorization is paused; see [Transaction categorization](features/transaction-categorization.md). Transactions currently have no classification, and every transaction counts toward the overview totals.
 
-Categories belong to transactions. The same description, merchant, or person can occur in transactions with different purposes. Neither exact description matching nor identifying a sender automatically assigns a category.
-
-Manual categorization uses the fixed list in [Transaction categorization](features/transaction-categorization.md). A later slice adds structured LLM suggestions with human review. Suggestions remain separate from assigned categories, and review preserves the prediction and human decision for evaluation. Categorization does not require LangGraph or merchant resolution.
-
-The importer currently creates merchant keys using whitespace/casing normalization. Existing merchant tables can remain during this transition, but their category relationships are not authoritative for transaction categorization.
+The importer creates merchant keys using whitespace/casing normalization.
 
 ## Current schema
 
-This section describes the implemented schema. Planned additions are listed separately below; they must be introduced through Alembic migrations.
+This section describes the implemented schema. Changes must be introduced through Alembic migrations.
 
 ### accounts
 
@@ -62,10 +55,6 @@ This section describes the implemented schema. Planned additions are listed sepa
 - `fitid`: OFX transaction identifier
 - `merchant_key_id`: derived merchant key foreign key
 - `created_at`: creation timestamp
-- `category_id`: nullable category foreign key; null means uncategorized
-- `category_decision_source`: `human` for a manual assignment, null when cleared
-- `category_decided_at`: UTC timestamp of the current assignment, null when cleared
-- Check constraint keeps the category and its decision metadata present or absent together
 - Unique constraint on `account_id` and `fitid`
 
 ### import_file_transactions
@@ -76,49 +65,13 @@ This section describes the implemented schema. Planned additions are listed sepa
 - Primary key on `import_file_id` and `position`
 - Unique constraint on `import_file_id` and `transaction_id`
 
-### categories
-
-- `id`: integer primary key
-- `name`: unique category name
-- `definition`: category purpose; the migration seeds the ten agreed categories and definitions
-
-Legacy categories without definitions remain stored for existing merchant references but are excluded from transaction category choices.
-
-### merchants
-
-- `id`: integer primary key
-- `name`: unique canonical merchant name
-- `category_id`: category foreign key
-
 ### merchant_keys
 
 - `id`: integer primary key
 - `value`: unique normalized source value
-- `merchant_id`: optional merchant foreign key
-
-### merchant_suggestions
-
-- `merchant_key_id`: primary key and merchant-key foreign key
-- `suggested_merchant_name`: suggested canonical name
-- `suggested_category_id`: suggested category foreign key
-- `confidence`: value from zero to one
-- `created_at`: suggestion timestamp
 
 ## Data handling
 
 No PII, real financial data, statements, credentials, or API keys may be committed. Tests and examples use synthetic data only. Local statement files, databases, uploaded data, and environment files are ignored by Git.
 
-External categorization requests follow the [LLM boundary](features/transaction-categorization.md#llm-boundary). Original descriptions remain local and unchanged. Do not log statement contents, descriptions, account identifiers, or LLM payloads containing transaction data.
-
-## Planned schema changes
-
-### Suggestion and review slice
-
-- Add transaction-level suggestion storage rather than using `merchant_suggestions`.
-- Record the transaction, proposed category or explicit abstention, optional confidence, provider/model, prompt version, category-definition version, and creation time.
-- Allow at most one pending suggestion per transaction. Repeated requests must not duplicate pending suggestions or overwrite reviewed evidence.
-- Record the human review outcome, final chosen category, and review time alongside the original prediction. Later category corrections must not rewrite what the user decided in that earlier review.
-- Assign the category and record the review outcome in one database transaction, including for an explicitly selected batch.
-- Retain reviewed prediction/decision records rather than deleting them. Raw LLM responses and full prompt archives are not required.
-
-Suggestion fields and constraints will be finalized in that implementation slice.
+Original descriptions remain local and unchanged. Do not log statement contents, descriptions, account identifiers, or LLM payloads containing transaction data.

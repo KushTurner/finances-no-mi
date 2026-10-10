@@ -3,8 +3,6 @@ import type { Period } from '@/lib';
 
 export type OverviewSearch = { period?: Period; accounts?: number[] };
 
-export type TransactionsSearch = { category?: string };
-
 function accountIdsFrom(value: unknown) {
   const candidates: unknown[] =
     typeof value === 'string'
@@ -24,14 +22,6 @@ export function validateOverviewSearch(
   return {
     period: isPeriod(search.period) ? search.period : undefined,
     accounts: accountIdsFrom(search.accounts),
-  };
-}
-
-export function validateTransactionsSearch(
-  search: Record<string, unknown>,
-): TransactionsSearch {
-  return {
-    category: typeof search.category === 'string' ? search.category : undefined,
   };
 }
 

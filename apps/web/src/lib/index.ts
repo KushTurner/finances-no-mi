@@ -1,5 +1,4 @@
 export * from './accounts';
-export * from './categories';
 export * from './comparison';
 export * from './format';
 export * from './money';

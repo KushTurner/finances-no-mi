@@ -8,7 +8,6 @@ import {
   formatShownCount,
   formatShownRange,
   percentChange,
-  share,
 } from './format';
 
 test('shortens a range to the parts that differ', () => {
@@ -39,12 +38,6 @@ test('axis ticks step in round amounts up to the largest value', () => {
     [0, 50000, 100000, 150000],
     [0, 25, 50, 75, 100],
   ]);
-});
-
-test('a share too small to round to a percent still shows as present', () => {
-  const shares = [share(82, 25118), share(0, 25118), share(2500, 10000)];
-
-  expect(shares).toEqual(['<1%', '0%', '25%']);
 });
 
 test('counts use the singular only for one', () => {

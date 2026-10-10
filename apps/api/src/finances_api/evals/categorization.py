@@ -7,7 +7,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from finances_api.categories import (
+from finances_api.evals.categories import (
     CATEGORY_DEFINITIONS,
     CategoryName,
 )

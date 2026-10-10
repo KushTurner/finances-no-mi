@@ -20,7 +20,7 @@ export function Totals({ summary, comparison }: TotalsProps) {
   return (
     <section
       aria-label="Totals"
-      className="grid rounded-2xl border bg-card sm:grid-cols-2 lg:grid-cols-4"
+      className="grid rounded-2xl border bg-card sm:grid-cols-3"
     >
       <Total
         label="Spent"
@@ -50,23 +50,6 @@ export function Totals({ summary, comparison }: TotalsProps) {
               covered={comparison.covered}
               higherIsBetter
               against={comparison.label}
-            />
-          )
-        }
-      />
-      <Total
-        label="Savings & investments"
-        value={summary.savings_pence}
-        change={
-          comparison && (
-            <TotalChange
-              current={summary.savings_pence}
-              previous={previous?.savings_pence}
-              hasPrevious={Boolean(previous?.transaction_count)}
-              covered={comparison.covered}
-              higherIsBetter
-              against={comparison.label}
-              inPounds
             />
           )
         }

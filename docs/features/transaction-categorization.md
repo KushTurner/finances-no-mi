@@ -1,5 +1,7 @@
 # Transaction Categorization
 
+> **Paused.** Categories were removed from the app on 2026-10-10 to focus on removing noise, such as own-account transfers and repayments, so totals reflect actual spending. This document is kept as the plan for when categorization returns. The category definitions and eval benchmark remain in `apps/api/src/finances_api/evals`.
+
 ## Outcome
 
 The user can understand spending through a small, fixed category list without first resolving merchants or identifying people. Categories are assigned to individual transactions. LLM suggestions later reduce manual selection, while the user remains able to inspect and correct decisions.

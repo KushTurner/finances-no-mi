@@ -49,7 +49,7 @@ def test_upgrade_removes_csv_imported_data_and_keeps_categories(
         )
         connection.execute(text("INSERT INTO import_file_transactions VALUES (1, 1, 2)"))
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "20261009_0004")
 
     with engine.connect() as connection:
         remaining = [

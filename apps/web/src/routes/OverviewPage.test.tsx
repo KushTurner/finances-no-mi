@@ -15,15 +15,7 @@ const summary = {
   transaction_count: 4,
   spent_pence: 125000,
   income_pence: 320000,
-  savings_pence: 50000,
   net_pence: 195000,
-  uncategorized: {
-    outgoing_count: 0,
-    outgoing_pence: 0,
-    incoming_count: 0,
-    incoming_pence: 0,
-  },
-  categories: [{ id: 1, name: 'Bills', spent_pence: 125000 }],
   accounts: [
     {
       id: 1,
@@ -106,13 +98,11 @@ test('a month still in progress is not compared with an earlier period', async (
   expect(summaryRanges()).toEqual(['2026-10-01..2026-10-06']);
 });
 
-test('shows savings separately from spending and net', async () => {
+test('shows spending, income and net for the period', async () => {
   renderOverview('/');
 
-  expect(
-    await screen.findByLabelText('Savings & investments £500.00'),
-  ).toBeVisible();
-  expect(screen.getByLabelText('Spent £1,250.00')).toBeVisible();
+  expect(await screen.findByLabelText('Spent £1,250.00')).toBeVisible();
+  expect(screen.getByLabelText('Income £3,200.00')).toBeVisible();
   expect(screen.getByLabelText('Net £1,950.00')).toBeVisible();
 });
 

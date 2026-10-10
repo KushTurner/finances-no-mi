@@ -11,13 +11,11 @@ import {
 } from '@/lib';
 
 import { AccountCards } from './AccountCards';
-import { CategorySpending } from './CategorySpending';
 import { IncomeAndSpending } from './IncomeAndSpending';
 import { LargestPayments } from './LargestPayments';
 import { MonthlySpending } from './MonthlySpending';
 import { SpendingPace } from './SpendingPace';
 import { Totals } from './Totals';
-import { UncategorizedNotice } from './UncategorizedNotice';
 
 type OverviewContentProps = {
   summary: Summary;
@@ -71,7 +69,6 @@ export function OverviewContent({
         </EmptyState>
       ) : (
         <>
-          <UncategorizedNotice uncategorized={summary.uncategorized} />
           <Totals
             summary={summary}
             comparison={
@@ -86,18 +83,17 @@ export function OverviewContent({
           />
           <div className="grid gap-5 lg:grid-cols-2">
             <SpendingPace end={summary.end} />
-            <CategorySpending summary={summary} />
-            <MonthlySpending range={shownRange} className="lg:col-span-2" />
             <IncomeAndSpending end={summary.end} />
-            <LargestPayments payments={summary.largest_payments} />
+            <MonthlySpending range={shownRange} className="lg:col-span-2" />
+            <LargestPayments
+              payments={summary.largest_payments}
+              className="lg:col-span-2"
+            />
           </div>
           <p className="max-w-[80ch] text-xs text-muted-foreground">
-            Spending leaves out savings, investments, and transfers between your
-            own accounts. Savings &amp; investments shows net money put aside,
-            after withdrawals. Net is income minus spending. Refunds and
-            repayments reduce spending in their category. Uncategorized money
-            going out counts as spending; uncategorized money coming in isn’t
-            counted until you categorize it.
+            Spending is all money going out and income is all money coming in,
+            including transfers between your own accounts. Net is income minus
+            spending.
           </p>
         </>
       )}

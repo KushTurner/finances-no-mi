@@ -9,7 +9,8 @@ accuracy on your real transaction history.
 The runner, prompt, category definitions, scoring, and synthetic examples are in
 Git. They work on any machine with the project dependencies. Credentials and
 private datasets stay outside Git. The runner does not access the application's
-database or assign transaction categories.
+database. Categorization is paused in the app, so the category definitions now
+live only in the evals package.
 
 ## Set up LangSmith
 

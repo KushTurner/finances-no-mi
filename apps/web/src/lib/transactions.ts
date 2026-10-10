@@ -15,9 +15,8 @@ export function filterByDescription(
   );
 }
 
-export function emptyTransactionsMessage(category: string, search: string) {
-  if (search.trim()) return `No transactions match “${search.trim()}”.`;
-  return category === 'all'
-    ? 'No transactions yet. Import a statement to get started.'
-    : 'No transactions match this category.';
+export function emptyTransactionsMessage(search: string) {
+  return search.trim()
+    ? `No transactions match “${search.trim()}”.`
+    : 'No transactions yet. Import a statement to get started.';
 }

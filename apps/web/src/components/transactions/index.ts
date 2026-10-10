@@ -1,3 +1,2 @@
-export * from './CategoryAssignment';
-export * from './TransactionFilters';
+export * from './DescriptionSearch';
 export * from './TransactionsTable';

@@ -32,4 +32,3 @@ CATEGORY_DEFINITIONS: dict[CategoryName, str] = {
 }
 
 CATEGORY_DEFINITIONS_VERSION = "2026-10-07"
-NON_SPENDING_CATEGORIES = frozenset({"Income", "Transfers", "Savings & investments"})

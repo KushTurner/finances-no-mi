@@ -2,7 +2,7 @@
 
 ## Outcome
 
-The user can see where their money went over a chosen period, across all accounts or selected ones, without reading individual transactions. Totals stay honest while many transactions are still uncategorized: the page states how much of each total is uncertain rather than hiding it.
+The user can see where their money went over a chosen period, across all accounts or selected ones, without reading individual transactions.
 
 The page is deliberately simple. Anything that needs institution-specific rules, or knowledge of what kind of card an account is, waits until it is needed.
 
@@ -10,12 +10,10 @@ The page is deliberately simple. Anything that needs institution-specific rules,
 
 All arithmetic happens in application code using integer pence.
 
-- **Spent** is the negative of the sum of signed amounts for transactions in spending categories, plus uncategorized outgoing transactions. Transfers, Savings & investments, and Income are excluded. Refunds and repayments in a spending category reduce Spent, following [Transaction categorization](transaction-categorization.md#business-rules).
-- **Income** is the sum of transactions categorized as Income.
-- **Savings & investments** is the negative sum of signed amounts in that category: contributions increase it and withdrawals reduce it. It can be negative. This reports net recorded activity for the selected accounts and period.
-- **Net** is Income minus Spent; savings and transfers do not reduce it. Net is not an account balance.
-- An uncategorized outgoing transaction counts as spending because most outgoing money is spending, but it may be an unrecognized own-account transfer such as a credit-card repayment.
-- An uncategorized incoming transaction is not counted as Income or as a refund. Incoming money is not necessarily income, and treating an unrecognized credit-card repayment as a refund would cancel out real card spending.
+- **Spent** is the sum of all outgoing amounts, as a positive number.
+- **Income** is the sum of all incoming amounts.
+- **Net** is Income minus Spent. Net is not an account balance.
+- Every transaction counts, including transfers between the user's own accounts, savings movements, and repayments. Removing that noise is the next feature.
 
 ## Overview page
 
@@ -44,23 +42,18 @@ Exports do not state the date range they cover, so an account is only known to b
 
 ### Totals
 
-- Spent, Income, Savings & investments, and Net for the selected period and accounts. Savings is separate from everyday spending.
-- For periods with a comparison, each total shows its change from the comparison period. Spent and Income show a percentage. Net and Savings & investments show the difference in pounds, because a percentage change of a value that can be negative is misleading.
+- Spent, Income, and Net for the selected period and accounts.
+- For periods with a comparison, each total shows its change from the comparison period. Spent and Income show a percentage. Net shows the difference in pounds, because a percentage change of a value that can be negative is misleading.
 - Increases in Spent and decreases in Income or Net are marked as unfavourable using an arrow and text, never color alone.
-
-### Uncategorized notice
-
-When the selected period and accounts contain uncategorized transactions, show their count, the outgoing amount counted as spending, and the incoming amount not counted. Link to the transactions page filtered to uncategorized transactions.
 
 ### Charts
 
 | Chart | Content |
 | --- | --- |
 | Spending pace | Running total of Spent by day for the latest month in the period, compared with the month before. States how far ahead or behind the previous month the current month is at the same day. |
-| Spending by category | Spent per category for the period as ranked horizontal bars with amounts and shares. Uncategorized outgoing spending is a separate, muted final row. |
 | Monthly spending | Spent per calendar month for the 12 months ending with the month the period ends in, with months in the selected period highlighted and the average of complete months marked. |
 | Income and spending | Income and Spent side by side per month for the last 12 months, with the amount kept over complete months. |
-| Largest payments | The eight largest outgoing transactions in the period, excluding Income, Transfers, and Savings & investments, with date, raw description, account, and amount. Transactions are not grouped, because descriptions include institution-specific references and suffixes that would need per-institution cleanup. |
+| Largest payments | The eight largest outgoing transactions in the period, with date, raw description, account, and amount. Transactions are not grouped, because descriptions include institution-specific references and suffixes that would need per-institution cleanup. |
 
 A month is complete when the selected accounts' data covers all of it: the month has fully gone by (its last day is on or before the latest transaction) and the data started on or before its first day. Exports usually start part-way through a month, so the first month of data is not complete. Averages and the amount kept use complete months only.
 
@@ -72,7 +65,7 @@ Charts follow these rules:
 
 ### Hide amounts
 
-A toggle replaces every monetary amount on the page with the same fixed mask, including cards, totals, chart axes and labels, tooltips, tables, and the notice. The mask does not reveal an amount's length. Percentages remain visible. The setting is remembered in the browser.
+A toggle replaces every monetary amount on the page with the same fixed mask, including cards, totals, chart axes and labels, tooltips, and tables. The mask does not reveal an amount's length. Percentages remain visible. The setting is remembered in the browser.
 
 ## Visual design
 
@@ -84,9 +77,9 @@ A toggle replaces every monetary amount on the page with the same fixed mask, in
 
 ## API
 
-The API is three read-only endpoints. Each accepts optional repeated `account_id` parameters; without them it covers every account. A range that ends before it starts, or an unknown account, is rejected with a 400 response. Amounts are integer pence in fields ending `_pence`; every amount is GBP. All aggregates use signed arithmetic: net spending can be negative when refunds exceed purchases, and savings can be negative when withdrawals exceed contributions. The uncategorized amounts are magnitudes; transaction amounts keep their sign.
+The API is three read-only endpoints. Each accepts optional repeated `account_id` parameters; without them it covers every account. A range that ends before it starts, or an unknown account, is rejected with a 400 response. Amounts are integer pence in fields ending `_pence`; every amount is GBP. Spent and Income are magnitudes; transaction amounts keep their sign, and Net can be negative.
 
-- `GET /summary?from=YYYY-MM-DD&to=YYYY-MM-DD` returns the resolved `start` and `end` (see [Data freshness](#data-freshness)), the transaction count, Spent, Income, Savings & investments (`savings_pence`), and Net, the uncategorized outgoing and incoming counts and amounts, Spent per spending category ranked highest first, every account with its Spent and earliest and latest transaction dates (unaffected by the account filter, so every card can still be shown), and the eight largest payments.
+- `GET /summary?from=YYYY-MM-DD&to=YYYY-MM-DD` returns the resolved `start` and `end` (see [Data freshness](#data-freshness)), the transaction count, Spent, Income, and Net, every account with its Spent and earliest and latest transaction dates (unaffected by the account filter, so every card can still be shown), and the eight largest payments.
 - `GET /summary/months?from=YYYY-MM&to=YYYY-MM` returns Spent, Income, and whether the month is complete for every month in the range, with the average Spent and the amount kept (Income minus Spent) over complete months.
 - `GET /summary/days?from=YYYY-MM-DD&to=YYYY-MM-DD` returns Spent and the running total of Spent for every day in the range.
 
@@ -94,16 +87,14 @@ The routes stay thin; a service owns the aggregation rules defined above. The fr
 
 ## Acceptance criteria
 
-- Spent excludes Transfers, Savings & investments, and Income, includes uncategorized outgoing transactions, and ignores uncategorized incoming transactions.
-- A categorized refund reduces Spent in its category.
-- Savings contributions and withdrawals affect only the separate savings total, not Spent, Income, spending charts, account spending or largest payments.
+- Spent counts every outgoing transaction and Income counts every incoming transaction.
 - Totals for the comparison period use the same accounts and definitions as the selected period, and only complete periods are compared.
-- Selecting account cards changes every total, chart, and the notice consistently; clearing the selection restores all accounts.
+- Selecting account cards changes every total and chart consistently; clearing the selection restores all accounts.
 - A range that ends after the latest transaction across the selected accounts ends on that transaction's date.
 - Monthly averages and the amount kept use complete months only.
 - Hiding amounts masks every monetary value on the page and keeps percentages.
 - The restyled Import and Transactions pages keep their existing behaviour and pass their existing tests, updated only for the new routes and markup.
-- Service tests use synthetic transactions covering spending, refunds, income, own-account transfers, uncategorized outgoing and incoming transactions, and multiple accounts.
+- Service tests use synthetic outgoing and incoming transactions across multiple accounts.
 - Browser tests start only the frontend, mock API requests, block other network traffic, and use synthetic data in screenshots.
 
 ## Deferred
@@ -115,4 +106,5 @@ The routes stay thin; a service owns the aggregation rules defined above. The fr
 - Choosing a custom date range in the page. The API already accepts any range.
 - Comparisons for periods still in progress.
 - A light theme.
+- Spending by category, while [categorization](transaction-categorization.md) is paused.
 - Calendar heatmaps, category trends over time, and recurring-payment detection.

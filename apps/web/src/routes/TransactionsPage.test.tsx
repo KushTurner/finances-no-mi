@@ -30,9 +30,6 @@ test('guides the user to import when there are no transactions', async () => {
       'No transactions yet. Import a statement to get started.',
     ),
   ).toBeVisible();
-  expect(
-    screen.queryByRole('region', { name: 'Categorize selected transactions' }),
-  ).toBeNull();
 });
 
 test('recovers from a failed load with an explicit retry', async () => {
@@ -60,38 +57,32 @@ test('recovers from a failed load with an explicit retry', async () => {
   ).toBeVisible();
 });
 
-test('select all picks only the transactions matching the search', async () => {
+test('search narrows the list to matching descriptions', async () => {
   vi.stubGlobal(
     'fetch',
-    vi.fn((url: string) =>
+    vi.fn(() =>
       Promise.resolve(
         Response.json(
-          url.endsWith('/api/categories')
-            ? []
-            : [
-                'SYNTHETIC GROCER 1',
-                'SYNTHETIC CAFE',
-                'Synthetic Grocer 2',
-              ].map((raw_description, index) => ({
-                id: index + 1,
-                account_name: 'Synthetic Bank',
-                transaction_date: '2026-09-01',
-                amount_pence: -100,
-                raw_description,
-                source_type: null,
-                category_id: null,
-              })),
+          ['SYNTHETIC GROCER 1', 'SYNTHETIC CAFE', 'Synthetic Grocer 2'].map(
+            (raw_description, index) => ({
+              id: index + 1,
+              account_name: 'Synthetic Bank',
+              transaction_date: '2026-09-01',
+              amount_pence: -100,
+              raw_description,
+              source_type: null,
+            }),
+          ),
         ),
       ),
     ),
   );
   renderPage();
+
   fireEvent.change(await screen.findByLabelText('Search descriptions'), {
     target: { value: 'grocer' },
   });
 
-  fireEvent.click(screen.getByLabelText('Select all shown transactions'));
-
-  expect(screen.getByText('2 selected')).toBeVisible();
   expect(screen.getByText('2 of 3 transactions')).toBeVisible();
+  expect(screen.queryByText('SYNTHETIC CAFE')).toBeNull();
 });

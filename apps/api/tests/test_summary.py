@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
-from finances_api.models import Account, Category, MerchantKey, Transaction
+from finances_api.models import Account, MerchantKey, Transaction
 
 
 def add_account(session: Session, name: str = "NatWest") -> int:
@@ -28,7 +28,6 @@ def add_transaction(
     account_id: int,
     on: str,
     amount_pence: int,
-    category: str | None = None,
     description: str = "SYNTHETIC SHOP",
 ) -> int:
     merchant_key = session.scalar(select(MerchantKey).where(MerchantKey.value == description))
@@ -36,11 +35,6 @@ def add_transaction(
         merchant_key = MerchantKey(value=description)
         session.add(merchant_key)
         session.flush()
-    category_id = (
-        session.scalars(select(Category.id).where(Category.name == category)).one()
-        if category
-        else None
-    )
     transaction = Transaction(
         account_id=account_id,
         transaction_date=date.fromisoformat(on),
@@ -48,9 +42,6 @@ def add_transaction(
         raw_description=description,
         fitid=uuid4().hex,
         merchant_key_id=merchant_key.id,
-        category_id=category_id,
-        category_decision_source="human" if category else None,
-        category_decided_at=date(2026, 10, 6) if category else None,
     )
     session.add(transaction)
     session.commit()
@@ -63,43 +54,20 @@ def get_summary(client: TestClient, query: str) -> Any:
     return response.json()
 
 
-def test_spent_counts_spending_less_refunds_and_uncategorized_outgoing(
-    client: TestClient, session: Session
-) -> None:
+def test_spent_is_money_out_and_income_is_money_in(client: TestClient, session: Session) -> None:
     natwest = add_account(session)
-    add_transaction(session, natwest, "2026-09-02", -5000, "Food")
-    add_transaction(session, natwest, "2026-09-03", 1000, "Food")
+    add_transaction(session, natwest, "2026-09-02", -5000)
+    add_transaction(session, natwest, "2026-09-03", 1000)
     add_transaction(session, natwest, "2026-09-04", -2000)
-    add_transaction(session, natwest, "2026-09-05", 300000, "Income")
-    add_transaction(session, natwest, "2026-09-06", -40000, "Transfers")
-    add_transaction(session, natwest, "2026-09-07", 40000, "Transfers")
+    add_transaction(session, natwest, "2026-09-05", 300000)
 
     summary = get_summary(client, "from=2026-09-01&to=2026-09-30")
 
     assert (summary["spent_pence"], summary["income_pence"], summary["net_pence"]) == (
-        6000,
-        300000,
+        7000,
+        301000,
         294000,
     )
-
-
-def test_uncategorized_incoming_is_reported_but_not_counted(
-    client: TestClient, session: Session
-) -> None:
-    natwest = add_account(session)
-    add_transaction(session, natwest, "2026-09-02", -2000)
-    add_transaction(session, natwest, "2026-09-03", 1200)
-    add_transaction(session, natwest, "2026-09-04", 700)
-
-    summary = get_summary(client, "from=2026-09-01&to=2026-09-30")
-
-    assert (summary["spent_pence"], summary["income_pence"]) == (2000, 0)
-    assert summary["uncategorized"] == {
-        "outgoing_count": 1,
-        "outgoing_pence": 2000,
-        "incoming_count": 2,
-        "incoming_pence": 1900,
-    }
 
 
 def test_range_ends_at_the_latest_transaction_of_the_selected_accounts(
@@ -132,9 +100,9 @@ def test_account_filter_narrows_totals_but_every_account_is_listed(
     natwest = add_account(session, "NatWest")
     amex = add_account(session, "Amex")
     nationwide = add_account(session, "Nationwide")
-    add_transaction(session, natwest, "2026-08-20", -500, "Food")
-    add_transaction(session, natwest, "2026-09-02", -1000, "Food")
-    add_transaction(session, amex, "2026-09-03", -2500, "Food")
+    add_transaction(session, natwest, "2026-08-20", -500)
+    add_transaction(session, natwest, "2026-09-02", -1000)
+    add_transaction(session, amex, "2026-09-03", -2500)
 
     summary = get_summary(client, f"from=2026-09-01&to=2026-09-30&account_id={amex}")
 
@@ -164,80 +132,14 @@ def test_account_filter_narrows_totals_but_every_account_is_listed(
     ]
 
 
-def test_categories_rank_spending_and_leave_out_income_transfers_and_zero_totals(
-    client: TestClient, session: Session
-) -> None:
-    natwest = add_account(session)
-    add_transaction(session, natwest, "2026-09-02", -1000, "Transport")
-    add_transaction(session, natwest, "2026-09-03", -1000, "Food")
-    add_transaction(session, natwest, "2026-09-04", -3000, "Shopping")
-    add_transaction(session, natwest, "2026-09-05", -500, "Other")
-    add_transaction(session, natwest, "2026-09-06", 500, "Other")
-    add_transaction(session, natwest, "2026-09-07", 300000, "Income")
-    add_transaction(session, natwest, "2026-09-08", -40000, "Transfers")
-    add_transaction(session, natwest, "2026-09-09", -9999)
-
-    summary = get_summary(client, "from=2026-09-01&to=2026-09-30")
-
-    assert [(row["name"], row["spent_pence"]) for row in summary["categories"]] == [
-        ("Shopping", 3000),
-        ("Food", 1000),
-        ("Transport", 1000),
-    ]
-
-
-def test_savings_and_withdrawals_are_separate_from_spending_and_income(
-    client: TestClient, session: Session
-) -> None:
-    account = add_account(session)
-    add_transaction(session, account, "2026-09-01", 300000, "Income")
-    add_transaction(session, account, "2026-09-02", -5000, "Food")
-    add_transaction(session, account, "2026-09-03", -100000, "Savings & investments")
-    add_transaction(session, account, "2026-09-04", 20000, "Savings & investments")
-    add_transaction(session, account, "2026-09-05", -50000, "Transfers")
-
-    summary = get_summary(client, "from=2026-09-01&to=2026-09-30")
-    months = client.get("/summary/months?from=2026-09&to=2026-09").json()
-    days = client.get("/summary/days?from=2026-09-03&to=2026-09-05").json()
-
-    assert (
-        summary["spent_pence"],
-        summary["income_pence"],
-        summary["savings_pence"],
-        summary["net_pence"],
-    ) == (5000, 300000, 80000, 295000)
-    assert [row["name"] for row in summary["categories"]] == ["Food"]
-    assert [row["amount_pence"] for row in summary["largest_payments"]] == [-5000]
-    assert (months["months"][0]["spent_pence"], months["months"][0]["income_pence"]) == (
-        5000,
-        300000,
-    )
-    assert [row["spent_pence"] for row in days] == [0, 0, 0]
-
-
-def test_savings_total_can_be_negative_and_follows_the_account_filter(
-    client: TestClient, session: Session
-) -> None:
-    first = add_account(session, "First synthetic account")
-    second = add_account(session, "Second synthetic account")
-    add_transaction(session, first, "2026-09-03", 15000, "Savings & investments")
-    add_transaction(session, second, "2026-09-03", -50000, "Savings & investments")
-
-    summary = get_summary(client, f"from=2026-09-01&to=2026-09-30&account_id={first}")
-
-    assert summary["savings_pence"] == -15000
-    assert (summary["spent_pence"], summary["income_pence"], summary["net_pence"]) == (0, 0, 0)
-
-
-def test_largest_payments_are_the_eight_biggest_outgoing_spending_transactions(
+def test_largest_payments_are_the_eight_biggest_outgoing_transactions(
     client: TestClient, session: Session
 ) -> None:
     natwest = add_account(session)
     for pence in range(100, 1100, 100):
-        add_transaction(session, natwest, "2026-09-02", -pence, "Food")
+        add_transaction(session, natwest, "2026-09-02", -pence)
     add_transaction(session, natwest, "2026-09-03", -5000)
-    add_transaction(session, natwest, "2026-09-04", -90000, "Transfers")
-    add_transaction(session, natwest, "2026-09-05", 80000, "Food")
+    add_transaction(session, natwest, "2026-09-05", 80000)
 
     summary = get_summary(client, "from=2026-09-01&to=2026-09-30")
 
@@ -284,9 +186,9 @@ def test_months_are_complete_only_when_the_data_covers_them_fully(
     client: TestClient, session: Session
 ) -> None:
     natwest = add_account(session)
-    add_transaction(session, natwest, "2026-08-15", -1000, "Food")
-    add_transaction(session, natwest, "2026-09-10", -2000, "Food")
-    add_transaction(session, natwest, "2026-10-03", -3000, "Food")
+    add_transaction(session, natwest, "2026-08-15", -1000)
+    add_transaction(session, natwest, "2026-09-10", -2000)
+    add_transaction(session, natwest, "2026-10-03", -3000)
 
     response = client.get("/summary/months?from=2026-07&to=2026-10")
 
@@ -305,12 +207,12 @@ def test_monthly_average_and_amount_kept_use_complete_months_only(
     client: TestClient, session: Session
 ) -> None:
     natwest = add_account(session)
-    add_transaction(session, natwest, "2026-06-15", -99999, "Food")
-    add_transaction(session, natwest, "2026-07-01", 300000, "Income")
-    add_transaction(session, natwest, "2026-07-10", -100000, "Bills")
-    add_transaction(session, natwest, "2026-08-01", 300000, "Income")
-    add_transaction(session, natwest, "2026-08-10", -100001, "Bills")
-    add_transaction(session, natwest, "2026-09-02", -50000, "Bills")
+    add_transaction(session, natwest, "2026-06-15", -99999)
+    add_transaction(session, natwest, "2026-07-01", 300000)
+    add_transaction(session, natwest, "2026-07-10", -100000)
+    add_transaction(session, natwest, "2026-08-01", 300000)
+    add_transaction(session, natwest, "2026-08-10", -100001)
+    add_transaction(session, natwest, "2026-09-02", -50000)
 
     response = client.get("/summary/months?from=2026-06&to=2026-09")
 
@@ -324,9 +226,9 @@ def test_days_include_days_without_spending_in_the_running_total(
     client: TestClient, session: Session
 ) -> None:
     natwest = add_account(session)
-    add_transaction(session, natwest, "2026-09-01", -1000, "Food")
+    add_transaction(session, natwest, "2026-09-01", -1000)
     add_transaction(session, natwest, "2026-09-03", -500)
-    add_transaction(session, natwest, "2026-09-03", 300000, "Income")
+    add_transaction(session, natwest, "2026-09-03", 300000)
 
     response = client.get("/summary/days?from=2026-09-01&to=2026-09-03")
 
