@@ -92,5 +92,6 @@ Local application data is stored under `.data/` and must never be committed.
 - [Roadmap](docs/roadmap.md)
 - [OFX imports](docs/features/ofx-imports.md)
 - [Money in](docs/features/money-in.md)
+- [Backlog](docs/backlog.md)
 - [Transaction categorization](docs/features/transaction-categorization.md) (paused)
 - [Categorization evals with LangChain and LangSmith](docs/evals.md)

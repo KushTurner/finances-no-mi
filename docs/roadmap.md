@@ -88,6 +88,8 @@ The roadmap is a sequence of small vertical slices, not a commitment to implemen
 
 ## Planned
 
+Ideas not yet scheduled are collected in the [backlog](backlog.md).
+
 The category slices below are paused until noise removal is in place.
 
 ### 0. Benchmark category suggestions
@@ -136,11 +138,10 @@ The category slices below are paused until noise removal is in place.
 
 ## Deferred
 
-- Account settings beyond import presets, including credit limit; account balances and credit-limit usage.
-- Suggested own-account transfer pairs.
+- Credit limits, account balances and credit-limit usage.
 - Merchant search and conversational analysis over filtered transactions, with totals computed in code.
 - Merchant aliases, reusable matching rules, and institution-specific description cleanup.
 - Custom model training and any LangGraph workflow.
-- Additional account presets and import formats beyond OFX.
+- Import formats beyond OFX, apart from the Nationwide PDF history in the [backlog](backlog.md).
 - Editing imported source fields or historical import files. Category corrections are part of the planned workflow.
 - Hosted deployment.
