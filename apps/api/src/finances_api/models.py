@@ -19,7 +19,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 Institution = Literal["amex", "natwest", "nationwide"]
 AccountType = Literal["current_account", "credit_card", "savings"]
 AccountPresetId = Literal[
-    "amex_gold", "nationwide_credit_card", "nationwide_flexone", "natwest_select"
+    "amex_gold", "nationwide_member_card", "nationwide_flexone", "natwest_select"
 ]
 CardType = Literal["credit", "debit"]
 CountsAs = Literal["income", "repayment", "own_account", "savings"]

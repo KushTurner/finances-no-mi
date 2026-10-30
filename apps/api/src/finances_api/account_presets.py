@@ -17,7 +17,7 @@ class AccountPreset:
 
 ACCOUNT_PRESETS = (
     AccountPreset("amex_gold", "American Express Gold", "amex", "credit_card"),
-    AccountPreset("nationwide_credit_card", "Nationwide Credit Card", "nationwide", "credit_card"),
+    AccountPreset("nationwide_member_card", "Nationwide Member Card", "nationwide", "credit_card"),
     AccountPreset("nationwide_flexone", "Nationwide FlexOne", "nationwide", "current_account"),
     AccountPreset("natwest_select", "NatWest Select", "natwest", "current_account"),
 )

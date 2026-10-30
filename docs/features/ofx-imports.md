@@ -22,7 +22,7 @@ Each file has its own outcome: imported with new and existing transaction counts
 | Preset id | Name | Institution | Account type |
 | --- | --- | --- | --- |
 | `amex_gold` | American Express Gold | `amex` | `credit_card` |
-| `nationwide_credit_card` | Nationwide Credit Card | `nationwide` | `credit_card` |
+| `nationwide_member_card` | Nationwide Member Card | `nationwide` | `credit_card` |
 | `nationwide_flexone` | Nationwide FlexOne | `nationwide` | `current_account` |
 | `natwest_select` | NatWest Select | `natwest` | `current_account` |
 
@@ -57,7 +57,7 @@ These were confirmed against local exports without recording their contents:
 | --- | --- | --- | --- |
 | Amex | OFX 2 XML | `ORG`, `FID`, masked `ACCTID` | Midnight `DTPOSTED` in a US time zone. `MEMO` holds cardholder and card-number details, which is why it is not part of the description. `FITID` equals `REFNUM`. |
 | Nationwide | OFX 2 XML | Masked `ACCTID`; `BANKID` is all zeroes | `DTPOSTED` has a fixed time with `[+1]` or `[+0]` offsets. Only `NAME`, up to 64 characters. |
-| Nationwide credit card | OFX 2 XML | `ACCTID` only | Same `DTPOSTED` format as the Nationwide current account. Only `NAME`. |
+| Nationwide Member Card | OFX 2 XML | `ACCTID` only | Same `DTPOSTED` format as the Nationwide current account. Only `NAME`. |
 | NatWest | OFX 1 SGML | `BANKID`, `ACCTID` | Date-only `DTPOSTED`. `NAME` is truncated to 18 characters; `MEMO` is short and often repeats the start of `NAME`. |
 
 Stable `FITID`s across overlapping exports have not been confirmed for these exports. The OFX specification requires them, but some institutions have been reported to regenerate them. If an overlapping import reports transactions as new that were already imported, `FITID`s are not stable for that export; fuzzy duplicate matching remains out of scope.

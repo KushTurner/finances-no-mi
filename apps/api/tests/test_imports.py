@@ -74,15 +74,15 @@ def test_a_nickname_replaces_the_preset_name(client: TestClient) -> None:
     assert response.json()["account_name"] == "Bills"
 
 
-def test_adds_a_nationwide_credit_card_from_a_credit_card_statement(
+def test_adds_a_nationwide_member_card_from_a_credit_card_statement(
     client: TestClient, session: Session
 ) -> None:
-    response = upload(client, credit_card_statement_ofx(), preset="nationwide_credit_card")
+    response = upload(client, credit_card_statement_ofx(), preset="nationwide_member_card")
 
     account = session.scalars(select(Account)).one()
     assert response.status_code == 201
     assert (account.name, account.institution, account.account_type) == (
-        "Nationwide Credit Card",
+        "Nationwide Member Card",
         "nationwide",
         "credit_card",
     )
