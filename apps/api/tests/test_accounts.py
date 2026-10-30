@@ -42,6 +42,13 @@ def test_lists_the_account_presets(client: TestClient) -> None:
             "card_type": "credit",
         },
         {
+            "id": "nationwide_member_card",
+            "name": "Nationwide Member Card",
+            "institution": "nationwide",
+            "account_type": "credit_card",
+            "card_type": "credit",
+        },
+        {
             "id": "nationwide_flexone",
             "name": "Nationwide FlexOne",
             "institution": "nationwide",
