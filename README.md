@@ -10,6 +10,8 @@ It runs only on your machine, so your statements never leave it. To try it with 
 
 Built with FastAPI, SQLAlchemy, SQLite, React, TypeScript and Playwright.
 
+![Overview page showing synthetic data](docs/images/overview.png)
+
 ## Repository layout
 
 ```text
