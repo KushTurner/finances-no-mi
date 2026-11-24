@@ -1,6 +1,14 @@
 # Finances No MI
 
-A local-only personal finance application for importing bank transactions and reviewing financial activity.
+See what you actually spend each month across your bank accounts.
+
+Bank apps count every payment out as spending and every payment in as income. Moving money between your own accounts, putting money into savings and friends paying you back all end up in the totals, so they rarely match what you really spent.
+
+Finances No MI imports OFX statements from Amex, Nationwide and NatWest into one place. You mark those transfers, savings and repayments once, and the totals show your real spending.
+
+It runs only on your machine, so your statements never leave it. To try it with synthetic data, run `pnpm demo` after [setup](#setup).
+
+Built with FastAPI, SQLAlchemy, SQLite, React, TypeScript and Playwright.
 
 ## Repository layout
 
